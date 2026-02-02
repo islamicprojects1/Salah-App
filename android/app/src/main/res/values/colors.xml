@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Notification color for Firebase Messaging -->
+    <color name="notification_color">#1B5E20</color>
+    
+    <!-- Primary colors (matching AppColors) -->
+    <color name="primary">#1B5E20</color>
+    <color name="primary_dark">#003300</color>
+    <color name="secondary">#D4AF37</color>
+</resources>
