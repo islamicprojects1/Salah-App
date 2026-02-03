@@ -9,52 +9,54 @@ class NotificationService extends GetxService {
   // ============================================================
   // PRIVATE
   // ============================================================
-  
+
   late final FlutterLocalNotificationsPlugin _notifications;
 
   // ============================================================
   // INITIALIZATION
   // ============================================================
-  
+
   /// Initialize the service
   Future<NotificationService> init() async {
     _notifications = FlutterLocalNotificationsPlugin();
-    
+
     // Initialize timezone
     tz_data.initializeTimeZones();
-    
+
     // Android settings
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
-    
+    const androidSettings = AndroidInitializationSettings(
+      '@mipmap/ic_launcher',
+    );
+
     // iOS settings
     const iosSettings = DarwinInitializationSettings(
       requestAlertPermission: true,
       requestBadgePermission: true,
       requestSoundPermission: true,
     );
-    
-    // Initialize
-    const initSettings = InitializationSettings(
-      android: androidSettings,
-      iOS: iosSettings,
-    );
-    
+
+    // Initialize with settings
     await _notifications.initialize(
-      initSettings,
+      settings: const InitializationSettings(
+        android: androidSettings,
+        iOS: iosSettings,
+      ),
       onDidReceiveNotificationResponse: _onNotificationTapped,
     );
-    
+
     // Create notification channels (Android)
     await _createNotificationChannels();
-    
+
     return this;
   }
 
   /// Create notification channels for Android
   Future<void> _createNotificationChannels() async {
-    final androidPlugin = _notifications.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
-    
+    final androidPlugin = _notifications
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+
     if (androidPlugin != null) {
       // Prayer notifications channel
       await androidPlugin.createNotificationChannel(
@@ -66,7 +68,7 @@ class NotificationService extends GetxService {
           sound: RawResourceAndroidNotificationSound('adhan'),
         ),
       );
-      
+
       // Social notifications channel
       await androidPlugin.createNotificationChannel(
         const AndroidNotificationChannel(
@@ -76,7 +78,7 @@ class NotificationService extends GetxService {
           importance: Importance.defaultImportance,
         ),
       );
-      
+
       // Reminder notifications channel
       await androidPlugin.createNotificationChannel(
         const AndroidNotificationChannel(
@@ -91,18 +93,42 @@ class NotificationService extends GetxService {
 
   /// Handle notification tap
   void _onNotificationTapped(NotificationResponse response) {
-    // Handle navigation based on payload
     final payload = response.payload;
     if (payload != null) {
-      // Navigate to appropriate screen
       // TODO: Implement navigation logic
     }
   }
 
   // ============================================================
+  // NOTIFICATION DETAILS
+  // ============================================================
+
+  NotificationDetails _getNotificationDetails(String channelId) {
+    final androidDetails = AndroidNotificationDetails(
+      channelId,
+      channelId == ApiConstants.prayerNotificationChannelId
+          ? 'Prayer Notifications'
+          : 'Notifications',
+      importance: Importance.high,
+      priority: Priority.high,
+    );
+
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+
+    return NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+  }
+
+  // ============================================================
   // SHOW NOTIFICATIONS
   // ============================================================
-  
+
   /// Show instant notification
   Future<void> showNotification({
     required int id,
@@ -111,27 +137,13 @@ class NotificationService extends GetxService {
     String? payload,
     String channelId = ApiConstants.prayerNotificationChannelId,
   }) async {
-    final androidDetails = AndroidNotificationDetails(
-      channelId,
-      channelId == ApiConstants.prayerNotificationChannelId 
-          ? 'Prayer Notifications' 
-          : 'Notifications',
-      importance: Importance.high,
-      priority: Priority.high,
+    await _notifications.show(
+      id: id,
+      title: title,
+      body: body,
+      notificationDetails: _getNotificationDetails(channelId),
+      payload: payload,
     );
-    
-    const iosDetails = DarwinNotificationDetails(
-      presentAlert: true,
-      presentBadge: true,
-      presentSound: true,
-    );
-    
-    final details = NotificationDetails(
-      android: androidDetails,
-      iOS: iosDetails,
-    );
-    
-    await _notifications.show(id, title, body, details, payload: payload);
   }
 
   /// Schedule notification at specific time
@@ -143,32 +155,14 @@ class NotificationService extends GetxService {
     String? payload,
     String channelId = ApiConstants.prayerNotificationChannelId,
   }) async {
-    final androidDetails = AndroidNotificationDetails(
-      channelId,
-      channelId == ApiConstants.prayerNotificationChannelId 
-          ? 'Prayer Notifications' 
-          : 'Notifications',
-      importance: Importance.high,
-      priority: Priority.high,
-    );
-    
-    const iosDetails = DarwinNotificationDetails(
-      presentAlert: true,
-      presentBadge: true,
-      presentSound: true,
-    );
-    
-    final details = NotificationDetails(
-      android: androidDetails,
-      iOS: iosDetails,
-    );
-    
+    final tzScheduledTime = tz.TZDateTime.from(scheduledTime, tz.local);
+
     await _notifications.zonedSchedule(
-      id,
-      title,
-      body,
-      tz.TZDateTime.from(scheduledTime, tz.local),
-      details,
+      id: id,
+      title: title,
+      body: body,
+      scheduledDate: tzScheduledTime,
+      notificationDetails: _getNotificationDetails(channelId),
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       payload: payload,
     );
@@ -177,7 +171,7 @@ class NotificationService extends GetxService {
   // ============================================================
   // PRAYER NOTIFICATIONS
   // ============================================================
-  
+
   /// Schedule prayer time notification
   Future<void> schedulePrayerNotification({
     required int id,
@@ -203,7 +197,7 @@ class NotificationService extends GetxService {
     final reminderTime = prayerTime.add(
       const Duration(minutes: ApiConstants.prayerReminderDelayMinutes),
     );
-    
+
     await scheduleNotification(
       id: id,
       title: 'هل صليت $prayerName؟',
@@ -217,7 +211,7 @@ class NotificationService extends GetxService {
   // ============================================================
   // SOCIAL NOTIFICATIONS
   // ============================================================
-  
+
   /// Show encouragement notification
   Future<void> showEncouragementNotification({
     required String senderName,
@@ -247,10 +241,10 @@ class NotificationService extends GetxService {
   // ============================================================
   // MANAGEMENT
   // ============================================================
-  
+
   /// Cancel specific notification
-  Future<void> cancelNotification(int id) async {
-    await _notifications.cancel(id);
+  Future<void> cancelNotification(int notificationId) async {
+    await _notifications.cancel(id: notificationId);
   }
 
   /// Cancel all notifications

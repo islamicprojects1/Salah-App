@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_dimensions.dart';
-import '../../core/constants/image_assets.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/services/prayer_time_service.dart';
 import '../../core/helpers/date_time_helper.dart';

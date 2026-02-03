@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../core/constants/app_dimensions.dart';
+import 'package:salah/core/constants/app_dimensions.dart';
 
 /// Button types
 enum AppButtonType { primary, outlined, text }
@@ -31,7 +31,7 @@ class AppButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final buttonHeight = height ?? AppDimensions.buttonHeight;
+    final buttonHeight = height ?? AppDimensions.buttonHeightLG;
     final isEnabled = !isDisabled && !isLoading && onPressed != null;
 
     Widget child = isLoading
@@ -76,9 +76,11 @@ class AppButton extends StatelessWidget {
           child: ElevatedButton(
             onPressed: isEnabled ? onPressed : null,
             style: ElevatedButton.styleFrom(
-              padding: padding ?? const EdgeInsets.symmetric(
-                horizontal: AppDimensions.paddingLG,
-              ),
+              padding:
+                  padding ??
+                  const EdgeInsets.symmetric(
+                    horizontal: AppDimensions.paddingLG,
+                  ),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
               ),
@@ -94,9 +96,11 @@ class AppButton extends StatelessWidget {
           child: OutlinedButton(
             onPressed: isEnabled ? onPressed : null,
             style: OutlinedButton.styleFrom(
-              padding: padding ?? const EdgeInsets.symmetric(
-                horizontal: AppDimensions.paddingLG,
-              ),
+              padding:
+                  padding ??
+                  const EdgeInsets.symmetric(
+                    horizontal: AppDimensions.paddingLG,
+                  ),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
               ),
@@ -109,9 +113,9 @@ class AppButton extends StatelessWidget {
         return TextButton(
           onPressed: isEnabled ? onPressed : null,
           style: TextButton.styleFrom(
-            padding: padding ?? const EdgeInsets.symmetric(
-              horizontal: AppDimensions.paddingMD,
-            ),
+            padding:
+                padding ??
+                const EdgeInsets.symmetric(horizontal: AppDimensions.paddingMD),
           ),
           child: child,
         );
@@ -146,9 +150,7 @@ class AppButton extends StatelessWidget {
       type: AppButtonType.outlined,
       icon: icon,
       height: AppDimensions.buttonHeightSM,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppDimensions.paddingMD,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: AppDimensions.paddingMD),
     );
   }
 }

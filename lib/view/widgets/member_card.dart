@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_dimensions.dart';
-import '../../core/constants/image_assets.dart';
 import '../../core/theme/app_colors.dart';
-import '../../core/services/prayer_time_service.dart';
 
 /// Member card widget for community/family screens
 class MemberCard extends StatelessWidget {
