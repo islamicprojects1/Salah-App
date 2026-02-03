@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 /// App color palette with Islamic-inspired colors
-/// 
-/// Primary: Islamic Green - representing nature, paradise, and spirituality
-/// Secondary: Gold - representing divine light and Quranic illumination
 class AppColors {
   AppColors._();
   
@@ -39,66 +37,38 @@ class AppColors {
   static const Color darkDivider = Color(0xFF424242);
   static const Color darkError = Color(0xFFCF6679);
   
-  // ==================== Prayer Time Colors ====================
+  // ==================== Dynamic Colors (GetX) ====================
   
-  /// Fajr - Dawn blue
-  static const Color fajr = Color(0xFF1A237E);
-  
-  /// Dhuhr - Midday yellow
-  static const Color dhuhr = Color(0xFFFFC107);
-  
-  /// Asr - Afternoon orange
-  static const Color asr = Color(0xFFFF9800);
-  
-  /// Maghrib - Sunset red-orange
-  static const Color maghrib = Color(0xFFE65100);
-  
-  /// Isha - Night purple
-  static const Color isha = Color(0xFF4A148C);
-  
-  // ==================== Gradient Colors ====================
-  
-  /// Fajr gradient (dawn sky)
-  static const List<Color> fajrGradient = [
-    Color(0xFF1A237E),
-    Color(0xFF3949AB),
-    Color(0xFFFF8A65),
-  ];
-  
-  /// Day gradient (bright sky)
-  static const List<Color> dayGradient = [
-    Color(0xFF42A5F5),
-    Color(0xFF64B5F6),
-    Color(0xFFFFEB3B),
-  ];
-  
-  /// Maghrib gradient (sunset)
-  static const List<Color> maghribGradient = [
-    Color(0xFFE65100),
-    Color(0xFFFF6F00),
-    Color(0xFFFFD54F),
-  ];
-  
-  /// Isha gradient (night sky)
-  static const List<Color> ishaGradient = [
-    Color(0xFF0D1B2A),
-    Color(0xFF1B263B),
-    Color(0xFF415A77),
-  ];
+  static Color get background => Get.isDarkMode ? darkBackground : lightBackground;
+  static Color get surface => Get.isDarkMode ? darkSurface : lightSurface;
+  static Color get card => Get.isDarkMode ? darkCard : lightCard;
+  static Color get textPrimary => Get.isDarkMode ? darkText : lightText;
+  static Color get textSecondary => Get.isDarkMode ? darkTextSecondary : lightTextSecondary;
+  static Color get divider => Get.isDarkMode ? darkDivider : lightDivider;
   
   // ==================== Utility Colors ====================
   
   static const Color success = Color(0xFF4CAF50);
   static const Color warning = Color(0xFFFFC107);
-  static const Color error = Color(0xFFE53935);
+  static const Color error = Color(0xFFE53935); // Fixed error color
   static const Color info = Color(0xFF2196F3);
   
-  /// Sunrise - Morning light gold
+  // ==================== Prayer Time Colors ====================
+  
+  static const Color fajr = Color(0xFF1A237E);
+  static const Color dhuhr = Color(0xFFFFC107);
+  static const Color asr = Color(0xFFFF9800);
+  static const Color maghrib = Color(0xFFE65100);
+  static const Color isha = Color(0xFF4A148C);
   static const Color sunrise = Color(0xFFFF8F00);
+
+  // ==================== Gradient Colors ====================
   
-  /// Qibla compass pointer color
+  static const List<Color> fajrGradient = [Color(0xFF1A237E), Color(0xFF3949AB), Color(0xFFFF8A65)];
+  static const List<Color> dayGradient = [Color(0xFF42A5F5), Color(0xFF64B5F6), Color(0xFFFFEB3B)];
+  static const List<Color> maghribGradient = [Color(0xFFE65100), Color(0xFFFF6F00), Color(0xFFFFD54F)];
+  static const List<Color> ishaGradient = [Color(0xFF0D1B2A), Color(0xFF1B263B), Color(0xFF415A77)];
+
   static const Color qiblaPointer = secondary;
-  
-  /// Mosque/location marker color
   static const Color locationMarker = primary;
 }

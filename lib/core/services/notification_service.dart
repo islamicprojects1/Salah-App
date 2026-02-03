@@ -50,6 +50,19 @@ class NotificationService extends GetxService {
     return this;
   }
 
+  /// Request notification permissions
+  Future<bool> requestPermissions() async {
+    final androidPlugin = _notifications
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+    if (androidPlugin != null) {
+      final granted = await androidPlugin.requestNotificationsPermission();
+      return granted ?? false;
+    }
+    return true;
+  }
+
   /// Create notification channels for Android
   Future<void> _createNotificationChannels() async {
     final androidPlugin = _notifications

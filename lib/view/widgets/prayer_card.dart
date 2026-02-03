@@ -28,7 +28,7 @@ class PrayerCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Card(
       elevation: isCurrentPrayer ? 4 : 1,
       shape: RoundedRectangleBorder(
@@ -56,15 +56,17 @@ class PrayerCard extends StatelessWidget {
                 ),
                 child: Icon(
                   isPrayed ? Icons.check : _getPrayerIcon(),
-                  color: isPrayed 
+                  color: isPrayed
                       ? _getQualityColor()
-                      : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                      : Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withOpacity(0.6),
                   size: 24,
                 ),
               ),
-              
+
               const SizedBox(width: AppDimensions.paddingMD),
-              
+
               // Prayer info
               Expanded(
                 child: Column(
@@ -73,8 +75,8 @@ class PrayerCard extends StatelessWidget {
                     Text(
                       _getPrayerNameArabic(),
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: isCurrentPrayer 
-                            ? FontWeight.bold 
+                        fontWeight: isCurrentPrayer
+                            ? FontWeight.bold
                             : FontWeight.w500,
                       ),
                     ),
@@ -82,13 +84,15 @@ class PrayerCard extends StatelessWidget {
                     Text(
                       DateTimeHelper.formatTime12(prayerTime),
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withOpacity(0.6),
                       ),
                     ),
                   ],
                 ),
               ),
-              
+
               // Action/Status
               if (!isPrayed && onMarkPrayed != null)
                 IconButton(
@@ -122,7 +126,7 @@ class PrayerCard extends StatelessWidget {
         label = 'فائتة';
         break;
     }
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppDimensions.paddingSM,

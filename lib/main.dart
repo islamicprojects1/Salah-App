@@ -2,15 +2,29 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
-import 'core/localization/languages.dart';
-import 'core/routes/app_pages.dart';
-import 'core/services/storage_service.dart';
-import 'core/services/theme_service.dart';
-import 'core/services/localization_service.dart';
+import 'package:salah/core/localization/languages.dart';
+import 'package:salah/core/routes/app_pages.dart';
+import 'package:salah/core/services/storage_service.dart';
+import 'package:salah/core/services/theme_service.dart';
+import 'package:salah/core/services/localization_service.dart';
+import 'package:salah/core/services/auth_service.dart';
+import 'package:salah/core/services/firestore_service.dart';
+import 'package:salah/core/services/notification_service.dart';
+import 'package:salah/core/services/location_service.dart';
+import 'package:salah/core/services/prayer_time_service.dart';
+import 'package:salah/core/services/family_service.dart';
+import 'package:salah/controller/auth_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   
   // Set preferred orientations
   await SystemChrome.setPreferredOrientations([
@@ -46,6 +60,27 @@ Future<void> initServices() async {
     final service = LocalizationService();
     return await service.init();
   });
+
+  // Firestore service
+  await Get.putAsync<FirestoreService>(() => FirestoreService().init());
+
+  // Auth service
+  await Get.putAsync<AuthService>(() => AuthService().init());
+
+  // Location service
+  await Get.putAsync<LocationService>(() => LocationService().init());
+
+  // Prayer time service
+  await Get.putAsync<PrayerTimeService>(() => PrayerTimeService().init());
+
+  // Notification service
+  await Get.putAsync<NotificationService>(() => NotificationService().init());
+
+  // Family service
+  Get.put(FamilyService(), permanent: true);
+  
+  // Auth controller
+  Get.put(AuthController(), permanent: true);
 }
 
 /// Main app widget

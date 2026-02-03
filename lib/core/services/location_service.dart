@@ -34,6 +34,10 @@ class LocationService extends GetxService {
   /// Check if location is available
   bool get hasLocation => currentPosition.value != null;
 
+  /// Get current city name
+  // TODO: Implement reverse geocoding
+  String? get currentCity => 'الرياض';
+
   // ============================================================
   // LOCATION METHODS
   // ============================================================

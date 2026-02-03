@@ -34,16 +34,18 @@ class AppButton extends StatelessWidget {
     final buttonHeight = height ?? AppDimensions.buttonHeightLG;
     final isEnabled = !isDisabled && !isLoading && onPressed != null;
 
-    Widget child = isLoading
-        ? SizedBox(
-            width: 20,
-            height: 20,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                type == AppButtonType.primary
-                    ? Theme.of(context).colorScheme.onPrimary
-                    : Theme.of(context).colorScheme.primary,
+    Widget content = isLoading
+        ? Center(
+            child: SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  type == AppButtonType.primary
+                      ? (Theme.of(context).colorScheme.onPrimary)
+                      : Theme.of(context).colorScheme.primary,
+                ),
               ),
             ),
           )
@@ -55,18 +57,17 @@ class AppButton extends StatelessWidget {
                 Icon(icon, size: AppDimensions.iconMD),
                 const SizedBox(width: AppDimensions.paddingSM),
               ],
-              Flexible(
-                child: Text(
-                  text,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                  ),
-                  overflow: TextOverflow.ellipsis,
+              Text(
+                text,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
                 ),
               ),
             ],
           );
+
+    print('DEBUG: AppButton "$text" - isLoading: $isLoading, isEnabled: $isEnabled');
 
     switch (type) {
       case AppButtonType.primary:
@@ -85,7 +86,7 @@ class AppButton extends StatelessWidget {
                 borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
               ),
             ),
-            child: child,
+            child: content,
           ),
         );
 
@@ -105,7 +106,7 @@ class AppButton extends StatelessWidget {
                 borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
               ),
             ),
-            child: child,
+            child: content,
           ),
         );
 
@@ -117,7 +118,7 @@ class AppButton extends StatelessWidget {
                 padding ??
                 const EdgeInsets.symmetric(horizontal: AppDimensions.paddingMD),
           ),
-          child: child,
+          child: content,
         );
     }
   }

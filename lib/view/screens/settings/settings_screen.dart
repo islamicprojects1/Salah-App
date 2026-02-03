@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../controller/settings_controller.dart';
-import '../../../core/services/theme_service.dart';
-import '../../../core/services/localization_service.dart';
-import '../../../core/theme/app_colors.dart';
+import 'package:salah/controller/settings_controller.dart';
+import 'package:salah/core/services/theme_service.dart';
+import 'package:salah/core/services/localization_service.dart';
+import 'package:salah/core/theme/app_colors.dart';
+import 'package:salah/core/theme/app_fonts.dart';
+import 'package:salah/core/routes/app_routes.dart';
+import 'package:salah/core/services/auth_service.dart';
 
 /// Settings screen for app preferences
 /// 
@@ -43,6 +46,11 @@ class SettingsScreen extends GetView<SettingsController> {
             _buildSectionTitle(context, 'about'.tr),
             const SizedBox(height: 8),
             _buildAboutCard(context),
+            const SizedBox(height: 24),
+
+            // Logout Section
+            _buildLogoutButton(context),
+            const SizedBox(height: 40),
           ],
         ),
       ),
@@ -251,6 +259,44 @@ class SettingsScreen extends GetView<SettingsController> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildLogoutButton(BuildContext context) {
+    return Card(
+      child: ListTile(
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: AppColors.error.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Icon(Icons.logout, color: AppColors.error),
+        ),
+        title: Text(
+          'تسجيل الخروج',
+          style: AppFonts.bodyLarge.copyWith(color: AppColors.error, fontWeight: FontWeight.bold),
+        ),
+        onTap: () async {
+          final confirm = await Get.dialog<bool>(
+            AlertDialog(
+              title: const Text('تسجيل الخروج'),
+              content: const Text('هل أنت متأكد من رغبتك في تسجيل الخروج؟'),
+              actions: [
+                TextButton(onPressed: () => Get.back(result: false), child: const Text('إلغاء')),
+                TextButton(
+                  onPressed: () => Get.back(result: true), 
+                  child: const Text('خروج', style: TextStyle(color: AppColors.error))
+                ),
+              ],
+            ),
+          );
+
+          if (confirm == true) {
+            await controller.logout();
+          }
+        },
       ),
     );
   }

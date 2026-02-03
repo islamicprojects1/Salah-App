@@ -60,6 +60,61 @@ class FirestoreService extends GetxService {
     await _usersCollection.doc(userId).delete();
   }
 
+  /// Calculate and update user streak
+  Future<int> updateStreak(String userId) async {
+    try {
+      // Fetch last 30 days of logs to calculate streak
+      final now = DateTime.now();
+      int streak = 0;
+      
+      // We look back day by day
+      for (int i = 0; i < 30; i++) {
+        final date = now.subtract(Duration(days: i));
+        final startOfDay = DateTime(date.year, date.month, date.day);
+        final endOfDay = startOfDay.add(const Duration(days: 1));
+        
+        final snapshot = await _prayerLogsCollection(userId)
+            .where('prayedAt', isGreaterThanOrEqualTo: startOfDay)
+            .where('prayedAt', isLessThan: endOfDay)
+            .get();
+        
+        // Check if 5 prayers completed (excluding sunrise for MVP, or including if required)
+        // Specification says 5/5 = 1 day
+        final completedPrayers = snapshot.docs.map((d) => d.data()['prayer'] as String).toSet();
+        // Remove sunrise if it's there
+        completedPrayers.remove('sunrise');
+        completedPrayers.remove('الشروق');
+
+        if (completedPrayers.length >= 5) {
+          streak++;
+        } else if (i == 0) {
+          // If today isn't finished, don't break the streak yet, 
+          // but if yesterday wasn't finished, the streak definitely broke.
+          continue; 
+        } else {
+          // Streak broken
+          break;
+        }
+      }
+
+      await updateUser(userId, {'currentStreak': streak});
+      return streak;
+    } catch (e) {
+      print('Error updating streak: $e');
+      return 0;
+    }
+  }
+
+  /// Get real-time notifications for a user
+  Stream<QuerySnapshot<Map<String, dynamic>>> getUserNotifications(String userId) {
+    return _usersCollection
+        .doc(userId)
+        .collection('notifications')
+        .orderBy('createdAt', descending: true)
+        .limit(10)
+        .snapshots();
+  }
+
   // ============================================================
   // GROUPS
   // ============================================================

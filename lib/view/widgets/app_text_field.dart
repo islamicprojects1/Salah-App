@@ -21,6 +21,10 @@ class AppTextField extends StatefulWidget {
   final TextInputAction? textInputAction;
   final bool autofocus;
 
+  // Custom properties
+  final bool readOnly;
+  final VoidCallback? onTap;
+
   const AppTextField({
     super.key,
     this.label,
@@ -40,6 +44,8 @@ class AppTextField extends StatefulWidget {
     this.focusNode,
     this.textInputAction,
     this.autofocus = false,
+    this.readOnly = false,
+    this.onTap,
   });
 
   @override
@@ -63,6 +69,8 @@ class _AppTextFieldState extends State<AppTextField> {
       obscureText: _obscureText,
       enabled: widget.enabled,
       maxLines: widget.maxLines,
+      readOnly: widget.readOnly,
+      onTap: widget.onTap,
       maxLength: widget.maxLength,
       validator: widget.validator,
       onChanged: widget.onChanged,
@@ -75,9 +83,7 @@ class _AppTextFieldState extends State<AppTextField> {
         labelText: widget.label,
         hintText: widget.hint,
         errorText: widget.errorText,
-        prefixIcon: widget.prefixIcon != null
-            ? Icon(widget.prefixIcon)
-            : null,
+        prefixIcon: widget.prefixIcon != null ? Icon(widget.prefixIcon) : null,
         suffixIcon: widget.obscureText
             ? IconButton(
                 icon: Icon(
@@ -102,12 +108,14 @@ class _AppTextFieldState extends State<AppTextField> {
 /// Email text field with built-in validation
 class EmailTextField extends StatelessWidget {
   final TextEditingController? controller;
+  final String? label;
   final String? Function(String?)? validator;
   final void Function(String)? onChanged;
 
   const EmailTextField({
     super.key,
     this.controller,
+    this.label,
     this.validator,
     this.onChanged,
   });
@@ -116,22 +124,24 @@ class EmailTextField extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppTextField(
       controller: controller,
-      label: 'البريد الإلكتروني',
+      label: label ?? 'البريد الإلكتروني',
       hint: 'example@email.com',
       keyboardType: TextInputType.emailAddress,
       prefixIcon: Icons.email_outlined,
       textInputAction: TextInputAction.next,
       onChanged: onChanged,
-      validator: validator ?? (value) {
-        if (value == null || value.isEmpty) {
-          return 'الرجاء إدخال البريد الإلكتروني';
-        }
-        final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-        if (!emailRegex.hasMatch(value)) {
-          return 'الرجاء إدخال بريد إلكتروني صحيح';
-        }
-        return null;
-      },
+      validator:
+          validator ??
+          (value) {
+            if (value == null || value.isEmpty) {
+              return 'الرجاء إدخال البريد الإلكتروني';
+            }
+            final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+            if (!emailRegex.hasMatch(value)) {
+              return 'الرجاء إدخال بريد إلكتروني صحيح';
+            }
+            return null;
+          },
     );
   }
 }
@@ -162,15 +172,17 @@ class PasswordTextField extends StatelessWidget {
       prefixIcon: Icons.lock_outlined,
       textInputAction: textInputAction ?? TextInputAction.done,
       onChanged: onChanged,
-      validator: validator ?? (value) {
-        if (value == null || value.isEmpty) {
-          return 'الرجاء إدخال كلمة المرور';
-        }
-        if (value.length < 6) {
-          return 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
-        }
-        return null;
-      },
+      validator:
+          validator ??
+          (value) {
+            if (value == null || value.isEmpty) {
+              return 'الرجاء إدخال كلمة المرور';
+            }
+            if (value.length < 6) {
+              return 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
+            }
+            return null;
+          },
     );
   }
 }

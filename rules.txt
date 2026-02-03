@@ -11,3 +11,4 @@
 CardTheme = in my version: CardThemeData
 تمام هسا بي تمر على كل البكجات أي بكج بدها إعداتا إضافةي مثلا flutter_local notifications يعني مر عليهم كلهم وتأكد انك عامل كل اشي قفي gradle and manfifiest etc etc etc كل البكدات لا تنسى اشي 
 لا تنسى تستخدم كل اشي في  فولدر الconstatns
+لا تسى تتسخجم كل اشي موجود مثل الصور والأنيشمن وهاي الأشايء والconstants 

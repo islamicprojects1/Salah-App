@@ -42,4 +42,7 @@ class StorageKeys {
   
   /// Key for storing Isha notification preference
   static const String ishaNotification = 'isha_notification';
+  
+  /// Key for checking if onboarding is completed
+  static const String onboardingCompleted = 'onboarding_completed';
 }

@@ -1,6 +1,8 @@
 import 'package:get/get.dart';
-import '../../core/services/theme_service.dart';
-import '../../core/services/localization_service.dart';
+import 'package:salah/core/services/theme_service.dart';
+import 'package:salah/core/services/localization_service.dart';
+import 'package:salah/core/services/auth_service.dart';
+import 'package:salah/core/routes/app_routes.dart';
 
 /// Controller for Settings screen
 /// 
@@ -21,10 +23,16 @@ class SettingsController extends GetxController {
   /// Check if current language is RTL
   bool get isRTL => _localizationService.isRTL;
   
-  /// Change theme mode
+  /// Change theme and save to storage
   Future<void> changeTheme(AppThemeMode mode) async {
     await _themeService.changeTheme(mode);
     update();
+  }
+
+  /// Logout from the app
+  Future<void> logout() async {
+    await Get.find<AuthService>().signOut();
+    Get.offAllNamed(AppRoutes.login);
   }
   
   /// Change language

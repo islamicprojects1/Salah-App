@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:salah/controller/auth_controller.dart';
 import 'package:salah/core/routes/app_routes.dart';
 import 'package:salah/core/theme/app_colors.dart';
 
@@ -53,8 +54,15 @@ class _SplashScreenState extends State<SplashScreen>
     // Wait for splash animation and initial setup
     await Future.delayed(const Duration(seconds: 2));
 
-    // Navigate to home screen
-    Get.offAllNamed(AppRoutes.home);
+    final authController = Get.find<AuthController>();
+
+    if (authController.isFirstTime) {
+      Get.offAllNamed(AppRoutes.onboarding);
+    } else if (!authController.isLoggedIn) {
+      Get.offAllNamed(AppRoutes.login);
+    } else {
+      Get.offAllNamed(AppRoutes.dashboard);
+    }
   }
 
   @override

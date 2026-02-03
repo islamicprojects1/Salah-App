@@ -1,5 +1,5 @@
 import 'package:get/get.dart';
-import '../settings_controller.dart';
+import 'package:salah/controller/settings_controller.dart';
 
 /// Binding for Settings screen
 /// 

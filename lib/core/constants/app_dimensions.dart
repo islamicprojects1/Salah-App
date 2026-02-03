@@ -229,6 +229,38 @@ class AppDimensions {
   }
 
   // ============================================================
+  // SPECIFIC UI ELEMENTS
+  // ============================================================
+
+  /// Onboarding image size
+  static const double imageOnboarding = 280.0;
+  
+  /// Onboarding icon place holder
+  static const double iconOnboardingPlaceholder = 120.0;
+
+  /// Login Logo size
+  static const double sizeLogo = 100.0;
+  
+  /// Login Logo icon size
+  static const double iconLogo = 50.0;
+
+  /// Dot indicator size
+  static const double dotSize = 8.0;
+  static const double dotWidthActive = 24.0;
+
+  /// Profile Avatar Radius (Large)
+  static const double radiusProfileAvatarLarge = 50.0;
+
+  /// Profile Camera Badge Radius
+  static const double radiusProfileCameraBadge = 18.0;
+
+  /// Gender selection icon size
+  static const double iconGender = 32.0;
+  
+  /// Selected border width
+  static const double borderWidthSelected = 2.0;
+
+  // ============================================================
   // BUTTON DIMENSIONS
   // ============================================================
 
