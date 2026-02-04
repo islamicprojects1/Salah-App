@@ -15,10 +15,7 @@ class MissedPrayersScreen extends GetView<MissedPrayersController> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text('missed_prayers'.tr),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: Text('missed_prayers'.tr), centerTitle: true),
       body: Obx(() {
         if (controller.isLoading.value) {
           return Center(
@@ -60,7 +57,7 @@ class MissedPrayersScreen extends GetView<MissedPrayersController> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: AppColors.primaryColor.withOpacity(0.1),
+                color: AppColors.primary.withOpacity(0.1),
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(30),
                   bottomRight: Radius.circular(30),
@@ -73,7 +70,7 @@ class MissedPrayersScreen extends GetView<MissedPrayersController> {
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.primaryColor,
+                      color: AppColors.primary,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -131,35 +128,37 @@ class MissedPrayersScreen extends GetView<MissedPrayersController> {
                   const SizedBox(width: 12),
                   Expanded(
                     flex: 2,
-                    child: Obx(() => ElevatedButton(
-                      onPressed: controller.isSaving.value 
-                          ? null 
-                          : controller.saveAll,
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                    child: Obx(
+                      () => ElevatedButton(
+                        onPressed: controller.isSaving.value
+                            ? null
+                            : controller.saveAll,
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          backgroundColor: AppColors.primary,
                         ),
-                        backgroundColor: AppColors.primaryColor,
+                        child: controller.isSaving.value
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : Text(
+                                'save_all'.tr,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                       ),
-                      child: controller.isSaving.value
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : Text(
-                              'save_all'.tr,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                    )),
+                    ),
                   ),
                 ],
               ),
@@ -172,10 +171,11 @@ class MissedPrayersScreen extends GetView<MissedPrayersController> {
 
   Widget _buildPrayerCard(PrayerTimeModel prayer) {
     return Obx(() {
-      final status = controller.prayerStatuses[prayer.prayerType] ?? 
-                     PrayerStatus.prayed;
-      final timing = controller.prayerTimings[prayer.prayerType] ?? 
-                     PrayerTimingQuality.onTime;
+      final status =
+          controller.prayerStatuses[prayer.prayerType] ?? PrayerStatus.prayed;
+      final timing =
+          controller.prayerTimings[prayer.prayerType] ??
+          PrayerTimingQuality.onTime;
 
       return Container(
         margin: const EdgeInsets.only(bottom: 16),
@@ -200,12 +200,12 @@ class MissedPrayersScreen extends GetView<MissedPrayersController> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryColor.withOpacity(0.1),
+                    color: AppColors.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
-                    _getPrayerIcon(prayer.prayerType),
-                    color: AppColors.primaryColor,
+                    _getPrayerIcon(prayer.prayerType ?? PrayerName.fajr),
+                    color: AppColors.primary,
                     size: 24,
                   ),
                 ),
@@ -245,7 +245,7 @@ class MissedPrayersScreen extends GetView<MissedPrayersController> {
                     icon: Icons.check_circle,
                     isSelected: status == PrayerStatus.prayed,
                     onTap: () => controller.setPrayerStatus(
-                      prayer.prayerType,
+                      prayer.prayerType!,
                       PrayerStatus.prayed,
                     ),
                   ),
@@ -257,7 +257,7 @@ class MissedPrayersScreen extends GetView<MissedPrayersController> {
                     icon: Icons.cancel,
                     isSelected: status == PrayerStatus.missed,
                     onTap: () => controller.setPrayerStatus(
-                      prayer.prayerType,
+                      prayer.prayerType!,
                       PrayerStatus.missed,
                     ),
                   ),
@@ -281,30 +281,34 @@ class MissedPrayersScreen extends GetView<MissedPrayersController> {
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  _buildTimingChip(
-                    prayer.prayerType,
-                    PrayerTimingQuality.veryEarly,
-                    'beginning_of_time'.tr,
-                    timing,
-                  ),
-                  _buildTimingChip(
-                    prayer.prayerType,
-                    PrayerTimingQuality.onTime,
-                    'middle_of_time'.tr,
-                    timing,
-                  ),
-                  _buildTimingChip(
-                    prayer.prayerType,
-                    PrayerTimingQuality.late,
-                    'end_of_time'.tr,
-                    timing,
-                  ),
-                  _buildTimingChip(
-                    prayer.prayerType,
-                    PrayerTimingQuality.onTime,
-                    'dont_remember'.tr,
-                    timing,
-                  ),
+                  if (prayer.prayerType != null)
+                    _buildTimingChip(
+                      prayer.prayerType!,
+                      PrayerTimingQuality.veryEarly,
+                      'beginning_of_time'.tr,
+                      timing,
+                    ),
+                  if (prayer.prayerType != null)
+                    _buildTimingChip(
+                      prayer.prayerType!,
+                      PrayerTimingQuality.onTime,
+                      'middle_of_time'.tr,
+                      timing,
+                    ),
+                  if (prayer.prayerType != null)
+                    _buildTimingChip(
+                      prayer.prayerType!,
+                      PrayerTimingQuality.late,
+                      'end_of_time'.tr,
+                      timing,
+                    ),
+                  if (prayer.prayerType != null)
+                    _buildTimingChip(
+                      prayer.prayerType!,
+                      PrayerTimingQuality.onTime,
+                      'dont_remember'.tr,
+                      timing,
+                    ),
                 ],
               ),
             ],
@@ -326,14 +330,12 @@ class MissedPrayersScreen extends GetView<MissedPrayersController> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected 
-              ? AppColors.primaryColor 
-              : AppColors.primaryColor.withOpacity(0.1),
+          color: isSelected
+              ? AppColors.primary
+              : AppColors.primary.withOpacity(0.1),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected 
-                ? AppColors.primaryColor 
-                : Colors.transparent,
+            color: isSelected ? AppColors.primary : Colors.transparent,
             width: 2,
           ),
         ),
@@ -342,14 +344,14 @@ class MissedPrayersScreen extends GetView<MissedPrayersController> {
           children: [
             Icon(
               icon,
-              color: isSelected ? Colors.white : AppColors.primaryColor,
+              color: isSelected ? Colors.white : AppColors.primary,
               size: 20,
             ),
             const SizedBox(width: 6),
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? Colors.white : AppColors.primaryColor,
+                color: isSelected ? Colors.white : AppColors.primary,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -374,9 +376,7 @@ class MissedPrayersScreen extends GetView<MissedPrayersController> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected 
-              ? color 
-              : color.withOpacity(0.1),
+          color: isSelected ? color : color.withOpacity(0.1),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected ? color : Colors.transparent,
