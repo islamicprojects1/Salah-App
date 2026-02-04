@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get/get.dart';
 import '../constants/api_constants.dart';
+import '../../data/models/prayer_log_model.dart';
 
 /// Service for Firestore database operations
 class FirestoreService extends GetxService {
@@ -194,6 +195,22 @@ class FirestoreService extends GetxService {
   /// Delete prayer log
   Future<void> deletePrayerLog(String userId, String logId) async {
     await _prayerLogsCollection(userId).doc(logId).delete();
+  }
+
+  /// Get prayer logs for a specific date range
+  Future<List<PrayerLogModel>> getPrayerLogs({
+    required String userId,
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    final snapshot = await _prayerLogsCollection(userId)
+        .where('prayedAt', isGreaterThanOrEqualTo: startDate)
+        .where('prayedAt', isLessThan: endDate)
+        .get();
+
+    return snapshot.docs
+        .map((doc) => PrayerLogModel.fromFirestore(doc))
+        .toList();
   }
 
   // ============================================================

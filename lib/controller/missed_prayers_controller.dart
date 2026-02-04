@@ -10,7 +10,7 @@ class MissedPrayersController extends GetxController {
   // ============================================================
   // DEPENDENCIES
   // ============================================================
-  
+
   final PrayerTimeService _prayerTimeService = Get.find<PrayerTimeService>();
   final FirestoreService _firestoreService = Get.find<FirestoreService>();
   final AuthService _authService = Get.find<AuthService>();
@@ -18,7 +18,7 @@ class MissedPrayersController extends GetxController {
   // ============================================================
   // STATE
   // ============================================================
-  
+
   final missedPrayers = <PrayerTimeModel>[].obs;
   final prayerStatuses = <PrayerName, PrayerStatus>{}.obs;
   final prayerTimings = <PrayerName, PrayerTimingQuality>{}.obs;
@@ -28,7 +28,7 @@ class MissedPrayersController extends GetxController {
   // ============================================================
   // LIFECYCLE
   // ============================================================
-  
+
   @override
   void onInit() {
     super.onInit();
@@ -38,33 +38,34 @@ class MissedPrayersController extends GetxController {
   // ============================================================
   // METHODS
   // ============================================================
-  
+
   /// Load prayers that haven't been logged today
   Future<void> _loadMissedPrayers() async {
     try {
       isLoading.value = true;
-      
+
       // Get today's prayers
-      final allPrayers = _prayerTimeService.getTodayPrayers()
+      final allPrayers = _prayerTimeService
+          .getTodayPrayers()
           .where((p) => p.prayerType != PrayerName.sunrise)
           .toList();
-      
+
       // Get today's logs
       final userId = _authService.currentUser.value?.uid ?? '';
       final today = DateTime.now();
       final startOfDay = DateTime(today.year, today.month, today.day);
       final endOfDay = startOfDay.add(const Duration(days: 1));
-      
+
       final logs = await _firestoreService.getPrayerLogs(
         userId: userId,
         startDate: startOfDay,
         endDate: endOfDay,
       );
-      
+
       // Find unlogged prayers (prayers that have passed but not logged)
       final now = DateTime.now();
       final unlogged = <PrayerTimeModel>[];
-      
+
       for (final prayer in allPrayers) {
         // Check if prayer time has passed
         if (prayer.dateTime.isBefore(now)) {
@@ -73,14 +74,16 @@ class MissedPrayersController extends GetxController {
           if (!hasLog) {
             unlogged.add(prayer);
             // Default: user prayed but forgot to log (optimistic)
-            prayerStatuses[prayer.prayerType] = PrayerStatus.prayed;
-            prayerTimings[prayer.prayerType] = PrayerTimingQuality.onTime;
+            final prayerType = prayer.prayerType;
+            if (prayerType != null) {
+              prayerStatuses[prayerType] = PrayerStatus.prayed;
+              prayerTimings[prayerType] = PrayerTimingQuality.onTime;
+            }
           }
         }
       }
-      
+
       missedPrayers.value = unlogged;
-      
     } catch (e) {
       print('Error loading missed prayers: $e');
     } finally {
@@ -91,7 +94,7 @@ class MissedPrayersController extends GetxController {
   /// Set prayer status (prayed/missed)
   void setPrayerStatus(PrayerName prayer, PrayerStatus status) {
     prayerStatuses[prayer] = status;
-    
+
     // If missed, set timing to missed
     if (status == PrayerStatus.missed) {
       prayerTimings[prayer] = PrayerTimingQuality.missed;
@@ -110,64 +113,72 @@ class MissedPrayersController extends GetxController {
   Future<void> saveAll() async {
     try {
       isSaving.value = true;
-      
+
       final userId = _authService.currentUser.value?.uid ?? '';
-      
+
       for (final prayer in missedPrayers) {
-        final status = prayerStatuses[prayer.prayerType];
-        final timing = prayerTimings[prayer.prayerType];
-        
+        final prayerType = prayer.prayerType;
+        if (prayerType == null) continue;
+
+        final status = prayerStatuses[prayerType];
+        final timing = prayerTimings[prayerType];
+
         if (status == null) continue;
-        
+
         // Get prayer time range for quality calculation
         final prayerTimes = _prayerTimeService.prayerTimes.value;
         if (prayerTimes == null) continue;
-        
+
         final range = PrayerTimeRange.fromPrayerTimes(
           prayerTimes: prayerTimes,
-          prayer: prayer.prayerType,
+          prayer: prayerType,
         );
-        
+
         if (range == null) continue;
-        
+
         DateTime prayedAt;
-        
+
         if (status == PrayerStatus.missed) {
           // If missed, use adhan time (will be marked as missed in quality)
-          prayedAt = prayer.dateTime.add(Duration(
-            minutes: range.totalMinutes + 1,
-          ));
+          prayedAt = prayer.dateTime.add(
+            Duration(minutes: range.totalMinutes + 1),
+          );
         } else {
           // If prayed, get suggested time based on selected quality
-          prayedAt = range.getSuggestedTime(timing ?? PrayerTimingQuality.onTime);
+          prayedAt = range.getSuggestedTime(
+            timing ?? PrayerTimingQuality.onTime,
+          );
         }
-        
+
         // Create prayer log
         final log = PrayerLogModel(
           id: '',
           oderId: userId,
-          prayer: prayer.prayerType,
+          prayer: prayerType,
           prayedAt: prayedAt,
           adhanTime: prayer.dateTime,
-          quality: _convertToLegacyQuality(timing ?? PrayerTimingQuality.onTime),
+          quality: _convertToLegacyQuality(
+            timing ?? PrayerTimingQuality.onTime,
+          ),
           timingQuality: timing,
-          note: status == PrayerStatus.missed ? 'Logged as missed' : 'Batch logged',
+          note: status == PrayerStatus.missed
+              ? 'Logged as missed'
+              : 'Batch logged',
         );
-        
+
         // Save to Firestore
-        await _firestoreService.addPrayerLog(log);
+        await _firestoreService.addPrayerLog(userId, log.toFirestore());
       }
-      
+
       // Show success message
       Get.snackbar(
         'success'.tr,
         'prayers_saved'.tr,
         snackPosition: SnackPosition.BOTTOM,
       );
-      
+
       // Go back
       Get.back();
-      
     } catch (e) {
       print('Error saving prayers: $e');
       Get.snackbar(
@@ -204,7 +215,4 @@ class MissedPrayersController extends GetxController {
 }
 
 /// Prayer status enum
-enum PrayerStatus {
-  prayed,
-  missed,
-}
+enum PrayerStatus { prayed, missed }
