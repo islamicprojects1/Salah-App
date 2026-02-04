@@ -8,7 +8,8 @@ class PrayerLogModel {
   final PrayerName prayer;
   final DateTime prayedAt;
   final DateTime adhanTime;
-  final PrayerQuality quality;
+  final PrayerQuality quality; // Legacy quality (for backward compatibility)
+  final PrayerTimingQuality? timingQuality; // New detailed timing quality
   final String? addedByLeaderId; // If leader added manually
   final String? note;
 
@@ -19,6 +20,7 @@ class PrayerLogModel {
     required this.prayedAt,
     required this.adhanTime,
     required this.quality,
+    this.timingQuality,
     this.addedByLeaderId,
     this.note,
   });
@@ -39,6 +41,9 @@ class PrayerLogModel {
       prayedAt: (data['prayedAt'] as Timestamp).toDate(),
       adhanTime: (data['adhanTime'] as Timestamp).toDate(),
       quality: _parsePrayerQuality(data['quality'] ?? 'onTime'),
+      timingQuality: data['timingQuality'] != null 
+          ? _parsePrayerTimingQuality(data['timingQuality'])
+          : null,
       addedByLeaderId: data['addedByLeaderId'],
       note: data['note'],
     );
@@ -52,6 +57,7 @@ class PrayerLogModel {
       'prayedAt': Timestamp.fromDate(prayedAt),
       'adhanTime': Timestamp.fromDate(adhanTime),
       'quality': quality.name,
+      'timingQuality': timingQuality?.name,
       'addedByLeaderId': addedByLeaderId,
       'note': note,
     };
@@ -90,6 +96,28 @@ class PrayerLogModel {
         return PrayerQuality.missed;
       default:
         return PrayerQuality.onTime;
+    }
+  }
+
+  /// Parse prayer timing quality from string
+  static PrayerTimingQuality _parsePrayerTimingQuality(String quality) {
+    switch (quality.toLowerCase()) {
+      case 'veryearly':
+        return PrayerTimingQuality.veryEarly;
+      case 'early':
+        return PrayerTimingQuality.early;
+      case 'ontime':
+        return PrayerTimingQuality.onTime;
+      case 'late':
+        return PrayerTimingQuality.late;
+      case 'verylate':
+        return PrayerTimingQuality.veryLate;
+      case 'missed':
+        return PrayerTimingQuality.missed;
+      case 'notyet':
+        return PrayerTimingQuality.notYet;
+      default:
+        return PrayerTimingQuality.onTime;
     }
   }
 
