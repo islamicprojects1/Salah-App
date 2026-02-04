@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:salah/view/widgets/app_loading.dart';
 import 'firebase_options.dart';
 
 import 'package:salah/core/localization/languages.dart';
@@ -20,24 +21,22 @@ import 'package:salah/controller/auth_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Initialize Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-  
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
   // Set preferred orientations
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
-  
+
   // Initialize GetStorage
   await GetStorage.init();
-  
+
   // Initialize services
   await initServices();
-  
+
   runApp(const SalahApp());
 }
 
@@ -48,13 +47,13 @@ Future<void> initServices() async {
     final service = StorageService();
     return await service.init();
   });
-  
+
   // Theme service
   await Get.putAsync<ThemeService>(() async {
     final service = ThemeService();
     return await service.init();
   });
-  
+
   // Localization service
   await Get.putAsync<LocalizationService>(() async {
     final service = LocalizationService();
@@ -78,7 +77,7 @@ Future<void> initServices() async {
 
   // Family service
   Get.put(FamilyService(), permanent: true);
-  
+
   // Auth controller
   Get.put(AuthController(), permanent: true);
 }
@@ -91,34 +90,35 @@ class SalahApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final themeService = Get.find<ThemeService>();
     final localizationService = Get.find<LocalizationService>();
-    
+
     return GetMaterialApp(
       // App info
       title: 'صلاة',
       debugShowCheckedModeBanner: false,
-      
+
       // Theme
       theme: themeService.lightTheme,
       darkTheme: themeService.darkTheme,
       themeMode: themeService.themeMode,
-      
+
       // Localization
       translations: Languages(),
       locale: localizationService.currentLocale,
       fallbackLocale: LocalizationService.fallbackLocale,
-      
+
       // Routing
+      // home: AppLoading(),
       initialRoute: AppPages.initial,
       getPages: AppPages.pages,
-      
+
       // Default transition
       defaultTransition: Transition.cupertino,
-      
+
       // Builder for global settings
       builder: (context, child) {
         return Directionality(
-          textDirection: localizationService.isRTL 
-              ? TextDirection.rtl 
+          textDirection: localizationService.isRTL
+              ? TextDirection.rtl
               : TextDirection.ltr,
           child: child ?? const SizedBox.shrink(),
         );

@@ -80,7 +80,7 @@ class AuthService extends GetxService {
       }
       
       return credential.user;
-    } on FirebaseAuthException catch (e) {
+    } on FirebaseException catch (e) {
       errorMessage.value = _getErrorMessage(e.code);
       return null;
     } catch (e) {
@@ -106,7 +106,7 @@ class AuthService extends GetxService {
       );
       
       return credential.user;
-    } on FirebaseAuthException catch (e) {
+    } on FirebaseException catch (e) {
       errorMessage.value = _getErrorMessage(e.code);
       return null;
     } catch (e) {
@@ -174,7 +174,7 @@ class AuthService extends GetxService {
       
       await _auth.sendPasswordResetEmail(email: email);
       return true;
-    } on FirebaseAuthException catch (e) {
+    } on FirebaseException catch (e) {
       errorMessage.value = _getErrorMessage(e.code);
       return false;
     } catch (e) {
@@ -193,7 +193,7 @@ class AuthService extends GetxService {
       
       await currentUser.value?.updatePassword(newPassword);
       return true;
-    } on FirebaseAuthException catch (e) {
+    } on FirebaseException catch (e) {
       errorMessage.value = _getErrorMessage(e.code);
       return false;
     } catch (e) {
@@ -251,7 +251,7 @@ class AuthService extends GetxService {
     try {
       await currentUser.value?.delete();
       return true;
-    } on FirebaseAuthException catch (e) {
+    } on FirebaseException catch (e) {
       errorMessage.value = _getErrorMessage(e.code);
       return false;
     } catch (e) {

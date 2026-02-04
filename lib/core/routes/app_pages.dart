@@ -29,7 +29,7 @@ class AppPages {
   static final List<GetPage> pages = [
     // Splash Screen
     GetPage(
-      name: AppRoutes.splash,
+      name: initial,
       page: () => const SplashScreen(),
       transition: Transition.fade,
     ),

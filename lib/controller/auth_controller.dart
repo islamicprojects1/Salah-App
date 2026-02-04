@@ -53,20 +53,45 @@ class AuthController extends GetxController {
     errorMessage.value = '';
 
     try {
+      print('DEBUG: Starting registration for ${emailController.text.trim()}');
+      
       final user = await _authService.registerWithEmail(
         email: emailController.text.trim(),
         password: passwordController.text,
         displayName: nameController.text.trim(),
       );
 
+      print('DEBUG: Registration result - user: ${user?.uid}');
+
       if (user != null) {
+        print('DEBUG: Creating Firestore user document...');
+        
+        // Create user document in Firestore immediately
+        final userModel = UserModel(
+          id: user.uid,
+          name: nameController.text.trim(),
+          birthDate: selectedBirthDate.value ?? DateTime(2000, 1, 1),
+          gender: selectedGender.value == 'male' ? Gender.male : Gender.female,
+          email: user.email,
+          photoUrl: user.photoURL,
+          createdAt: DateTime.now(),
+          language: Get.locale?.languageCode ?? 'ar',
+        );
+
+        await _firestore.setUser(user.uid, userModel.toFirestore());
+        print('DEBUG: User document created successfully');
         return true;
       } else {
-        errorMessage.value = 'فشل إنشاء الحساب';
+        print('DEBUG: Registration failed - authService error: ${_authService.errorMessage.value}');
+        errorMessage.value = _authService.errorMessage.value.isNotEmpty 
+            ? _authService.errorMessage.value 
+            : 'فشل إنشاء الحساب';
         return false;
       }
-    } catch (e) {
-      errorMessage.value = e.toString();
+    } catch (e, stackTrace) {
+      print('DEBUG: Registration exception - $e');
+      print('DEBUG: Stack trace - $stackTrace');
+      errorMessage.value = 'خطأ في التسجيل: ${e.toString()}';
       return false;
     } finally {
       isLoading.value = false;

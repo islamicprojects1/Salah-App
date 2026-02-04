@@ -10,6 +10,7 @@ class QiblaController extends GetxController {
 
   final Rxn<double> heading = Rxn<double>();
   final Rxn<double> qiblaDirection = Rxn<double>();
+  final RxDouble distanceToKaaba = 0.0.obs; // Distance in kilometers
   final RxBool isLoading = true.obs;
   final RxString errorMessage = ''.obs;
 
@@ -36,9 +37,9 @@ class QiblaController extends GetxController {
         return;
       }
 
-      // 2. Calculate Qibla angle
-      // 2. Calculate Qibla angle
+      // 2. Calculate Qibla angle and distance
       qiblaDirection.value = _calculateQiblaAngle(pos.latitude, pos.longitude);
+      distanceToKaaba.value = _calculateDistance(pos.latitude, pos.longitude);
 
       // 3. Start listening to compass
       _compassSubscription = FlutterCompass.events?.listen((event) {
@@ -50,6 +51,12 @@ class QiblaController extends GetxController {
     } finally {
       isLoading.value = false;
     }
+  }
+
+  /// Refresh qibla direction (called from retry button)
+  Future<void> refreshQibla() async {
+    errorMessage.value = '';
+    await _initQibla();
   }
 
   double _calculateQiblaAngle(double lat, double lon) {
@@ -66,6 +73,25 @@ class QiblaController extends GetxController {
     
     double qibla = math.atan2(y, x);
     return qibla * (180.0 / math.pi);
+  }
+
+  /// Calculate distance to Kaaba using Haversine formula
+  double _calculateDistance(double lat, double lon) {
+    const mLat = 21.4225;
+    const mLon = 39.8262;
+    const earthRadius = 6371.0; // km
+
+    final dLat = (mLat - lat) * (math.pi / 180.0);
+    final dLon = (mLon - lon) * (math.pi / 180.0);
+
+    final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(lat * (math.pi / 180.0)) *
+            math.cos(mLat * (math.pi / 180.0)) *
+            math.sin(dLon / 2) *
+            math.sin(dLon / 2);
+
+    final c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
+    return earthRadius * c;
   }
 
   @override

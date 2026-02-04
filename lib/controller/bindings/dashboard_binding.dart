@@ -7,9 +7,11 @@ import 'package:salah/controller/settings_controller.dart';
 class DashboardBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut<DashboardController>(() => DashboardController());
-    Get.lazyPut<FamilyController>(() => FamilyController());
-    Get.lazyPut<QiblaController>(() => QiblaController());
-    Get.lazyPut<SettingsController>(() => SettingsController());
+    // Use fenix: true to keep controllers alive during navigation
+    Get.lazyPut<DashboardController>(() => DashboardController(), fenix: true);
+    Get.lazyPut<FamilyController>(() => FamilyController(), fenix: true);
+    Get.lazyPut<QiblaController>(() => QiblaController(), fenix: true);
+    Get.lazyPut<SettingsController>(() => SettingsController(), fenix: true);
   }
 }
+

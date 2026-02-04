@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:salah/core/routes/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_fonts.dart';
 import '../../../core/constants/app_dimensions.dart';
@@ -93,7 +94,9 @@ class LoginScreen extends StatelessWidget {
               Obx(() {
                 if (controller.errorMessage.value.isNotEmpty) {
                   return Padding(
-                    padding: const EdgeInsets.only(bottom: AppDimensions.paddingMD),
+                    padding: const EdgeInsets.only(
+                      bottom: AppDimensions.paddingMD,
+                    ),
                     child: Text(
                       controller.errorMessage.value,
                       style: AppFonts.bodySmall.copyWith(
@@ -107,17 +110,19 @@ class LoginScreen extends StatelessWidget {
               }),
 
               // Login button
-              Obx(() => AppButton(
-                text: 'تسجيل الدخول',
-                onPressed: () async {
-                  final success = await controller.loginWithEmail();
-                  if (success) {
-                    Get.offAllNamed('/dashboard');
-                  }
-                },
-                isLoading: controller.isLoading.value,
-                width: double.infinity,
-              )),
+              Obx(
+                () => AppButton(
+                  text: 'تسجيل الدخول',
+                  onPressed: () async {
+                    final success = await controller.loginWithEmail();
+                    if (success) {
+                      Get.offAllNamed('/dashboard');
+                    }
+                  },
+                  isLoading: controller.isLoading.value,
+                  width: double.infinity,
+                ),
+              ),
 
               const SizedBox(height: AppDimensions.paddingMD),
 
@@ -143,19 +148,21 @@ class LoginScreen extends StatelessWidget {
               const SizedBox(height: AppDimensions.paddingMD),
 
               // Google sign in
-              Obx(() => AppButton(
-                text: 'المتابعة مع Google',
-                onPressed: () async {
-                  final success = await controller.loginWithGoogle();
-                  if (success) {
-                    Get.offAllNamed('/dashboard');
-                  }
-                },
-                type: AppButtonType.outlined,
-                isLoading: controller.isLoading.value,
-                width: double.infinity,
-                icon: Icons.g_mobiledata,
-              )),
+              Obx(
+                () => AppButton(
+                  text: 'المتابعة مع Google',
+                  onPressed: () async {
+                    final success = await controller.loginWithGoogle();
+                    if (success) {
+                      Get.offAllNamed('/dashboard');
+                    }
+                  },
+                  type: AppButtonType.outlined,
+                  isLoading: controller.isLoading.value,
+                  width: double.infinity,
+                  icon: Icons.g_mobiledata,
+                ),
+              ),
 
               const SizedBox(height: AppDimensions.paddingXL),
 
@@ -170,7 +177,7 @@ class LoginScreen extends StatelessWidget {
                     ),
                   ),
                   TextButton(
-                    onPressed: () => Get.toNamed('/register'),
+                    onPressed: () => Get.toNamed(AppRoutes.register),
                     child: Text(
                       'إنشاء حساب',
                       style: AppFonts.bodyMedium.copyWith(

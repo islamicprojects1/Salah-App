@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:lottie/lottie.dart';
 import 'package:salah/core/theme/app_colors.dart';
 import 'package:salah/core/theme/app_fonts.dart';
 import 'package:salah/core/constants/app_dimensions.dart';
+import 'package:salah/core/constants/image_assets.dart';
 import 'package:salah/controller/dashboard_controller.dart';
-import 'package:salah/controller/family_controller.dart';
 import 'package:salah/view/screens/family/family_dashboard_screen.dart';
 import 'package:salah/view/screens/settings/settings_screen.dart';
 import 'package:salah/view/screens/qibla/qibla_screen.dart';
 import 'package:salah/core/services/prayer_time_service.dart';
-import 'package:salah/data/models/prayer_log_model.dart';
 import 'package:salah/view/widgets/app_button.dart';
+import 'package:salah/view/widgets/app_loading.dart';
 import 'package:salah/view/widgets/prayer_timeline.dart';
 
 class DashboardScreen extends GetView<DashboardController> {
@@ -50,26 +51,26 @@ class DashboardScreen extends GetView<DashboardController> {
       backgroundColor: AppColors.surface,
       selectedItemColor: AppColors.primary,
       unselectedItemColor: AppColors.textSecondary,
-      items: const [
+      items: [
         BottomNavigationBarItem(
           icon: Icon(Icons.home_outlined),
           activeIcon: Icon(Icons.home),
-          label: 'الرئيسية',
+          label: 'home'.tr,
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.family_restroom_outlined),
           activeIcon: Icon(Icons.family_restroom),
-          label: 'العائلة',
+          label: 'family'.tr,
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.explore_outlined),
           activeIcon: Icon(Icons.explore),
-          label: 'القبلة',
+          label: 'qibla'.tr,
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.settings_outlined),
           activeIcon: Icon(Icons.settings),
-          label: 'الإعدادات',
+          label: 'settings'.tr,
         ),
       ],
     );
@@ -78,8 +79,8 @@ class DashboardScreen extends GetView<DashboardController> {
   Widget _buildHomeContent() {
     return SafeArea(
       child: Obx(() {
-        if (controller.isLoading.value) {
-          return const Center(child: CircularProgressIndicator());
+      if (controller.isLoading.value) {
+          return const AppLoading(message: 'جاري التحميل...');
         }
         
         return SingleChildScrollView(
@@ -112,7 +113,7 @@ class DashboardScreen extends GetView<DashboardController> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: AppDimensions.paddingLG),
                 child: Text(
-                  'مواقيت اليوم',
+                  'prayer_times'.tr,
                   style: AppFonts.titleLarge.copyWith(color: AppColors.textPrimary),
                 ),
               ),
@@ -145,7 +146,7 @@ class DashboardScreen extends GetView<DashboardController> {
                   Row(
                     children: [
                       Text(
-                        'الصلاة القادمة',
+                        'next_prayer'.tr,
                         style: AppFonts.bodyMedium.copyWith(color: Colors.white70),
                       ),
                       const SizedBox(width: AppDimensions.paddingSM),
@@ -207,10 +208,15 @@ class DashboardScreen extends GetView<DashboardController> {
           padding: const EdgeInsets.symmetric(horizontal: AppDimensions.paddingLG),
           child: Column(
             children: [
-              const Icon(Icons.check_circle, color: Colors.green, size: 48),
+              Lottie.asset(
+                ImageAssets.successAnimation,
+                width: 80,
+                height: 80,
+                repeat: false,
+              ),
               const SizedBox(height: AppDimensions.paddingSM),
               Text(
-                'تقبل الله صلاتك',
+                'prayer_accepted'.tr,
                 style: AppFonts.titleMedium.copyWith(color: Colors.green, fontWeight: FontWeight.bold),
               ),
             ],
@@ -223,12 +229,12 @@ class DashboardScreen extends GetView<DashboardController> {
         child: Column(
           children: [
             Text(
-              'هل صليت ${current.name}؟',
+              '${'did_you_pray'.tr} ${current.name}؟',
               style: AppFonts.titleMedium,
             ),
             const SizedBox(height: AppDimensions.paddingMD),
             AppButton(
-              text: 'نعم، صليت',
+              text: 'yes_i_prayed'.tr,
               icon: Icons.check,
               onPressed: () => controller.logPrayer(current),
               width: double.infinity,

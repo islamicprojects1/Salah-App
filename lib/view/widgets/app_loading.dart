@@ -8,16 +8,12 @@ class AppLoading extends StatelessWidget {
   final double? size;
   final String? message;
 
-  const AppLoading({
-    super.key,
-    this.size,
-    this.message,
-  });
+  const AppLoading({super.key, this.size, this.message});
 
   @override
   Widget build(BuildContext context) {
-    final loadingSize = size ?? AppDimensions.iconXXL * 2;
-    
+    final loadingSize = size ?? AppDimensions.iconXXL * 5;
+
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -62,11 +58,7 @@ class AppLoadingIndicator extends StatelessWidget {
   final double? size;
   final Color? color;
 
-  const AppLoadingIndicator({
-    super.key,
-    this.size,
-    this.color,
-  });
+  const AppLoadingIndicator({super.key, this.size, this.color});
 
   @override
   Widget build(BuildContext context) {

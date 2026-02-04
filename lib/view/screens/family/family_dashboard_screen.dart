@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:lottie/lottie.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:salah/core/theme/app_colors.dart';
 import 'package:salah/core/theme/app_fonts.dart';
 import 'package:salah/core/constants/app_dimensions.dart';
+import 'package:salah/core/constants/image_assets.dart';
 import 'package:salah/controller/family_controller.dart';
 import 'package:salah/core/routes/app_routes.dart';
 import 'package:salah/core/services/auth_service.dart';
 import 'package:salah/view/widgets/app_button.dart';
+import 'package:salah/view/widgets/app_loading.dart';
 
 class FamilyDashboardScreen extends GetView<FamilyController> {
   const FamilyDashboardScreen({super.key});
@@ -18,7 +21,7 @@ class FamilyDashboardScreen extends GetView<FamilyController> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(
-          'العائلة',
+          'family'.tr,
           style: AppFonts.titleLarge.copyWith(color: AppColors.textPrimary),
         ),
         centerTitle: true,
@@ -27,7 +30,7 @@ class FamilyDashboardScreen extends GetView<FamilyController> {
       ),
       body: Obx(() {
         if (controller.isLoading) {
-          return const Center(child: CircularProgressIndicator());
+          return const AppLoading();
         }
 
         if (!controller.hasFamily) {
@@ -46,14 +49,14 @@ class FamilyDashboardScreen extends GetView<FamilyController> {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Icon(
-            Icons.family_restroom_outlined,
-            size: 80,
-            color: AppColors.textSecondary.withOpacity(0.5),
+          Lottie.asset(
+            ImageAssets.familyPrayingAnimation,
+            width: 150,
+            height: 150,
           ),
           const SizedBox(height: AppDimensions.paddingXL),
           Text(
-            'لم تنضم لعائلة بعد',
+            'no_family_yet'.tr,
             style: AppFonts.headlineMedium.copyWith(
               color: AppColors.textPrimary,
               fontWeight: FontWeight.bold,
@@ -62,22 +65,22 @@ class FamilyDashboardScreen extends GetView<FamilyController> {
           ),
           const SizedBox(height: AppDimensions.paddingMD),
           Text(
-            'أنشئ عائلة جديدة أو انضم لعائلة موجودة\nلمشاركة صلاتك وتشجيع بعضكم',
+            'create_or_join_family_desc'.tr,
             style: AppFonts.bodyMedium.copyWith(color: AppColors.textSecondary),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppDimensions.paddingXL * 2),
           AppButton(
-            text: 'إنشاء عائلة جديدة',
+            text: 'create_family'.tr,
             onPressed: () => Get.toNamed(AppRoutes.createFamily),
             icon: Icons.add_circle_outline,
             width: double.infinity,
           ),
           const SizedBox(height: AppDimensions.paddingMD),
           AppButton(
-            text: 'انضمام لعائلة',
+            text: 'join_family'.tr,
             onPressed: () => Get.toNamed(AppRoutes.joinFamily),
-            type: AppButtonType.outlined, // Assuming this exists or falls back
+            type: AppButtonType.outlined,
             width: double.infinity,
           ),
         ],

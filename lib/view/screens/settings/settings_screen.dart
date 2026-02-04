@@ -5,8 +5,8 @@ import 'package:salah/core/services/theme_service.dart';
 import 'package:salah/core/services/localization_service.dart';
 import 'package:salah/core/theme/app_colors.dart';
 import 'package:salah/core/theme/app_fonts.dart';
-import 'package:salah/core/routes/app_routes.dart';
-import 'package:salah/core/services/auth_service.dart';
+import 'package:salah/core/constants/app_dimensions.dart';
+import 'package:salah/view/widgets/app_dialogs.dart';
 
 /// Settings screen for app preferences
 /// 
@@ -275,26 +275,22 @@ class SettingsScreen extends GetView<SettingsController> {
           child: const Icon(Icons.logout, color: AppColors.error),
         ),
         title: Text(
-          'تسجيل الخروج',
+          'logout'.tr,
           style: AppFonts.bodyLarge.copyWith(color: AppColors.error, fontWeight: FontWeight.bold),
         ),
         onTap: () async {
-          final confirm = await Get.dialog<bool>(
-            AlertDialog(
-              title: const Text('تسجيل الخروج'),
-              content: const Text('هل أنت متأكد من رغبتك في تسجيل الخروج؟'),
-              actions: [
-                TextButton(onPressed: () => Get.back(result: false), child: const Text('إلغاء')),
-                TextButton(
-                  onPressed: () => Get.back(result: true), 
-                  child: const Text('خروج', style: TextStyle(color: AppColors.error))
-                ),
-              ],
-            ),
+          final confirm = await AppDialogs.confirm(
+            title: 'logout'.tr,
+            message: 'logout_confirm_message'.tr,
+            confirmText: 'logout'.tr,
+            cancelText: 'cancel'.tr,
+            isDestructive: true,
           );
 
-          if (confirm == true) {
+          if (confirm) {
+            AppDialogs.showLoading(message: 'logging_out'.tr);
             await controller.logout();
+            AppDialogs.hideLoading();
           }
         },
       ),
