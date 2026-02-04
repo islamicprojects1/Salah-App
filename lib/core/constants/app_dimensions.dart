@@ -108,7 +108,7 @@ class AppDimensions {
   static const double paddingLG = 16.0;
 
   /// 20.0
-  static const double paddingXL = 20.0;
+  static const double paddingXL = 18.0;
 
   /// 24.0
   static const double paddingXXL = 24.0;
@@ -234,13 +234,13 @@ class AppDimensions {
 
   /// Onboarding image size
   static const double imageOnboarding = 280.0;
-  
+
   /// Onboarding icon place holder
   static const double iconOnboardingPlaceholder = 120.0;
 
   /// Login Logo size
   static const double sizeLogo = 100.0;
-  
+
   /// Login Logo icon size
   static const double iconLogo = 50.0;
 
@@ -256,7 +256,7 @@ class AppDimensions {
 
   /// Gender selection icon size
   static const double iconGender = 32.0;
-  
+
   /// Selected border width
   static const double borderWidthSelected = 2.0;
 

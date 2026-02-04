@@ -10,9 +10,22 @@ class QiblaController extends GetxController {
 
   final Rxn<double> heading = Rxn<double>();
   final Rxn<double> qiblaDirection = Rxn<double>();
-  final RxDouble distanceToKaaba = 0.0.obs; // Distance in kilometers
+  final RxDouble distanceToKaaba = 0.0.obs;
   final RxBool isLoading = true.obs;
   final RxString errorMessage = ''.obs;
+  
+  // Compass accuracy: 0 = unreliable, 1 = low, 2 = medium, 3 = high
+  final RxInt compassAccuracy = 0.obs;
+  final RxBool showCalibration = false.obs;
+  
+  // Facing Qibla state with hysteresis (prevents flickering)
+  final RxBool isFacingQibla = false.obs;
+  static const double _enterThreshold = 20.0; // Enter green at 20°
+  static const double _exitThreshold = 35.0;  // Exit green at 35°
+  
+  // Smoothing: keep last N readings for averaging (more = smoother)
+  final List<double> _headingBuffer = [];
+  static const int _smoothingFactor = 12; // Average of last 12 readings
 
   StreamSubscription? _compassSubscription;
 
@@ -41,15 +54,70 @@ class QiblaController extends GetxController {
       qiblaDirection.value = _calculateQiblaAngle(pos.latitude, pos.longitude);
       distanceToKaaba.value = _calculateDistance(pos.latitude, pos.longitude);
 
-      // 3. Start listening to compass
+      // 3. Start listening to compass with smoothing
       _compassSubscription = FlutterCompass.events?.listen((event) {
-        heading.value = event.heading;
+        if (event.heading != null) {
+          // Add to buffer for smoothing
+          _headingBuffer.add(event.heading!);
+          if (_headingBuffer.length > _smoothingFactor) {
+            _headingBuffer.removeAt(0);
+          }
+          
+          // Calculate smoothed heading (circular average for angles)
+          heading.value = _calculateCircularMean(_headingBuffer);
+          
+          // Update facing Qibla state with hysteresis
+          _updateFacingQiblaState();
+        }
+        
+        // Track compass accuracy
+        if (event.accuracy != null) {
+          compassAccuracy.value = event.accuracy!.round().clamp(0, 3);
+        }
       });
 
     } catch (e) {
       errorMessage.value = 'خطأ في تشغيل البوصلة: $e';
     } finally {
       isLoading.value = false;
+    }
+  }
+  
+  /// Calculate circular mean for angles (handles 0°/360° wraparound)
+  double _calculateCircularMean(List<double> angles) {
+    if (angles.isEmpty) return 0;
+    
+    double sinSum = 0;
+    double cosSum = 0;
+    
+    for (final angle in angles) {
+      sinSum += math.sin(angle * math.pi / 180);
+      cosSum += math.cos(angle * math.pi / 180);
+    }
+    
+    return math.atan2(sinSum / angles.length, cosSum / angles.length) * 180 / math.pi;
+  }
+  
+  /// Update facing Qibla state with hysteresis to prevent flickering
+  void _updateFacingQiblaState() {
+    if (heading.value == null || qiblaDirection.value == null) return;
+    
+    double angleDiff = (qiblaDirection.value! - heading.value!) % 360;
+    if (angleDiff > 180) angleDiff -= 360;
+    if (angleDiff < -180) angleDiff += 360;
+    final absAngleDiff = angleDiff.abs();
+    
+    // Hysteresis: different thresholds for entering and exiting
+    if (isFacingQibla.value) {
+      // Currently facing Qibla - only exit if deviation exceeds exit threshold
+      if (absAngleDiff > _exitThreshold) {
+        isFacingQibla.value = false;
+      }
+    } else {
+      // Not facing Qibla - only enter if within enter threshold
+      if (absAngleDiff <= _enterThreshold) {
+        isFacingQibla.value = true;
+      }
     }
   }
 
