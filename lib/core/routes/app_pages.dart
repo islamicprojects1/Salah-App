@@ -15,6 +15,8 @@ import '../../controller/bindings/family_binding.dart';
 import '../../view/screens/family/create_family_screen.dart';
 import '../../view/screens/family/join_family_screen.dart';
 import '../../view/screens/family/family_dashboard_screen.dart';
+import '../../view/screens/missed_prayers/missed_prayers_screen.dart';
+import '../../controller/missed_prayers_controller.dart';
 
 /// App pages configuration for GetX routing
 ///
@@ -105,6 +107,16 @@ class AppPages {
       page: () => const JoinFamilyScreen(),
       binding: FamilyBinding(),
       transition: Transition.rightToLeft,
+    ),
+
+    // Missed Prayers
+    GetPage(
+      name: AppRoutes.missedPrayers,
+      page: () => const MissedPrayersScreen(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut<MissedPrayersController>(() => MissedPrayersController());
+      }),
+      transition: Transition.downToUp,
     ),
   ];
 }

@@ -39,6 +39,9 @@ class AppRoutes {
   /// Prayer times screen - detailed prayer times view
   static const String prayerTimes = '/prayer-times';
 
+  /// Missed prayers screen - batch logging of unlogged prayers
+  static const String missedPrayers = '/missed-prayers';
+
   /// About screen - app information
   static const String about = '/about';
 }

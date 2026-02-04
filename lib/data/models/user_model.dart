@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'user_privacy_settings.dart';
 
 /// Gender enum
 enum Gender { male, female }
@@ -65,6 +66,9 @@ class UserModel {
   final double? lastLatitude;
   final double? lastLongitude;
   final String? lastCity;
+  
+  // Privacy settings
+  final UserPrivacySettings privacySettings;
 
   UserModel({
     required this.id,
@@ -99,7 +103,8 @@ class UserModel {
     this.lastLatitude,
     this.lastLongitude,
     this.lastCity,
-  });
+    UserPrivacySettings? privacySettings,
+  }) : privacySettings = privacySettings ?? UserPrivacySettings.defaultPublic();
 
   /// Calculate age from birth date
   int get age {
@@ -155,6 +160,9 @@ class UserModel {
       lastLatitude: data['lastLatitude']?.toDouble(),
       lastLongitude: data['lastLongitude']?.toDouble(),
       lastCity: data['lastCity'],
+      privacySettings: data['privacySettings'] != null
+          ? UserPrivacySettings.fromMap(Map<String, dynamic>.from(data['privacySettings']))
+          : UserPrivacySettings.defaultPublic(),
     );
   }
 
@@ -186,6 +194,7 @@ class UserModel {
       'lastLatitude': lastLatitude,
       'lastLongitude': lastLongitude,
       'lastCity': lastCity,
+      'privacySettings': privacySettings.toMap(),
     };
   }
 
