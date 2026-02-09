@@ -69,8 +69,22 @@ class AuthService extends GetxService {
       isLoading.value = true;
       errorMessage.value = '';
       
+      // Validate email format
+      final emailError = _validateEmail(email);
+      if (emailError != null) {
+        errorMessage.value = emailError;
+        return null;
+      }
+      
+      // Validate password strength
+      final passwordError = _validatePassword(password);
+      if (passwordError != null) {
+        errorMessage.value = passwordError;
+        return null;
+      }
+      
       final credential = await _auth.createUserWithEmailAndPassword(
-        email: email,
+        email: email.trim(),
         password: password,
       );
       
@@ -100,8 +114,21 @@ class AuthService extends GetxService {
       isLoading.value = true;
       errorMessage.value = '';
       
+      // Validate email format
+      final emailError = _validateEmail(email);
+      if (emailError != null) {
+        errorMessage.value = emailError;
+        return null;
+      }
+      
+      // Basic password check (not empty)
+      if (password.isEmpty) {
+        errorMessage.value = 'يرجى إدخال كلمة المرور';
+        return null;
+      }
+      
       final credential = await _auth.signInWithEmailAndPassword(
-        email: email,
+        email: email.trim(),
         password: password,
       );
       
@@ -116,6 +143,29 @@ class AuthService extends GetxService {
       isLoading.value = false;
     }
   }
+  
+  /// Validate email format
+  String? _validateEmail(String email) {
+    if (email.isEmpty) {
+      return 'يرجى إدخال البريد الإلكتروني';
+    }
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    if (!emailRegex.hasMatch(email.trim())) {
+      return 'صيغة البريد الإلكتروني غير صحيحة';
+    }
+    return null;
+  }
+  
+  /// Validate password strength
+  String? _validatePassword(String password) {
+    if (password.isEmpty) {
+      return 'يرجى إدخال كلمة المرور';
+    }
+    if (password.length < 8) {
+      return 'كلمة المرور يجب أن تكون 8 أحرف على الأقل';
+    }
+    return null;
+  }
 
   // ============================================================
   // GOOGLE SIGN IN
@@ -124,25 +174,19 @@ class AuthService extends GetxService {
   /// Sign in with Google
   Future<User?> signInWithGoogle() async {
     try {
-      print('DEBUG: Starting Google Sign In flow...');
       isLoading.value = true;
       errorMessage.value = '';
       
       // Trigger the Google Sign In flow
       final googleUser = await _googleSignIn.signIn();
-      print('DEBUG: Google Sign In returned: $googleUser');
-      
+
       if (googleUser == null) {
-        print('DEBUG: Google Sign In user is null (cancelled or failed silently)');
         errorMessage.value = 'فشل تسجيل الدخول مع قوقل';
         return null;
       }
       
-      // Get auth details
-      print('DEBUG: Fetching auth details...');
       final googleAuth = await googleUser.authentication;
-      print('DEBUG: Auth details fetched');
-      
+
       // Create credential
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
@@ -154,7 +198,6 @@ class AuthService extends GetxService {
       
       return userCredential.user;
     } catch (e) {
-      print('ERROR: AuthService.signInWithGoogle failed: $e');
       errorMessage.value = e.toString();
       return null;
     } finally {

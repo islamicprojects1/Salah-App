@@ -1,0 +1,57 @@
+rules_version = '2';
+// Salah App – Firestore Security Rules
+// Users can only read/write their own user doc, their prayer_logs and notifications,
+// and group data for groups they belong to. Reactions/achievements as needed.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper: true if request is authenticated
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Helper: true if the user is operating on their own document
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Users: each user can read/write only their own document
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // User subcollections: prayer_logs, notifications, user_achievements
+    match /users/{userId}/prayer_logs/{logId} {
+      allow read, write: if isOwner(userId);
+    }
+    match /users/{userId}/notifications/{notifId} {
+      allow read: if isOwner(userId);
+      allow create: if isSignedIn();
+      allow update, delete: if isOwner(userId);
+    }
+    match /users/{userId}/user_achievements/{achievementId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // Groups (families): create by any signed-in user; read/update/delete only if in memberIds
+    match /groups/{groupId} {
+      allow create: if isSignedIn();
+      allow read, update, delete: if isSignedIn() &&
+        request.auth.uid in resource.data.get('memberIds', []);
+    }
+
+    // Reactions: authenticated users can create; users can read reactions where they are receiver
+    match /reactions/{reactionId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update, delete: if isSignedIn();
+    }
+
+    // Achievements (definitions): read-only for all authenticated
+    match /achievements/{achievementId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+  }
+}

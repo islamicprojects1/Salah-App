@@ -67,8 +67,6 @@ class AppButton extends StatelessWidget {
             ],
           );
 
-    print('DEBUG: AppButton "$text" - isLoading: $isLoading, isEnabled: $isEnabled');
-
     switch (type) {
       case AppButtonType.primary:
         return SizedBox(

@@ -101,7 +101,7 @@ class FirestoreService extends GetxService {
       await updateUser(userId, {'currentStreak': streak});
       return streak;
     } catch (e) {
-      print('Error updating streak: $e');
+      // Streak update failed
       return 0;
     }
   }
@@ -167,10 +167,19 @@ class FirestoreService extends GetxService {
           .doc(userId)
           .collection(ApiConstants.prayerLogsCollection);
 
-  /// Add prayer log
+  /// Add prayer log (server-generated doc id).
   Future<String> addPrayerLog(String userId, Map<String, dynamic> data) async {
     final doc = await _prayerLogsCollection(userId).add(data);
     return doc.id;
+  }
+
+  /// Set prayer log with a fixed doc id (idempotent sync: same clientId overwrites).
+  Future<void> setPrayerLog(
+    String userId,
+    String docId,
+    Map<String, dynamic> data,
+  ) async {
+    await _prayerLogsCollection(userId).doc(docId).set(data);
   }
 
   /// Get prayer logs for a specific date
@@ -222,7 +231,7 @@ class FirestoreService extends GetxService {
       _firestore.collection(ApiConstants.reactionsCollection);
 
   /// Send reaction (encouragement or reminder)
-  Future<void> sendReaction({
+  Future<void> addReaction({
     required String senderId,
     required String receiverId,
     required String type, // 'encouragement' or 'reminder'
@@ -264,6 +273,41 @@ class FirestoreService extends GetxService {
   /// Commit batch
   Future<void> commitBatch(WriteBatch batch) async {
     await batch.commit();
+  }
+
+  // ============================================================
+  // ACHIEVEMENTS
+  // ============================================================
+
+  /// Get achievements collection
+  CollectionReference<Map<String, dynamic>> get _achievementsCollection =>
+      _firestore.collection(ApiConstants.achievementsCollection);
+
+  /// Get user achievements collection
+  CollectionReference<Map<String, dynamic>> _userAchievementsCollection(String userId) =>
+      _usersCollection.doc(userId).collection(ApiConstants.userAchievementsCollection);
+
+  /// Get all achievements (definitions)
+  Future<List<DocumentSnapshot<Map<String, dynamic>>>> getAchievements() async {
+    final snapshot = await _achievementsCollection.where('isActive', isEqualTo: true).get();
+    return snapshot.docs;
+  }
+
+  /// Get user's achievements progress
+  Future<List<DocumentSnapshot<Map<String, dynamic>>>> getUserAchievements(String userId) async {
+    final snapshot = await _userAchievementsCollection(userId).get();
+    return snapshot.docs;
+  }
+
+  /// Update user achievement
+  Future<void> updateUserAchievement(
+    String userId, 
+    String achievementId, 
+    Map<String, dynamic> data,
+  ) async {
+    await _userAchievementsCollection(userId)
+        .doc(achievementId)
+        .set(data, SetOptions(merge: true));
   }
 
   // ============================================================

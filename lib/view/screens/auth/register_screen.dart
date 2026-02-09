@@ -83,7 +83,9 @@ class RegisterScreen extends StatelessWidget {
               Obx(() {
                 if (controller.errorMessage.value.isNotEmpty) {
                   return Padding(
-                    padding: const EdgeInsets.only(bottom: AppDimensions.paddingMD),
+                    padding: const EdgeInsets.only(
+                      bottom: AppDimensions.paddingMD,
+                    ),
                     child: Text(
                       controller.errorMessage.value,
                       style: AppFonts.bodySmall.copyWith(
@@ -97,17 +99,19 @@ class RegisterScreen extends StatelessWidget {
               }),
 
               // Register button
-              Obx(() => AppButton(
-                text: 'إنشاء حساب',
-                onPressed: () async {
-                  final success = await controller.registerWithEmail();
-                  if (success) {
-                    Get.offAllNamed('/profile-setup');
-                  }
-                },
-                isLoading: controller.isLoading.value,
-                width: double.infinity,
-              )),
+              Obx(
+                () => AppButton(
+                  text: 'إنشاء حساب',
+                  onPressed: () async {
+                    final success = await controller.registerWithEmail();
+                    if (success) {
+                      Get.offAllNamed('/profile-setup');
+                    }
+                  },
+                  isLoading: controller.isLoading.value,
+                  width: double.infinity,
+                ),
+              ),
 
               const SizedBox(height: AppDimensions.paddingXL),
 

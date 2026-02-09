@@ -19,6 +19,11 @@ class DateTimeHelper {
     return DateFormat('yyyy-MM-dd').format(date);
   }
 
+  /// Date key for cache keys and DB (yyyy-MM-dd). Single source for date string format.
+  static String toDateKey(DateTime date) {
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  }
+
   /// Format date as readable string based on locale
   static String formatDateReadable(DateTime date) {
     final isArabic = Get.locale?.languageCode == 'ar';

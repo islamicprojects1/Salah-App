@@ -3,13 +3,13 @@ class ApiConstants {
   ApiConstants._();
 
   // ============================================================
-  // FIRESTORE COLLECTIONS
+  // FIRESTORE COLLECTIONS - CORE
   // ============================================================
   
   /// Users collection
   static const String usersCollection = 'users';
   
-  /// Groups collection
+  /// Groups collection (families, friends, mosques, etc.)
   static const String groupsCollection = 'groups';
   
   /// Prayer logs collection
@@ -22,6 +22,71 @@ class ApiConstants {
   static const String reactionsCollection = 'reactions';
 
   // ============================================================
+  // FIRESTORE COLLECTIONS - GAMIFICATION
+  // ============================================================
+  
+  /// Challenges collection
+  static const String challengesCollection = 'challenges';
+  
+  /// Achievements collection
+  static const String achievementsCollection = 'achievements';
+  
+  /// User challenges progress (subcollection of users)
+  static const String userChallengesCollection = 'user_challenges';
+  
+  /// User achievements (subcollection of users)
+  static const String userAchievementsCollection = 'user_achievements';
+
+  // ============================================================
+  // FIRESTORE COLLECTIONS - SOCIAL
+  // ============================================================
+  
+  /// Feed items collection (social timeline)
+  static const String feedItemsCollection = 'feed_items';
+  
+  /// Leaderboard cached data
+  static const String leaderboardCollection = 'leaderboard';
+
+  // ============================================================
+  // FIRESTORE COLLECTIONS - ADMIN
+  // ============================================================
+  
+  /// Admin users collection
+  static const String adminUsersCollection = 'admin_users';
+  
+  /// App configuration collection
+  static const String appConfigCollection = 'app_config';
+  
+  /// Reports and issues collection
+  static const String reportsCollection = 'reports';
+  
+  /// Analytics events collection
+  static const String analyticsCollection = 'analytics';
+
+  // ============================================================
+  // FIRESTORE COLLECTIONS - CONTENT
+  // ============================================================
+  
+  /// Daily tips collection
+  static const String dailyTipsCollection = 'daily_tips';
+  
+  /// Duas collection
+  static const String duasCollection = 'duas';
+  
+  /// Islamic quotes collection
+  static const String quotesCollection = 'quotes';
+
+  // ============================================================
+  // FIRESTORE COLLECTIONS - OFFLINE SYNC
+  // ============================================================
+  
+  /// Pending sync operations (local)
+  static const String pendingSyncCollection = 'pending_sync';
+  
+  /// User prayer patterns (for smart reminders)
+  static const String userPatternsCollection = 'user_patterns';
+
+  // ============================================================
   // FIRESTORE SUBCOLLECTIONS
   // ============================================================
   
@@ -30,6 +95,12 @@ class ApiConstants {
   
   /// User's daily prayers subcollection
   static const String dailyPrayersSubcollection = 'daily_prayers';
+  
+  /// Group feed subcollection
+  static const String groupFeedSubcollection = 'group_feed';
+  
+  /// Challenge participants subcollection
+  static const String participantsSubcollection = 'participants';
 
   // ============================================================
   // STORAGE PATHS

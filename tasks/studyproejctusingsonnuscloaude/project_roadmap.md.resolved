@@ -1,0 +1,511 @@
+# 🚀 خطة العمل الشاملة - مشروع قُرب (Salah App)
+
+> خارطة طريق واضحة لإكمال المشروع ميزة بميزة
+
+---
+
+## 📋 ملخص المراحل
+
+| المرحلة | الهدف | الوقت المقدّر | الأولوية |
+|---------|-------|---------------|----------|
+| **Phase 1** | إصلاح المشاكل الحرجة + الأداء | 2-3 أيام | 🔴 عالية جداً |
+| **Phase 2** | استكمال MVP | 5-7 أيام | 🟠 عالية |
+| **Phase 3** | تحسينات UI/UX | 3-5 أيام | 🟡 متوسطة |
+| **Phase 4** | ميزات متقدمة | 7-10 أيام | 🟢 منخفضة |
+
+**إجمالي:** ~17-25 يوم عمل
+
+---
+
+## 🔴 Phase 1: إصلاح المشاكل الحرجة (CRITICAL)
+
+> **الهدف:** تحسين الأداء وإصلاح الأخطاء البنيوية قبل أي شيء
+
+### 1.1 إصلاح Obx على Scaffold
+
+**الملفات:**
+- [lib/view/screens/dashboard/dashboard_screen.dart](file:///c:/development/Salah-App/lib/view/screens/dashboard/dashboard_screen.dart)
+
+**التغييرات:**
+```dart
+// قبل
+return Obx(() => Scaffold(...));
+
+// بعد
+return Scaffold(
+  body: Obx(() => _buildBody()),
+  bottomNavigationBar: Obx(() => _buildBottomBar()),
+);
+```
+
+**معايير القبول:**
+- ✅ Obx فقط حول الأجزاء التي تتغير
+- ✅ لا rebuild للـ Scaffold كامل
+
+**الوقت المقدر:** 30 دقيقة
+
+---
+
+### 1.2 تحسين سرعة البدء (Parallel Services Init)
+
+**الملفات:**
+- [lib/main.dart](file:///c:/development/Salah-App/lib/main.dart)
+
+**التغييرات:**
+```dart
+// قبل - متسلسل
+await Get.putAsync<StorageService>(...);
+await Get.putAsync<ThemeService>(...);
+//...
+
+// بعد - متوازي
+await Get.putAsync<StorageService>(...); // يبقى أولاً
+
+await Future.wait([
+  Get.putAsync<ThemeService>(...),
+  Get.putAsync<LocalizationService>(...),
+  Get.putAsync<LocationService>(...),
+]);
+
+await Get.putAsync<FirestoreService>(...);
+await Get.putAsync<AuthService>(...);
+// ...
+```
+
+**معايير القبول:**
+- ✅ تقليل وقت البدء بنسبة 30-40%
+- ✅ Services المستقلة تُهيّأ بالتوازي
+
+**الوقت المقدر:** 45 دقيقة
+
+---
+
+### 1.3 إنشاء Repository Layer
+
+**الملفات الجديدة:**
+- `lib/data/repositories/prayer_repository.dart`
+- `lib/data/repositories/user_repository.dart`
+- `lib/data/repositories/family_repository.dart`
+- `lib/data/repositories/base_repository.dart`
+
+**التغييرات:**
+1. إنشاء `BaseRepository` - للـ common operations
+2. إنشاء `PrayerRepository` - يحتوي على كل عمليات الصلوات
+3. إنشاء `UserRepository` - عمليات المستخدم
+4. إنشاء `FamilyRepository` - عمليات العائلة
+5. تعديل Controllers لاستخدام Repositories بدل Services مباشرة
+
+**مثال:**
+```dart
+// prayer_repository.dart
+class PrayerRepository {
+  final FirestoreService _firestore;
+  
+  PrayerRepository({required FirestoreService firestore}) 
+    : _firestore = firestore;
+  
+  Future<void> logPrayer(String userId, PrayerLogModel log) async {
+    await _firestore.addPrayerLog(userId, log.toFirestore());
+  }
+  
+  Stream<List<PrayerLogModel>> getTodayLogs(String userId) {
+    return _firestore.getTodayPrayerLogs(userId).map(
+      (snapshot) => snapshot.docs
+          .map((doc) => PrayerLogModel.fromFirestore(doc))
+          .toList()
+    );
+  }
+}
+```
+
+**معايير القبول:**
+- ✅ فصل كامل بين Business Logic و Data Access
+- ✅ Controllers نظيفة وتستخدم Repositories فقط
+- ✅ سهولة الاختبار
+
+**الوقت المقدر:** 3-4 ساعات
+
+---
+
+### 1.4 تحسين Dependency Injection
+
+**الملفات:**
+- [lib/controller/dashboard_controller.dart](file:///c:/development/Salah-App/lib/controller/dashboard_controller.dart)
+- [lib/controller/auth_controller.dart](file:///c:/development/Salah-App/lib/controller/auth_controller.dart)
+- [lib/controller/family_controller.dart](file:///c:/development/Salah-App/lib/controller/family_controller.dart)
+- [lib/controller/bindings/dashboard_binding.dart](file:///c:/development/Salah-App/lib/controller/bindings/dashboard_binding.dart)
+- جميع الـ bindings
+
+**التغييرات:**
+```dart
+// قبل - في Controller
+final PrayerTimeService _service = Get.find();
+
+// بعد
+class DashboardController extends GetxController {
+  final PrayerRepository prayerRepo;
+  final LocationService locationService;
+  
+  DashboardController({
+    required this.prayerRepo,
+    required this.locationService,
+  });
+}
+
+// في Binding
+class DashboardBinding extends Bindings {
+  @override
+  void dependencies() {
+    Get.lazyPut(() => PrayerRepository(firestore: Get.find()));
+    Get.lazyPut(() => DashboardController(
+      prayerRepo: Get.find(),
+      locationService: Get.find(),
+    ));
+  }
+}
+```
+
+**معايير القبول:**
+- ✅ كل Controllers تستخدم Constructor Injection
+- ✅ لا استخدام Get.find داخل Controllers
+- ✅ Bindings تُحقن Dependencies
+
+**الوقت المقدر:** 2-3 ساعات
+
+---
+
+## 🟠 Phase 2: استكمال MVP
+
+> **الهدف:** إكمال الميزات الأساسية المطلوبة
+
+### 2.1 Parent Logs for Child
+
+**الملفات:**
+- [lib/controller/family_controller.dart](file:///c:/development/Salah-App/lib/controller/family_controller.dart)
+- `lib/data/repositories/family_repository.dart`
+- [lib/view/screens/family/family_dashboard_screen.dart](file:///c:/development/Salah-App/lib/view/screens/family/family_dashboard_screen.dart)
+- [lib/view/widgets/member_card.dart](file:///c:/development/Salah-App/lib/view/widgets/member_card.dart)
+
+**الميزة:**
+- إظهار زر "تسجيل صلاة" بجانب كل طفل بدون هاتف
+- عند الضغط: dialog لاختيار الصلاة
+- تسجيل الصلاة باسم الطفل مع metadata (logged_by: parent_id)
+
+**معايير القبول:**
+- ✅ Parent يستطيع تسجيل صلاة لأطفاله
+- ✅ تظهر في سجل الطفل
+- ✅ Streak للطفل يُحدّث تلقائياً
+
+**الوقت المقدر:** 2-3 ساعات
+
+---
+
+### 2.2 Offline Support
+
+**الملفات:**
+- [lib/core/services/connectivity_service.dart](file:///c:/development/Salah-App/lib/core/services/connectivity_service.dart) (موجود - سنفعّله)
+- `lib/data/repositories/prayer_repository.dart`
+- `lib/core/services/sync_service.dart` (جديد)
+
+**التغييرات:**
+1. تفعيل `ConnectivityService` للاستماع للإنترنت
+2. إنشاء `SyncService` للمزامنة
+3. حفظ Prayer logs محلياً في `get_storage` عند offline
+4. Sync تلقائي عند عودة الإنترنت
+
+**معايير القبول:**
+- ✅ التطبيق يعمل بدون إنترنت
+- ✅ Prayer times محفوظة محلياً
+- ✅ Logs تُرسل تلقائياً عند عودة الإنترنت
+- ✅ مؤشر واضح لحالة الاتصال
+
+**الوقت المقدر:** 4-5 ساعات
+
+---
+
+### 2.3 استخدام AppDialogs موحد
+
+**الملفات:**
+- جميع Controllers
+- جميع Screens
+
+**التغييرات:**
+استبدال كل:
+- `Get.snackbar()` → `AppDialogs.snackbar()`
+- `Get.dialog()` → `AppDialogs.show()` أو `AppDialogs.confirm()`
+- Loading states → `AppDialogs.showLoading()` / [hideLoading()](file:///c:/development/Salah-App/lib/view/widgets/app_dialogs.dart#116-122)
+
+**معايير القبول:**
+- ✅ لا استخدام Get.snackbar مباشرة
+- ✅ UX موحدة في كل التطبيق
+- ✅ Animations مع كل dialog (من AppDialogs)
+
+**الوقت المقدر:** 2-3 ساعات
+
+---
+
+### 2.4 تطبيق PrayerTimingQuality
+
+**الملفات:**
+- [lib/view/widgets/prayer_card.dart](file:///c:/development/Salah-App/lib/view/widgets/prayer_card.dart)
+- [lib/controller/dashboard_controller.dart](file:///c:/development/Salah-App/lib/controller/dashboard_controller.dart)
+- [lib/data/models/prayer_log_model.dart](file:///c:/development/Salah-App/lib/data/models/prayer_log_model.dart)
+
+**التغييرات:**
+1. حساب `PrayerTimingQuality` عند تسجيل الصلاة
+2. حفظه في `PrayerLogModel`
+3. إظهار لون مختلف في UI حسب الجودة:
+   - 🟩 veryEarly
+   - 🟢 early
+   - 🟡 onTime
+   - 🟠 late
+   - 🔴 veryLate
+
+**معايير القبول:**
+- ✅ كل صلاة لها quality محسوبة
+- ✅ ألوان واضحة في UI
+- ✅ tooltip يشرح المعنى
+
+**الوقت المقدر:** 2-3 ساعات
+
+---
+
+### 2.5 QR Code & Link Sharing للعائلة
+
+**الملفات:**
+- [lib/view/screens/family/family_dashboard_screen.dart](file:///c:/development/Salah-App/lib/view/screens/family/family_dashboard_screen.dart)
+- [pubspec.yaml](file:///c:/development/Salah-App/pubspec.yaml) (إضافة `qr_flutter` و `share_plus`)
+
+**التغييرات:**
+1. زر "مشاركة رابط الدعوة"
+2. توليد QR code من invite code
+3. استخدام `share_plus` لمشاركة رابط
+
+**معايير القبول:**
+- ✅ مشاركة رابط عبر WhatsApp/etc
+- ✅ QR code قابل للمسح
+- ✅ الرابط يفتح التطبيق مباشرة (Deep linking - اختياري)
+
+**الوقت المقدر:** 2-3 ساعات
+
+---
+
+## 🟡 Phase 3: تحسينات UI/UX
+
+> **الهدف:** جعل التطبيق أكثر جاذبية وسلاسة
+
+### 3.1 استخدام Confetti Animation
+
+**الملفات:**
+- [lib/controller/dashboard_controller.dart](file:///c:/development/Salah-App/lib/controller/dashboard_controller.dart)
+- [lib/view/screens/dashboard/dashboard_screen.dart](file:///c:/development/Salah-App/lib/view/screens/dashboard/dashboard_screen.dart)
+
+**التغييرات:**
+عند اكتمال 5 صلوات:
+```dart
+if (todayLogs.length >= 5) {
+  AppDialogs.success(
+    title: 'ماشاء الله! 🎉',
+    message: 'أكملت جميع الصلوات اليوم',
+    autoDismiss: true,
+  );
+  // إظهار Confetti animation
+}
+```
+
+**معايير القبول:**
+- ✅ Confetti يظهر عند 5 صلوات
+- ✅ مرة واحدة فقط في اليوم
+
+**الوقت المقدر:** 1-2 ساعة
+
+---
+
+### 3.2 Weekly Stats Chart
+
+**الملفات:**
+- `lib/view/screens/stats/stats_screen.dart` (جديد)
+- [pubspec.yaml](file:///c:/development/Salah-App/pubspec.yaml) (إضافة `fl_chart`)
+
+**التغييرات:**
+1. شاشة جديدة للإحصائيات
+2. رسم بياني لآخر 7 أيام
+3. عرض:
+   - عدد الصلوات/يوم
+   - أفضل أيام الأسبوع
+   - المتوسط
+
+**معايير القبول:**
+- ✅ رسم بياني واضح وجميل
+- ✅ معلومات مفيدة
+- ✅ سهل الوصول من Dashboard
+
+**الوقت المقدر:** 3-4 ساعات
+
+---
+
+### 3.3 Prayer History Calendar
+
+**الملفات:**
+- `lib/view/screens/stats/stats_screen.dart`
+- [pubspec.yaml](file:///c:/development/Salah-App/pubspec.yaml) (إضافة `table_calendar`)
+
+**التغييرات:**
+تقويم يُلوّن الأيام:
+- 🟩 يوم كامل (5 صلوات)
+- 🟡 يوم جزئي (1-4 صلوات)
+- ⚪ لا صلوات
+- عند الضغط: تفاصيل اليوم
+
+**معايير القبول:**
+- ✅ تقويم واضح
+- ✅ ألوان مفهومة
+- ✅ تفاصيل عند النقر
+
+**الوقت المقدر:** 3-4 ساعات
+
+---
+
+### 3.4 تحسينات متنوعة
+
+**الميزات:**
+1. **Pull to Refresh** في Dashboard
+2. **Haptic Feedback** عند النقر على "صليت"
+3. **Skeleton Loading** بدل CircularProgressIndicator
+4. **Empty States** في Family screen
+5. **Smooth transitions** بين الشاشات
+
+**معايير القبول:**
+- ✅ تجربة مستخدم سلسة
+- ✅ feedback واضح لكل action
+
+**الوقت المقدر:** 2-3 ساعات
+
+---
+
+## 🟢 Phase 4: ميزات متقدمة
+
+> **الهدف:** إضافة ميزات Phase 2 من المواصفات
+
+### 4.1 Groups Feature
+
+**الملفات:**
+- [lib/data/models/group_model.dart](file:///c:/development/Salah-App/lib/data/models/group_model.dart) (موجود - سنستخدمه)
+- `lib/core/services/group_service.dart` (جديد)
+- `lib/controller/group_controller.dart` (جديد)
+- `lib/view/screens/groups/` (جديد)
+
+**الميزة:**
+- إنشاء مجموعات (أصدقاء، دراسة، etc.)
+- دعوة أعضاء
+- تحديات جماعية
+
+**الوقت المقدر:** 5-7 أيام
+
+---
+
+### 4.2 Dashboard للإحصائيات (Admin Optional)
+
+**الملفات:**
+- `lib/view/screens/admin/admin_dashboard.dart` (جديد)
+
+**الميزة:**
+- إحصائيات العائلة/المجموعة
+- Charts متقدمة
+- Insights
+
+**الوقت المقدر:** 2-3 أيام
+
+---
+
+### 4.3 Home Screen Widget
+
+**الملفات:**
+- `android/app/src/main/kotlin/.../WidgetProvider.kt`
+- `ios/Runner/Widget/`
+
+**الميزة:**
+- widget يظهر الصلاة القادمة
+- countdown
+- زر سريع "صليت"
+
+**الوقت المقدر:** 3-4 أيام
+
+---
+
+### 4.4 Challenges System
+
+**الملفات:**
+- `lib/data/models/challenge_model.dart` (جديد)
+- `lib/core/services/challenge_service.dart` (جديد)
+- `lib/view/screens/challenges/` (جديد)
+
+**الميزة:**
+- تحديات أسبوعية/شهرية
+- نقاط ومكافآت
+- Leaderboard
+
+**الوقت المقدر:** 4-5 أيام
+
+---
+
+## ✅ معايير النجاح الشاملة
+
+### أداء
+- [ ] وقت فتح التطبيق < 2 ثانية
+- [ ] سلاسة 60 FPS في كل الشاشات
+- [ ] استهلاك بطارية معقول
+
+### جودة الكود
+- [ ] كل Controllers تستخدم Repositories
+- [ ] لا Get.find داخل Controllers
+- [ ] Test coverage > 60%
+- [ ] لا Obx على widgets كبيرة
+
+### UX
+- [ ] Offline support كامل
+- [ ] Animations سلسة
+- [ ] Error handling واضح
+- [ ] Loading states مفهومة
+
+### الميزات
+- [ ] كل MVP features موجودة
+- [ ] Parent can log for child
+- [ ] Invite via link/QR
+- [ ] Stats & Charts
+
+---
+
+## 🎯 التوصيات
+
+### ابدأ بـ Phase 1!
+**لماذا؟**
+- أساسية للأداء
+- تؤثر على كل الكود القادم
+- سهلة نسبياً (يوم-يومين)
+
+### الترتيب المقترح
+1. ✅ Phase 1.2 (Parallel init) - سريع وتأثير كبير
+2. ✅ Phase 1.1 (Obx fix) - سهل
+3. ✅ Phase 1.3 & 1.4 (Repository + DI) - أهم شيء!
+4. ✅ Phase 2.2 (Offline) - مطلوب في MVP
+5. ✅ Phase 2.1 (Parent logs) - ميزة أساسية
+6. → بقية المراحل حسب الأولوية
+
+---
+
+## 📞 الخطوات التالية
+
+**سؤال لك:**
+> من أي Phase/ميزة تريد أن نبدأ؟
+
+**اقتراحي:**
+لنبدأ بـ **Phase 1** كاملة (يوم-يومين عمل):
+1. Parallel services init ✨
+2. Fix Obx on Scaffold 🚀
+3. Repository Layer 🏗️
+4. Dependency Injection 💉
+
+بعدها ستكون القاعدة قوية جداً لبقية الميزات!
+
+**ما رأيك؟** 😊

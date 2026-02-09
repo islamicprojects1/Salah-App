@@ -19,6 +19,7 @@ class _SplashScreenState extends State<SplashScreen>
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
+  late Animation<double> _glowAnimation;
 
   @override
   void initState() {
@@ -29,25 +30,32 @@ class _SplashScreenState extends State<SplashScreen>
 
   void _setupAnimations() {
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 2000),
       vsync: this,
     );
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: const Interval(0.0, 0.5, curve: Curves.easeIn),
+        curve: const Interval(0.0, 0.6, curve: Curves.easeIn),
       ),
     );
 
     _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
+        curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
       ),
     );
 
-    _controller.forward();
+    _glowAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.3, 1.0, curve: Curves.easeInOut),
+      ),
+    );
+
+    _controller.repeat(reverse: true);
   }
 
   Future<void> _navigateToHome() async {
@@ -81,87 +89,217 @@ class _SplashScreenState extends State<SplashScreen>
         height: double.infinity,
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
             colors: isDark
                 ? [
-                    AppColors.darkBackground,
-                    AppColors.primary.withValues(alpha: 0.3),
+                    const Color(0xFF0D1B2A),
+                    const Color(0xFF1B263B),
+                    AppColors.primary.withValues(alpha: 0.4),
                   ]
-                : [AppColors.primary, AppColors.primaryDark],
+                : [
+                    const Color(0xFF1B5E20),
+                    const Color(0xFF2E7D32),
+                    const Color(0xFF4CAF50),
+                  ],
           ),
         ),
-        child: AnimatedBuilder(
-          animation: _controller,
-          builder: (context, child) {
-            return Opacity(
-              opacity: _fadeAnimation.value,
-              child: Transform.scale(
-                scale: _scaleAnimation.value,
-                child: child,
+        child: Stack(
+          children: [
+            // Decorative elements
+            _buildDecorativeElements(),
+
+            // Main content
+            AnimatedBuilder(
+              animation: _controller,
+              builder: (context, child) {
+                return Opacity(
+                  opacity: _fadeAnimation.value,
+                  child: Transform.scale(
+                    scale: _scaleAnimation.value,
+                    child: child,
+                  ),
+                );
+              },
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Enhanced Logo with glow effect
+                  _buildLogoWithGlow(),
+                  const SizedBox(height: 32),
+
+                  // App Name with better typography
+                  _buildAppName(),
+                  const SizedBox(height: 12),
+
+                  // Enhanced tagline
+                  _buildTagline(),
+                  const SizedBox(height: 60),
+
+                  // Beautiful loading indicator
+                  _buildLoadingIndicator(),
+                ],
               ),
-            );
-          },
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDecorativeElements() {
+    return Positioned.fill(
+      child: AnimatedBuilder(
+        animation: _glowAnimation,
+        builder: (context, child) {
+          return Stack(
             children: [
-              // App Icon/Logo
-              Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(30),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
+              // Top right decoration
+              Positioned(
+                top: -100,
+                right: -100,
+                child: Container(
+                  width: 300,
+                  height: 300,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        AppColors.secondary.withValues(
+                          alpha: 0.1 * _glowAnimation.value,
+                        ),
+                        Colors.transparent,
+                      ],
                     ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.mosque,
-                  size: 60,
-                  color: AppColors.primary,
+                  ),
                 ),
               ),
-              const SizedBox(height: 24),
-
-              // App Name
-              Text(
-                'app_name'.tr,
-                style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-
-              // Tagline
-              Text(
-                'prayer_times'.tr,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.8),
-                ),
-              ),
-              const SizedBox(height: 48),
-
-              // Loading indicator
-              const SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    AppColors.secondary,
+              // Bottom left decoration
+              Positioned(
+                bottom: -80,
+                left: -80,
+                child: Container(
+                  width: 250,
+                  height: 250,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        Colors.white.withValues(
+                          alpha: 0.05 * _glowAnimation.value,
+                        ),
+                        Colors.transparent,
+                      ],
+                    ),
                   ),
                 ),
               ),
             ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildLogoWithGlow() {
+    return AnimatedBuilder(
+      animation: _glowAnimation,
+      builder: (context, child) {
+        return Container(
+          width: 140,
+          height: 140,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(35),
+            gradient: LinearGradient(
+              colors: [
+                Colors.white.withValues(alpha: 0.9),
+                Colors.white.withValues(alpha: 0.7),
+              ],
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.secondary.withValues(
+                  alpha: 0.3 * _glowAnimation.value,
+                ),
+                blurRadius: 30 + (10 * _glowAnimation.value),
+                offset: const Offset(0, 15),
+              ),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.2),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Icon(Icons.mosque, size: 70, color: AppColors.primary),
+        );
+      },
+    );
+  }
+
+  Widget _buildAppName() {
+    return Text(
+      'صلاة',
+      style: TextStyle(
+        fontSize: 42,
+        fontWeight: FontWeight.bold,
+        color: Colors.white,
+        shadows: [
+          Shadow(
+            color: Colors.black.withValues(alpha: 0.3),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTagline() {
+    return Text(
+      'مواقيت الصلاة',
+      style: TextStyle(
+        fontSize: 18,
+        color: Colors.white.withValues(alpha: 0.9),
+        letterSpacing: 1.2,
+        shadows: [
+          Shadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 5,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoadingIndicator() {
+    return Column(
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: LinearGradient(
+              colors: [AppColors.secondary, AppColors.secondaryLight],
+            ),
+          ),
+          child: const CircularProgressIndicator(
+            strokeWidth: 3,
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
           ),
         ),
-      ),
+        const SizedBox(height: 16),
+        Text(
+          'جاري التحميل...',
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.8),
+            fontSize: 14,
+            letterSpacing: 0.5,
+          ),
+        ),
+      ],
     );
   }
 }

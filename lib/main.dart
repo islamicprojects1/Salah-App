@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:salah/view/widgets/app_loading.dart';
 import 'firebase_options.dart';
 
 import 'package:salah/core/localization/languages.dart';
@@ -14,7 +12,12 @@ import 'package:salah/core/services/localization_service.dart';
 import 'package:salah/core/services/auth_service.dart';
 import 'package:salah/core/services/firestore_service.dart';
 import 'package:salah/core/services/notification_service.dart';
+import 'package:salah/core/services/connectivity_service.dart';
+import 'package:salah/core/services/database_helper.dart';
+import 'package:salah/core/services/sync_service.dart';
 import 'package:salah/core/services/location_service.dart';
+import 'package:salah/data/repositories/prayer_repository.dart';
+import 'package:salah/data/repositories/user_repository.dart';
 import 'package:salah/core/services/prayer_time_service.dart';
 import 'package:salah/core/services/family_service.dart';
 import 'package:salah/controller/auth_controller.dart';
@@ -31,9 +34,6 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
 
-  // Initialize GetStorage
-  await GetStorage.init();
-
   // Initialize services
   await initServices();
 
@@ -41,44 +41,76 @@ void main() async {
 }
 
 /// Initialize all app services
+/// Optimized to initialize independent services in parallel for faster startup
 Future<void> initServices() async {
-  // Storage service (must be first)
+  // 1. Storage & Database services (must be first)
   await Get.putAsync<StorageService>(() async {
     final service = StorageService();
     return await service.init();
   });
 
-  // Theme service
-  await Get.putAsync<ThemeService>(() async {
-    final service = ThemeService();
+  await Get.putAsync<DatabaseHelper>(() async {
+    final service = DatabaseHelper();
     return await service.init();
   });
 
-  // Localization service
-  await Get.putAsync<LocalizationService>(() async {
-    final service = LocalizationService();
-    return await service.init();
-  });
+  // 2. Initialize independent services in parallel
+  await Future.wait([
+    Get.putAsync<ThemeService>(() async {
+      final service = ThemeService();
+      return await service.init();
+    }),
+    Get.putAsync<LocalizationService>(() async {
+      final service = LocalizationService();
+      return await service.init();
+    }),
+    Get.putAsync<LocationService>(() => LocationService().init()),
+    Get.putAsync<ConnectivityService>(() => ConnectivityService().init()),
+  ]);
 
-  // Firestore service
+  // 3. Firestore
   await Get.putAsync<FirestoreService>(() => FirestoreService().init());
 
-  // Auth service
+  // 4. Auth service (depends on Firestore)
   await Get.putAsync<AuthService>(() => AuthService().init());
 
-  // Location service
-  await Get.putAsync<LocationService>(() => LocationService().init());
+  // 5. Sync service – holds sync state; worker started after PrayerRepository is registered
+  await Get.putAsync<SyncService>(() => SyncService().init());
 
-  // Prayer time service
-  await Get.putAsync<PrayerTimeService>(() => PrayerTimeService().init());
+  // 6. Prayer repository (permanent) – handles offline sync; SyncService worker calls syncAllPending on reconnect
+  Get.put<PrayerRepository>(
+    PrayerRepository(
+      firestore: Get.find(),
+      database: Get.find(),
+      connectivity: Get.find(),
+      syncService: Get.find(),
+      auth: Get.find(),
+    ),
+    permanent: true,
+  );
+  Get.find<SyncService>().startConnectivityWorker();
 
-  // Notification service
-  await Get.putAsync<NotificationService>(() => NotificationService().init());
+  // 6b. UserRepository (DashboardController needs it)
+  Get.put<UserRepository>(
+    UserRepository(
+      firestore: Get.find(),
+      database: Get.find(),
+      connectivity: Get.find(),
+      prayerRepository: Get.find(),
+    ),
+    permanent: true,
+  );
 
-  // Family service
+  // 7. Remaining services in parallel
+  await Future.wait([
+    Get.putAsync<PrayerTimeService>(() => PrayerTimeService().init()),
+    Get.putAsync<NotificationService>(() => NotificationService().init()),
+  ]);
+
+  // 8. Family service (depends on Firestore and Auth)
   Get.put(FamilyService(), permanent: true);
 
-  // Auth controller
+  // 9. Auth controller (depends on all auth-related services)
   Get.put(AuthController(), permanent: true);
 }
 

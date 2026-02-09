@@ -1,15 +1,18 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:salah/core/services/family_service.dart';
+import 'package:salah/core/feedback/app_feedback.dart';
+import 'package:salah/core/helpers/input_validators.dart';
+import 'package:salah/core/routes/app_routes.dart';
 import 'package:salah/core/services/auth_service.dart';
+import 'package:salah/core/services/family_service.dart';
 import 'package:salah/data/models/family_model.dart';
 import 'package:salah/data/models/user_model.dart';
-import 'package:salah/core/routes/app_routes.dart';
 
 class FamilyController extends GetxController {
   final FamilyService _familyService = Get.find<FamilyService>();
   final AuthService _authService = Get.find<AuthService>();
-  
+
   // Observables
   bool get isLoading => _familyService.isLoading.value;
   String get errorMessage => _familyService.errorMessage.value;
@@ -19,78 +22,88 @@ class FamilyController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    // Listen to family changes to load member data
     ever(_familyService.currentFamily, (family) {
-      if (family != null) {
-        loadMembersData();
-      }
+      if (family != null) loadMembersData();
     });
   }
 
-  // Real-time progress for members
-  final memberProgress = <String, int>{}.obs; // userId -> count of prayers today
-  final memberStreaks = <String, int>{}.obs; // userId -> streak
+  @override
+  void onReady() {
+    super.onReady();
+    // Ensure family loads when user opens tab (e.g. after app reopen)
+    _familyService.refreshFamily();
+  }
 
-  // Text Controllers
+  final memberProgress = <String, int>{}.obs;
+  final memberStreaks = <String, int>{}.obs;
+
+  final List<StreamSubscription<dynamic>> _memberSubscriptions = [];
+
   final familyNameController = TextEditingController();
   final inviteCodeController = TextEditingController();
 
   // Actions
-  
-  /// Create a new family
+
   Future<void> createFamily() async {
-    if (familyNameController.text.trim().isEmpty) {
-      Get.snackbar('تنبيه', 'الرجاء إدخال اسم العائلة',
-          snackPosition: SnackPosition.BOTTOM);
+    final (name, err) = InputValidators.validateFamilyName(familyNameController.text);
+    if (err != null) {
+      AppFeedback.showSnackbar('تنبيه', err);
       return;
     }
-
-    final success = await _familyService.createFamily(familyNameController.text.trim());
-    
-    if (success) {
-      Get.offNamed(AppRoutes.dashboard); // Or navigate to Family Dashboard
-      Get.snackbar('تم بنجاح', 'تم إنشاء العائلة بنجاح');
-    } else {
-      Get.snackbar('خطأ', errorMessage);
-    }
-  }
-
-  /// Join a family
-  Future<void> joinFamily() async {
-    if (inviteCodeController.text.trim().length != 6) {
-      Get.snackbar('تنبيه', 'كود الدعوة يجب أن يتكون من 6 أرقام/حروف',
-          snackPosition: SnackPosition.BOTTOM);
-      return;
-    }
-
-    final success = await _familyService.joinFamily(inviteCodeController.text.trim());
-    
+    final success = await _familyService.createFamily(name!);
     if (success) {
       Get.offNamed(AppRoutes.dashboard);
-      Get.snackbar('تم بنجاح', 'تم الانضمام للعائلة بنجاح');
+      AppFeedback.showSuccess('تم بنجاح', 'تم إنشاء العائلة بنجاح');
     } else {
-      Get.snackbar('خطأ', errorMessage);
+      AppFeedback.showError('خطأ', errorMessage);
     }
   }
 
-  /// Add a child without phone
+  Future<void> joinFamily() async {
+    final (code, err) = InputValidators.validateInviteCode(inviteCodeController.text);
+    if (err != null) {
+      AppFeedback.showSnackbar('تنبيه', err);
+      return;
+    }
+    final success = await _familyService.joinFamily(code!);
+    if (success) {
+      Get.offNamed(AppRoutes.dashboard);
+      AppFeedback.showSuccess('تم بنجاح', 'تم الانضمام للعائلة بنجاح');
+    } else {
+      AppFeedback.showError('خطأ', errorMessage);
+    }
+  }
+
   Future<void> addChild(String name, DateTime birthDate, String gender) async {
+    final (validName, nameErr) = InputValidators.validateDisplayName(name);
+    if (nameErr != null) {
+      AppFeedback.showSnackbar('تنبيه', nameErr);
+      return;
+    }
+    final birthErr = InputValidators.validateBirthDate(birthDate);
+    if (birthErr != null) {
+      AppFeedback.showSnackbar('تنبيه', birthErr);
+      return;
+    }
     final success = await _familyService.addChildWithoutPhone(
-      name: name,
+      name: validName!,
       birthDate: birthDate,
       gender: gender == 'male' ? Gender.male : Gender.female,
     );
-
     if (success) {
-      Get.back(); // Close dialog/screen
-      Get.snackbar('تم بنجاح', 'تم إضافة الطفل بنجاح');
+      Get.back();
+      AppFeedback.showSuccess('تم بنجاح', 'تم إضافة الطفل بنجاح');
     } else {
-      Get.snackbar('خطأ', errorMessage);
+      AppFeedback.showError('خطأ', errorMessage);
     }
   }
 
-  /// Load progress for all members
   void loadMembersData() {
+    for (final sub in _memberSubscriptions) {
+      sub.cancel();
+    }
+    _memberSubscriptions.clear();
+
     final family = currentFamily;
     if (family == null) return;
 
@@ -100,35 +113,57 @@ class FamilyController extends GetxController {
   }
 
   void _loadSingleMemberData(String userId) {
-    // This could be optimized to a single query if all members are in same family
-    // For now, load each one simple-way
-    final now = DateTime.now();
-    final startOfDay = DateTime(now.year, now.month, now.day);
-    
-    _familyService.getMemberTodayLogs(userId).listen((snapshot) {
+    _memberSubscriptions.add(
+      _familyService.getMemberTodayLogs(userId).listen((snapshot) {
         memberProgress[userId] = snapshot.docs.length;
-    });
-    
-    _familyService.getMemberData(userId).listen((doc) {
+      }),
+    );
+    _memberSubscriptions.add(
+      _familyService.getMemberData(userId).listen((doc) {
         if (doc.exists) {
-            memberStreaks[userId] = doc.data()?['currentStreak'] ?? 0;
+          memberStreaks[userId] = doc.data()?['currentStreak'] ?? 0;
         }
-    });
+      }),
+    );
   }
 
-  /// Poke/Encourage a member
-  Future<void> pokeMember(String userId, String name) async {
-    final success = await _familyService.sendEncouragement(
-      userId, 
-      'شجعك ${Get.find<AuthService>().currentUser.value?.displayName ?? 'عضو'} على الصلاة! ✨',
+  /// Parent logs a prayer on behalf of a child (spec: Parent logs for child).
+  Future<void> logPrayerForMember({
+    required String memberId,
+    required String prayerName,
+    required DateTime adhanTime,
+  }) async {
+    final success = await _familyService.logPrayerForMember(
+      memberId: memberId,
+      prayerName: prayerName,
+      prayerTime: adhanTime,
     );
     if (success) {
-      Get.snackbar('تم', 'تم إرسال تشجيع لـ $name');
+      AppFeedback.showSuccess('تم', 'تم تسجيل الصلاة عنه');
+      loadMembersData();
+    } else {
+      AppFeedback.showError('خطأ', errorMessage);
+    }
+  }
+
+  Future<void> pokeMember(String userId, String name) async {
+    final success = await _familyService.sendEncouragement(
+      userId,
+      'شجعك ${_authService.currentUser.value?.displayName ?? 'عضو'} على الصلاة! ✨',
+    );
+    if (success) {
+      AppFeedback.showSuccess('تم', 'تم إرسال تشجيع لـ $name');
+    } else {
+      AppFeedback.showError('خطأ', errorMessage);
     }
   }
 
   @override
   void onClose() {
+    for (final sub in _memberSubscriptions) {
+      sub.cancel();
+    }
+    _memberSubscriptions.clear();
     familyNameController.dispose();
     inviteCodeController.dispose();
     super.onClose();

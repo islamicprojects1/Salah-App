@@ -1,87 +1,136 @@
 import 'package:get/get.dart';
 import 'package:adhan/adhan.dart';
+import 'package:salah/core/helpers/prayer_names.dart';
+import 'package:salah/core/services/database_helper.dart';
 import 'package:salah/core/services/location_service.dart';
+import 'package:salah/core/services/storage_service.dart';
 import 'package:salah/data/models/prayer_time_model.dart';
-import 'package:salah/data/models/prayer_log_model.dart';
 
 /// Service for calculating prayer times using Adhan package
-  // ============================================================
-  // ENUMS
-  // ============================================================
+// ============================================================
+// ENUMS
+// ============================================================
 
-  /// Prayer timing quality based on when prayer was logged
-  /// relative to the prayer time window
+/// Prayer timing quality based on when prayer was logged
+/// relative to the prayer time window
 enum PrayerTimingQuality {
-  veryEarly,   // 🟩 Dark Green - Beginning of time (0-15%)
-  early,       // 🟢 Light Green - Early in time (15-40%)
-  onTime,      // 🟡 Yellow - Middle of time (40-70%)
-  late,        // 🟠 Orange - Late in time (70-90%)
-  veryLate,    // 🔴 Light Red - Very late (90-100%)
-  missed,      // ⚫ Dark Red - After time ended
-  notYet,      // ⚪ White/Gray - Time hasn't come yet
+  veryEarly, // 🟩 Dark Green - Beginning of time (0-15%)
+  early, // 🟢 Light Green - Early in time (15-40%)
+  onTime, // 🟡 Yellow - Middle of time (40-70%)
+  late, // 🟠 Orange - Late in time (70-90%)
+  veryLate, // 🔴 Light Red - Very late (90-100%)
+  missed, // ⚫ Dark Red - After time ended
+  notYet, // ⚪ White/Gray - Time hasn't come yet
 }
 
 /// Legacy enum for backward compatibility
 /// Will be gradually replaced with PrayerTimingQuality
-enum PrayerQuality { 
-  early,    // Within 15 minutes of adhan (green)
-  onTime,   // Within 30 minutes of adhan (yellow/gold)
-  late,     // After 30 minutes (orange)
-  missed,   // Not prayed before next prayer
+enum PrayerQuality {
+  early, // Within 15 minutes of adhan (green)
+  onTime, // Within 30 minutes of adhan (yellow/gold)
+  late, // After 30 minutes (orange)
+  missed, // Not prayed before next prayer
 }
 
 /// Prayer names
-enum PrayerName {
-  fajr,
-  sunrise,
-  dhuhr,
-  asr,
-  maghrib,
-  isha,
-}
+enum PrayerName { fajr, sunrise, dhuhr, asr, maghrib, isha }
 
 class PrayerTimeService extends GetxService {
   // ============================================================
   // DEPENDENCIES
   // ============================================================
-  
+
   late final LocationService _locationService;
+  late final StorageService _storageService;
 
   // ============================================================
   // OBSERVABLE STATE
   // ============================================================
-  
+
   final prayerTimes = Rxn<PrayerTimes>();
   final qiblaDirection = 0.0.obs;
   final isLoading = false.obs;
+  PrayerTimeModel? _tomorrowFajr;
+  List<PrayerTimeModel>? _cachedTodayList;
+  
+  // User preferences
+  final currentCalculationMethod = Rx<CalculationMethod>(CalculationMethod.muslim_world_league);
+  final currentMadhab = Rx<Madhab>(Madhab.shafi);
 
   // ============================================================
   // CALCULATION PARAMETERS
   // ============================================================
-  
-  /// Default calculation method (Muslim World League)
+
+  /// Calculation parameters based on user preferences
   CalculationParameters get _calculationParams {
-    final params = CalculationMethod.muslim_world_league.getParameters();
-    params.madhab = Madhab.shafi; // Can be changed based on user preference
+    final params = currentCalculationMethod.value.getParameters();
+    params.madhab = currentMadhab.value;
     return params;
+  }
+  
+  /// Update calculation method and recalculate
+  Future<void> setCalculationMethod(CalculationMethod method) async {
+    currentCalculationMethod.value = method;
+    await _storageService.write('prayer_calculation_method', method.name);
+    await calculatePrayerTimes();
+  }
+  
+  /// Update madhab and recalculate
+  Future<void> setMadhab(Madhab madhab) async {
+    currentMadhab.value = madhab;
+    await _storageService.write('prayer_madhab', madhab.name);
+    await calculatePrayerTimes();
+  }
+  
+  /// Load saved preferences
+  void _loadPreferences() {
+    final methodName = _storageService.read<String>('prayer_calculation_method');
+    if (methodName != null) {
+      currentCalculationMethod.value = _parseCalculationMethod(methodName);
+    }
+    
+    final madhabName = _storageService.read<String>('prayer_madhab');
+    if (madhabName != null) {
+      currentMadhab.value = madhabName == 'hanafi' ? Madhab.hanafi : Madhab.shafi;
+    }
+  }
+  
+  CalculationMethod _parseCalculationMethod(String name) {
+    switch (name) {
+      case 'muslim_world_league': return CalculationMethod.muslim_world_league;
+      case 'egyptian': return CalculationMethod.egyptian;
+      case 'karachi': return CalculationMethod.karachi;
+      case 'umm_al_qura': return CalculationMethod.umm_al_qura;
+      case 'dubai': return CalculationMethod.dubai;
+      case 'qatar': return CalculationMethod.qatar;
+      case 'kuwait': return CalculationMethod.kuwait;
+      case 'moon_sighting_committee': return CalculationMethod.moon_sighting_committee;
+      case 'singapore': return CalculationMethod.singapore;
+      case 'turkey': return CalculationMethod.turkey;
+      case 'tehran': return CalculationMethod.tehran;
+      case 'north_america': return CalculationMethod.north_america;
+      default: return CalculationMethod.muslim_world_league;
+    }
   }
 
   // ============================================================
   // INITIALIZATION
   // ============================================================
-  
+
   /// Initialize the service
   Future<PrayerTimeService> init() async {
-    // Avoid double initialization or finding self if not registered yet in early stages
-    // typically put dependencies in Get.put/lazyPut
+    // Initialize dependencies
     if (Get.isRegistered<LocationService>()) {
-       _locationService = Get.find<LocationService>();
+      _locationService = Get.find<LocationService>();
     } else {
-       // Ideally LocationService should be initialized before PrayerTimeService
-       // For safety:
-       _locationService = Get.put(LocationService());
+      _locationService = Get.put(LocationService());
     }
     
+    _storageService = Get.find<StorageService>();
+    
+    // Load user preferences
+    _loadPreferences();
+
     await calculatePrayerTimes();
     return this;
   }
@@ -89,79 +138,186 @@ class PrayerTimeService extends GetxService {
   // ============================================================
   // PRAYER TIMES CALCULATION
   // ============================================================
-  
-  /// Calculate prayer times for today
+
+  /// Calculate prayer times for today; uses cache when available and same location.
   Future<void> calculatePrayerTimes() async {
     try {
       isLoading.value = true;
-      
-      // Get location
+      _tomorrowFajr = null;
+      _cachedTodayList = null;
+
       final position = _locationService.currentPosition.value;
-      if (position == null) {
-        await _locationService.getCurrentLocation();
-      }
-      
+      if (position == null) await _locationService.getCurrentLocation();
+
       final lat = _locationService.latitude;
       final lng = _locationService.longitude;
-      
-      if (lat == null || lng == null) {
-        return;
-      }
-      
-      // Create coordinates
-      final coordinates = Coordinates(lat, lng);
-      
-      // Calculate prayer times
+      if (lat == null || lng == null) return;
+
       final now = DateTime.now();
+      final coordinates = Coordinates(lat, lng);
+
+      if (Get.isRegistered<DatabaseHelper>()) {
+        final db = Get.find<DatabaseHelper>();
+        final cached = await db.getCachedPrayerTimes(now);
+        if (cached != null &&
+            _nullableDouble(cached['latitude']) == lat &&
+            _nullableDouble(cached['longitude']) == lng) {
+          final fromCache = _modelsFromCache(cached);
+          if (fromCache.isNotEmpty) {
+            _cachedTodayList = fromCache;
+            if (now.isAfter(fromCache.last.dateTime)) {
+              _tomorrowFajr = await _getFirstPrayerForDate(now.add(const Duration(days: 1)));
+            }
+            return;
+          }
+        }
+      }
+
       final dateComponents = DateComponents.from(now);
-      
       prayerTimes.value = PrayerTimes(
         coordinates,
         dateComponents,
         _calculationParams,
       );
-      
-      // Calculate Qibla direction
+      if (Get.isRegistered<DatabaseHelper>()) {
+        await _saveToCache(now, prayerTimes.value!, lat, lng);
+      }
       final qibla = Qibla(coordinates);
       qiblaDirection.value = qibla.direction;
-      
-    } catch (e) {
-      print('Error calculating prayer times: $e');
+      if (now.isAfter(prayerTimes.value!.isha)) {
+        _tomorrowFajr = await _getFirstPrayerForDate(now.add(const Duration(days: 1)));
+      }
+    } catch (_) {
+      // Prayer times calculation failed
     } finally {
       isLoading.value = false;
     }
   }
 
-  /// Get prayer times for today as a List of PrayerTimeModel
-  List<PrayerTimeModel> getTodayPrayers() {
-    final times = prayerTimes.value;
-    if (times == null) {
-        // Return mock/empty if loading to avoid null errors in UI
-        return []; 
+  double? _nullableDouble(dynamic v) =>
+      v == null ? null : (v is double ? v : (v is int ? v.toDouble() : null));
+
+  List<PrayerTimeModel> _modelsFromCache(Map<String, dynamic> c) {
+    final list = <PrayerTimeModel>[];
+    for (final p in [
+      PrayerName.fajr,
+      PrayerName.sunrise,
+      PrayerName.dhuhr,
+      PrayerName.asr,
+      PrayerName.maghrib,
+      PrayerName.isha,
+    ]) {
+      final s = c[p.name] as String?;
+      if (s == null) continue;
+      list.add(PrayerTimeModel(
+        name: PrayerNames.displayName(p),
+        dateTime: DateTime.parse(s),
+        prayerType: p,
+        isNotificationEnabled: p != PrayerName.sunrise,
+      ));
+    }
+    return list;
+  }
+
+  Future<void> _saveToCache(
+      DateTime date, PrayerTimes times, double lat, double lng) async {
+    if (!Get.isRegistered<DatabaseHelper>()) return;
+    final db = Get.find<DatabaseHelper>();
+    await db.cachePrayerTimes(
+      date: date,
+      prayerTimes: {
+        'fajr': times.fajr.toIso8601String(),
+        'sunrise': times.sunrise.toIso8601String(),
+        'dhuhr': times.dhuhr.toIso8601String(),
+        'asr': times.asr.toIso8601String(),
+        'maghrib': times.maghrib.toIso8601String(),
+        'isha': times.isha.toIso8601String(),
+      },
+      latitude: lat,
+      longitude: lng,
+    );
+  }
+
+  /// Returns first prayer (Fajr) for the given date; uses cache or computes.
+  Future<PrayerTimeModel?> _getFirstPrayerForDate(DateTime date) async {
+    final list = await getPrayersForDate(date);
+    return list.isNotEmpty ? list.first : null;
+  }
+
+  /// Get prayer times for a date (cache-first, then compute and cache).
+  Future<List<PrayerTimeModel>> getPrayersForDate(DateTime date) async {
+    final lat = _locationService.latitude;
+    final lng = _locationService.longitude;
+    if (lat == null || lng == null) return [];
+
+    if (Get.isRegistered<DatabaseHelper>()) {
+      final db = Get.find<DatabaseHelper>();
+      final cached = await db.getCachedPrayerTimes(date);
+      if (cached != null) return _modelsFromCache(cached);
     }
 
+    final coordinates = Coordinates(lat, lng);
+    final dateComponents = DateComponents.from(date);
+    final times = PrayerTimes(
+      coordinates,
+      dateComponents,
+      _calculationParams,
+    );
+    if (Get.isRegistered<DatabaseHelper>()) {
+      await _saveToCache(date, times, lat, lng);
+    }
+    return _timesToModels(times);
+  }
+
+  List<PrayerTimeModel> _timesToModels(PrayerTimes times) {
     return [
-      PrayerTimeModel(name: 'الفجر', dateTime: times.fajr, prayerType: PrayerName.fajr),
-      PrayerTimeModel(name: 'الشروق', dateTime: times.sunrise, prayerType: PrayerName.sunrise, isNotificationEnabled: false),
-      PrayerTimeModel(name: 'الظهر', dateTime: times.dhuhr, prayerType: PrayerName.dhuhr),
-      PrayerTimeModel(name: 'العصر', dateTime: times.asr, prayerType: PrayerName.asr),
-      PrayerTimeModel(name: 'المغرب', dateTime: times.maghrib, prayerType: PrayerName.maghrib),
-      PrayerTimeModel(name: 'العشاء', dateTime: times.isha, prayerType: PrayerName.isha),
+      PrayerTimeModel(name: PrayerNames.displayName(PrayerName.fajr), dateTime: times.fajr, prayerType: PrayerName.fajr),
+      PrayerTimeModel(name: PrayerNames.displayName(PrayerName.sunrise), dateTime: times.sunrise, prayerType: PrayerName.sunrise, isNotificationEnabled: false),
+      PrayerTimeModel(name: PrayerNames.displayName(PrayerName.dhuhr), dateTime: times.dhuhr, prayerType: PrayerName.dhuhr),
+      PrayerTimeModel(name: PrayerNames.displayName(PrayerName.asr), dateTime: times.asr, prayerType: PrayerName.asr),
+      PrayerTimeModel(name: PrayerNames.displayName(PrayerName.maghrib), dateTime: times.maghrib, prayerType: PrayerName.maghrib),
+      PrayerTimeModel(name: PrayerNames.displayName(PrayerName.isha), dateTime: times.isha, prayerType: PrayerName.isha),
     ];
   }
-  
-  /// Get the next prayer time after the given time
+
+  /// Get prayer times for today (from cache or last calculation); includes tomorrow's Fajr when after Isha.
+  List<PrayerTimeModel> getTodayPrayers() {
+    if (_cachedTodayList != null) {
+      final list = List<PrayerTimeModel>.from(_cachedTodayList!);
+      if (_tomorrowFajr != null) list.add(_tomorrowFajr!);
+      return list;
+    }
+    final times = prayerTimes.value;
+    if (times == null) return [];
+    final list = _timesToModels(times);
+    if (_tomorrowFajr != null) list.add(_tomorrowFajr!);
+    return list;
+  }
+
+  /// Get specific prayer time
+  DateTime? getPrayerTime(PrayerName prayer) {
+    final times = prayerTimes.value;
+    if (times == null) return null;
+
+    switch (prayer) {
+      case PrayerName.fajr: return times.fajr;
+      case PrayerName.sunrise: return times.sunrise;
+      case PrayerName.dhuhr: return times.dhuhr;
+      case PrayerName.asr: return times.asr;
+      case PrayerName.maghrib: return times.maghrib;
+      case PrayerName.isha: return times.isha;
+    }
+  }
+
+  /// Next prayer after [afterTime]; includes tomorrow's Fajr when after Isha.
   PrayerTimeModel? getNextPrayer([DateTime? afterTime]) {
     final prayers = getTodayPrayers()
         .where((p) => p.prayerType != PrayerName.sunrise)
         .toList();
     final now = afterTime ?? DateTime.now();
-    
     try {
       return prayers.firstWhere((p) => p.dateTime.isAfter(now));
     } catch (_) {
-      // If no prayer found today, return first prayer of tomorrow
-      // For now, return null
       return null;
     }
   }
@@ -190,25 +346,25 @@ class PrayerTimeRange {
   /// Calculate prayer timing quality based on when prayer was logged
   PrayerTimingQuality calculateQuality(DateTime prayedAt) {
     final elapsedMinutes = prayedAt.difference(adhanTime).inMinutes;
-    
+
     // Prayer hasn't started yet
     if (elapsedMinutes < 0) {
       return PrayerTimingQuality.notYet;
     }
-    
+
     // Missed (after next prayer time)
     if (elapsedMinutes > totalMinutes) {
       return PrayerTimingQuality.missed;
     }
-    
+
     // Calculate percentage
     final percentage = (elapsedMinutes / totalMinutes) * 100;
-    
-    if (percentage <= 15) return PrayerTimingQuality.veryEarly;  // 0-15%
-    if (percentage <= 40) return PrayerTimingQuality.early;      // 15-40%
-    if (percentage <= 70) return PrayerTimingQuality.onTime;     // 40-70%
-    if (percentage <= 90) return PrayerTimingQuality.late;       // 70-90%
-    return PrayerTimingQuality.veryLate;                         // 90-100%
+
+    if (percentage <= 15) return PrayerTimingQuality.veryEarly; // 0-15%
+    if (percentage <= 40) return PrayerTimingQuality.early; // 15-40%
+    if (percentage <= 70) return PrayerTimingQuality.onTime; // 40-70%
+    if (percentage <= 90) return PrayerTimingQuality.late; // 70-90%
+    return PrayerTimingQuality.veryLate; // 90-100%
   }
 
   /// Get suggested prayer time for a given quality
@@ -263,11 +419,7 @@ class PrayerTimeRange {
       case PrayerName.isha:
         adhan = prayerTimes.isha;
         // Isha ends at midnight (or Fajr next day, but for simplicity use midnight)
-        final midnight = DateTime(
-          adhan.year,
-          adhan.month,
-          adhan.day + 1,
-        );
+        final midnight = DateTime(adhan.year, adhan.month, adhan.day + 1);
         nextPrayer = midnight;
         break;
       case PrayerName.sunrise:
@@ -282,4 +434,3 @@ class PrayerTimeRange {
     );
   }
 }
-

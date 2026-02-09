@@ -1,6 +1,7 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
 import 'package:timezone/timezone.dart' as tz;
+import 'package:salah/core/routes/app_routes.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import '../constants/api_constants.dart';
 
@@ -104,12 +105,11 @@ class NotificationService extends GetxService {
     }
   }
 
-  /// Handle notification tap
+  /// Handle notification tap – open dashboard when user taps notification
   void _onNotificationTapped(NotificationResponse response) {
-    final payload = response.payload;
-    if (payload != null) {
-      // TODO: Implement navigation logic
-    }
+    try {
+      Get.toNamed(AppRoutes.dashboard);
+    } catch (_) {}
   }
 
   // ============================================================

@@ -9,7 +9,7 @@ import '../../../controller/auth_controller.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_text_field.dart';
 
-/// Login screen
+/// Login screen with Google as primary sign-in option
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
 
@@ -25,36 +25,64 @@ class LoginScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: AppDimensions.paddingXL),
+              const SizedBox(height: AppDimensions.paddingXL * 2),
 
               // Logo
               Center(
-                child: Image.asset(
-                  ImageAssets.appIcon,
-                  height: AppDimensions.sizeLogo,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      height: AppDimensions.sizeLogo,
-                      width: AppDimensions.sizeLogo,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.mosque,
-                        size: AppDimensions.iconLogo,
-                        color: Colors.white,
-                      ),
-                    );
-                  },
+                child: Container(
+                  padding: const EdgeInsets.all(AppDimensions.paddingLG),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        AppColors.primary.withValues(alpha: 0.1),
+                        AppColors.secondary.withValues(alpha: 0.1),
+                      ],
+                    ),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Image.asset(
+                    ImageAssets.appLogo,
+                    height: AppDimensions.sizeLogo,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        height: AppDimensions.sizeLogo,
+                        width: AppDimensions.sizeLogo,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              AppColors.primary,
+                              AppColors.primaryLight,
+                            ],
+                          ),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primary.withValues(alpha: 0.3),
+                              blurRadius: 20,
+                              offset: const Offset(0, 10),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.mosque,
+                          size: AppDimensions.iconLogo,
+                          color: Colors.white,
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
 
-              const SizedBox(height: AppDimensions.paddingLG),
+              const SizedBox(height: AppDimensions.paddingXL),
 
               // Title
               Text(
-                'مرحباً بك',
+                'مرحباً بك في قُرب',
                 style: AppFonts.headlineLarge.copyWith(
                   color: AppColors.textPrimary,
                   fontWeight: FontWeight.bold,
@@ -65,8 +93,8 @@ class LoginScreen extends StatelessWidget {
               const SizedBox(height: AppDimensions.paddingSM),
 
               Text(
-                'سجّل دخولك للمتابعة',
-                style: AppFonts.bodyMedium.copyWith(
+                'تتبّع صلاتك وتقرّب إلى الله',
+                style: AppFonts.bodyLarge.copyWith(
                   color: AppColors.textSecondary,
                 ),
                 textAlign: TextAlign.center,
@@ -74,53 +102,54 @@ class LoginScreen extends StatelessWidget {
 
               const SizedBox(height: AppDimensions.paddingXL * 2),
 
-              // Email field
-              EmailTextField(
-                controller: controller.emailController,
-                label: 'البريد الإلكتروني',
-              ),
-
-              const SizedBox(height: AppDimensions.paddingMD),
-
-              // Password field
-              PasswordTextField(
-                controller: controller.passwordController,
-                label: 'كلمة المرور',
-              ),
-
-              const SizedBox(height: AppDimensions.paddingXL),
-
               // Error message
               Obx(() {
                 if (controller.errorMessage.value.isNotEmpty) {
-                  return Padding(
-                    padding: const EdgeInsets.only(
+                  return Container(
+                    margin: const EdgeInsets.only(
                       bottom: AppDimensions.paddingMD,
                     ),
-                    child: Text(
-                      controller.errorMessage.value,
-                      style: AppFonts.bodySmall.copyWith(
-                        color: AppColors.error,
+                    padding: const EdgeInsets.all(AppDimensions.paddingMD),
+                    decoration: BoxDecoration(
+                      color: AppColors.error.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
+                      border: Border.all(
+                        color: AppColors.error.withValues(alpha: 0.3),
                       ),
-                      textAlign: TextAlign.center,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          color: AppColors.error,
+                          size: 20,
+                        ),
+                        const SizedBox(width: AppDimensions.paddingSM),
+                        Expanded(
+                          child: Text(
+                            controller.errorMessage.value,
+                            style: AppFonts.bodySmall.copyWith(
+                              color: AppColors.error,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   );
                 }
                 return const SizedBox.shrink();
               }),
 
-              // Login button
+              // Google Sign In (Primary)
               Obx(
-                () => AppButton(
-                  text: 'تسجيل الدخول',
+                () => _GoogleSignInButton(
                   onPressed: () async {
-                    final success = await controller.loginWithEmail();
+                    final success = await controller.loginWithGoogle();
                     if (success) {
                       Get.offAllNamed('/dashboard');
                     }
                   },
                   isLoading: controller.isLoading.value,
-                  width: double.infinity,
                 ),
               ),
 
@@ -129,40 +158,36 @@ class LoginScreen extends StatelessWidget {
               // Divider
               Row(
                 children: [
-                  Expanded(child: Divider(color: AppColors.divider)),
+                  Expanded(
+                    child: Divider(
+                      color: AppColors.divider,
+                      thickness: 1,
+                    ),
+                  ),
                   Padding(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: AppDimensions.paddingMD,
+                      horizontal: AppDimensions.paddingLG,
                     ),
                     child: Text(
                       'أو',
-                      style: AppFonts.bodySmall.copyWith(
+                      style: AppFonts.bodyMedium.copyWith(
                         color: AppColors.textSecondary,
                       ),
                     ),
                   ),
-                  Expanded(child: Divider(color: AppColors.divider)),
+                  Expanded(
+                    child: Divider(
+                      color: AppColors.divider,
+                      thickness: 1,
+                    ),
+                  ),
                 ],
               ),
 
               const SizedBox(height: AppDimensions.paddingMD),
 
-              // Google sign in
-              Obx(
-                () => AppButton(
-                  text: 'المتابعة مع Google',
-                  onPressed: () async {
-                    final success = await controller.loginWithGoogle();
-                    if (success) {
-                      Get.offAllNamed('/dashboard');
-                    }
-                  },
-                  type: AppButtonType.outlined,
-                  isLoading: controller.isLoading.value,
-                  width: double.infinity,
-                  icon: Icons.g_mobiledata,
-                ),
-              ),
+              // Email Option (Expandable)
+              _EmailSignInSection(controller: controller),
 
               const SizedBox(height: AppDimensions.paddingXL),
 
@@ -188,10 +213,236 @@ class LoginScreen extends StatelessWidget {
                   ),
                 ],
               ),
+
+              const SizedBox(height: AppDimensions.paddingXL),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Google Sign-In Button with proper branding
+class _GoogleSignInButton extends StatelessWidget {
+  final VoidCallback? onPressed;
+  final bool isLoading;
+
+  const _GoogleSignInButton({
+    required this.onPressed,
+    this.isLoading = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: AppDimensions.buttonHeightLG + 4,
+      child: ElevatedButton(
+        onPressed: isLoading ? null : onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black87,
+          elevation: 2,
+          shadowColor: Colors.black26,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
+            side: BorderSide(
+              color: AppColors.divider.withValues(alpha: 0.5),
+            ),
+          ),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppDimensions.paddingLG,
+          ),
+        ),
+        child: isLoading
+            ? SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    AppColors.primary,
+                  ),
+                ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Google Icon
+                  Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Center(
+                      child: Text(
+                        'G',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.red.shade600,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppDimensions.paddingMD),
+                  Text(
+                    'المتابعة مع Google',
+                    style: AppFonts.bodyLarge.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+}
+
+/// Email Sign-In Section (Expandable)
+class _EmailSignInSection extends StatefulWidget {
+  final AuthController controller;
+
+  const _EmailSignInSection({required this.controller});
+
+  @override
+  State<_EmailSignInSection> createState() => _EmailSignInSectionState();
+}
+
+class _EmailSignInSectionState extends State<_EmailSignInSection>
+    with SingleTickerProviderStateMixin {
+  bool _isExpanded = false;
+  late AnimationController _animationController;
+  late Animation<double> _expandAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _expandAnimation = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    );
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  void _toggleExpand() {
+    setState(() {
+      _isExpanded = !_isExpanded;
+      if (_isExpanded) {
+        _animationController.forward();
+      } else {
+        _animationController.reverse();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        // Email toggle button
+        TextButton(
+          onPressed: _toggleExpand,
+          style: TextButton.styleFrom(
+            padding: const EdgeInsets.symmetric(
+              vertical: AppDimensions.paddingMD,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.email_outlined,
+                size: 20,
+                color: AppColors.textSecondary,
+              ),
+              const SizedBox(width: AppDimensions.paddingSM),
+              Text(
+                'المتابعة بالبريد الإلكتروني',
+                style: AppFonts.bodyMedium.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(width: AppDimensions.paddingSM),
+              AnimatedRotation(
+                turns: _isExpanded ? 0.5 : 0,
+                duration: const Duration(milliseconds: 300),
+                child: Icon(
+                  Icons.keyboard_arrow_down,
+                  size: 20,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Expandable email form
+        SizeTransition(
+          sizeFactor: _expandAnimation,
+          child: FadeTransition(
+            opacity: _expandAnimation,
+            child: Container(
+              margin: const EdgeInsets.only(top: AppDimensions.paddingMD),
+              padding: const EdgeInsets.all(AppDimensions.paddingLG),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
+                border: Border.all(
+                  color: AppColors.divider.withValues(alpha: 0.5),
+                ),
+              ),
+              child: Column(
+                children: [
+                  // Email field
+                  EmailTextField(
+                    controller: widget.controller.emailController,
+                    label: 'البريد الإلكتروني',
+                  ),
+
+                  const SizedBox(height: AppDimensions.paddingMD),
+
+                  // Password field
+                  PasswordTextField(
+                    controller: widget.controller.passwordController,
+                    label: 'كلمة المرور',
+                  ),
+
+                  const SizedBox(height: AppDimensions.paddingLG),
+
+                  // Login button
+                  Obx(
+                    () => AppButton(
+                      text: 'تسجيل الدخول',
+                      onPressed: () async {
+                        final success = await widget.controller.loginWithEmail();
+                        if (success) {
+                          Get.offAllNamed('/dashboard');
+                        }
+                      },
+                      isLoading: widget.controller.isLoading.value,
+                      width: double.infinity,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

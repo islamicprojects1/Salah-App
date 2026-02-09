@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_dimensions.dart';
 import '../../core/constants/image_assets.dart';
-import '../../core/theme/app_colors.dart';
 
 /// Empty state widget for when there's no data
 class EmptyState extends StatelessWidget {
@@ -49,30 +48,32 @@ class EmptyState extends StatelessWidget {
                   color: Theme.of(context).colorScheme.primary,
                 ),
               ),
-            
+
             const SizedBox(height: AppDimensions.paddingLG),
-            
+
             // Title
             Text(
               title,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
-            
+
             // Subtitle
             if (subtitle != null) ...[
               const SizedBox(height: AppDimensions.paddingSM),
               Text(
                 subtitle!,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.6),
                 ),
                 textAlign: TextAlign.center,
               ),
             ],
-            
+
             // Action button
             if (action != null) ...[
               const SizedBox(height: AppDimensions.paddingXL),
@@ -105,10 +106,7 @@ class EmptyState extends StatelessWidget {
   }
 
   /// Error state
-  factory EmptyState.error({
-    String? message,
-    VoidCallback? onRetry,
-  }) {
+  factory EmptyState.error({String? message, VoidCallback? onRetry}) {
     return EmptyState(
       title: 'حدث خطأ',
       subtitle: message ?? 'يرجى المحاولة مرة أخرى',

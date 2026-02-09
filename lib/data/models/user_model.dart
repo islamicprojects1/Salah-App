@@ -122,24 +122,34 @@ class UserModel {
 
   /// Create from Firestore document
   factory UserModel.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
-    final data = doc.data()!;
+    return UserModel.fromMap(doc.data()!, doc.id);
+  }
+
+  /// Create from Map
+  factory UserModel.fromMap(Map<String, dynamic> data, String id) {
     return UserModel(
-      id: doc.id,
+      id: id,
       name: data['name'] ?? '',
-      birthDate: data['birthDate'] != null 
+      birthDate: data['birthDate'] is Timestamp 
           ? (data['birthDate'] as Timestamp).toDate()
-          : DateTime(2000),
+          : (data['birthDate'] is String 
+              ? DateTime.parse(data['birthDate']) 
+              : DateTime(2000)),
       gender: data['gender'] == 'male' ? Gender.male : Gender.female,
       email: data['email'],
       photoUrl: data['photoUrl'],
       fcmToken: data['fcmToken'],
       language: data['language'] ?? 'ar',
-      createdAt: data['createdAt'] != null
+      createdAt: data['createdAt'] is Timestamp 
           ? (data['createdAt'] as Timestamp).toDate()
-          : DateTime.now(),
-      updatedAt: data['updatedAt'] != null
+          : (data['createdAt'] is String 
+              ? DateTime.parse(data['createdAt']) 
+              : DateTime.now()),
+      updatedAt: data['updatedAt'] is Timestamp 
           ? (data['updatedAt'] as Timestamp).toDate()
-          : null,
+          : (data['updatedAt'] is String 
+              ? DateTime.parse(data['updatedAt']) 
+              : null),
       familyId: data['familyId'],
       groupIds: List<String>.from(data['groupIds'] ?? []),
       role: _parseRole(data['role']),
@@ -147,9 +157,11 @@ class UserModel {
       currentStreak: data['currentStreak'] ?? 0,
       longestStreak: data['longestStreak'] ?? 0,
       totalPrayers: data['totalPrayers'] ?? 0,
-      lastPrayerAt: data['lastPrayerAt'] != null
+      lastPrayerAt: data['lastPrayerAt'] is Timestamp 
           ? (data['lastPrayerAt'] as Timestamp).toDate()
-          : null,
+          : (data['lastPrayerAt'] is String 
+              ? DateTime.parse(data['lastPrayerAt']) 
+              : null),
       prayerNotifications: Map<String, bool>.from(data['prayerNotifications'] ?? {
         'fajr': true, 'dhuhr': true, 'asr': true, 'maghrib': true, 'isha': true,
       }),

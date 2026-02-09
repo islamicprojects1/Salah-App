@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:salah/core/services/firestore_service.dart';
-import 'package:salah/data/models/user_model.dart';
-import 'package:salah/core/services/auth_service.dart';
-import 'package:salah/core/services/storage_service.dart';
 import 'package:salah/core/constants/storage_keys.dart';
+import 'package:salah/core/helpers/input_validators.dart';
+import 'package:salah/core/services/auth_service.dart';
+import 'package:salah/core/services/firestore_service.dart';
+import 'package:salah/core/services/storage_service.dart';
+import 'package:salah/data/models/user_model.dart';
 
 /// Controller for authentication flow
 class AuthController extends GetxController {
@@ -53,44 +54,39 @@ class AuthController extends GetxController {
     errorMessage.value = '';
 
     try {
-      print('DEBUG: Starting registration for ${emailController.text.trim()}');
-      
+      final (name, _) = InputValidators.validateDisplayName(nameController.text);
+      final birthDate = selectedBirthDate.value ?? DateTime(2000, 1, 1);
+      final birthErr = InputValidators.validateBirthDate(birthDate);
+      if (birthErr != null) {
+        errorMessage.value = birthErr;
+        return false;
+      }
       final user = await _authService.registerWithEmail(
         email: emailController.text.trim(),
         password: passwordController.text,
-        displayName: nameController.text.trim(),
+        displayName: name ?? '',
       );
 
-      print('DEBUG: Registration result - user: ${user?.uid}');
-
       if (user != null) {
-        print('DEBUG: Creating Firestore user document...');
-        
-        // Create user document in Firestore immediately
         final userModel = UserModel(
           id: user.uid,
-          name: nameController.text.trim(),
-          birthDate: selectedBirthDate.value ?? DateTime(2000, 1, 1),
+          name: name ?? '',
+          birthDate: birthDate,
           gender: selectedGender.value == 'male' ? Gender.male : Gender.female,
           email: user.email,
           photoUrl: user.photoURL,
           createdAt: DateTime.now(),
           language: Get.locale?.languageCode ?? 'ar',
         );
-
         await _firestore.setUser(user.uid, userModel.toFirestore());
-        print('DEBUG: User document created successfully');
         return true;
       } else {
-        print('DEBUG: Registration failed - authService error: ${_authService.errorMessage.value}');
-        errorMessage.value = _authService.errorMessage.value.isNotEmpty 
-            ? _authService.errorMessage.value 
+        errorMessage.value = _authService.errorMessage.value.isNotEmpty
+            ? _authService.errorMessage.value
             : 'فشل إنشاء الحساب';
         return false;
       }
-    } catch (e, stackTrace) {
-      print('DEBUG: Registration exception - $e');
-      print('DEBUG: Stack trace - $stackTrace');
+    } catch (e, _) {
       errorMessage.value = 'خطأ في التسجيل: ${e.toString()}';
       return false;
     } finally {
@@ -98,50 +94,41 @@ class AuthController extends GetxController {
     }
   }
 
-  /// Login with email and password
+  /// Login with email and password. GetX-compatible validation via GetUtils.
   Future<bool> loginWithEmail() async {
-    if (emailController.text.isEmpty || passwordController.text.isEmpty) {
-      errorMessage.value = 'الرجاء إدخال البريد وكلمة المرور';
+    if (!GetUtils.isEmail(emailController.text.trim())) {
+      errorMessage.value = 'الرجاء إدخال بريد إلكتروني صحيح';
       return false;
     }
-
-    print('DEBUG: loginWithEmail started for ${emailController.text}');
+    if (passwordController.text.isEmpty) {
+      errorMessage.value = 'الرجاء إدخال كلمة المرور';
+      return false;
+    }
     isLoading.value = true;
     errorMessage.value = '';
-
     try {
       final user = await _authService.signInWithEmail(
         email: emailController.text.trim(),
         password: passwordController.text,
       );
-
-      if (user != null) {
-        return true;
-      } else {
-        errorMessage.value = 'خطأ في البريد أو كلمة المرور';
-        return false;
-      }
+      if (user != null) return true;
+      errorMessage.value = 'خطأ في البريد أو كلمة المرور';
+      return false;
     } catch (e) {
       errorMessage.value = e.toString();
       return false;
     } finally {
-      print('DEBUG: loginWithEmail finished. Result: ${errorMessage.value.isEmpty}');
       isLoading.value = false;
     }
   }
 
-  /// Login with Google
   Future<bool> loginWithGoogle() async {
-    print('DEBUG: loginWithGoogle started');
     isLoading.value = true;
     errorMessage.value = '';
-
     try {
       final user = await _authService.signInWithGoogle();
-      print('DEBUG: loginWithGoogle finished. User: $user');
       return user != null;
     } catch (e) {
-      print('ERROR: Google Sign In failed: $e');
       errorMessage.value = e.toString();
       return false;
     } finally {
@@ -167,11 +154,19 @@ class AuthController extends GetxController {
   // PROFILE SETUP
   // ============================================================
 
-  /// Update user profile
   Future<bool> updateProfile() async {
-    if (nameController.text.isEmpty) {
-      errorMessage.value = 'الرجاء إدخال الاسم';
+    final (name, nameErr) = InputValidators.validateDisplayName(nameController.text);
+    if (nameErr != null) {
+      errorMessage.value = nameErr;
       return false;
+    }
+    final birthDate = selectedBirthDate.value;
+    if (birthDate != null) {
+      final birthErr = InputValidators.validateBirthDate(birthDate);
+      if (birthErr != null) {
+        errorMessage.value = birthErr;
+        return false;
+      }
     }
 
     isLoading.value = true;
@@ -183,7 +178,7 @@ class AuthController extends GetxController {
 
       final userModel = UserModel(
         id: user.uid,
-        name: nameController.text.trim(),
+        name: name!,
         birthDate: selectedBirthDate.value ?? DateTime(2000),
         gender: selectedGender.value == 'male' ? Gender.male : Gender.female,
         email: user.email,
@@ -222,15 +217,16 @@ class AuthController extends GetxController {
   // ============================================================
 
   bool _validateForm() {
-    if (nameController.text.isEmpty) {
-      errorMessage.value = 'الرجاء إدخال الاسم';
+    final (name, nameErr) = InputValidators.validateDisplayName(nameController.text);
+    if (nameErr != null) {
+      errorMessage.value = nameErr;
       return false;
     }
-    if (emailController.text.isEmpty) {
-      errorMessage.value = 'الرجاء إدخال البريد الإلكتروني';
+    if (!GetUtils.isEmail(emailController.text.trim())) {
+      errorMessage.value = 'الرجاء إدخال بريد إلكتروني صحيح';
       return false;
     }
-    if (passwordController.text.length < 6) {
+    if (!GetUtils.isLengthGreaterOrEqual(passwordController.text, 6)) {
       errorMessage.value = 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
       return false;
     }

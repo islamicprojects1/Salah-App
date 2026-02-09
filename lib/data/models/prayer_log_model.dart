@@ -4,6 +4,7 @@ import '../../core/services/prayer_time_service.dart';
 /// Prayer log model for tracking prayer completion
 class PrayerLogModel {
   final String id;
+  /// Owner/user id. Note: field name is "oderId" (legacy typo) in Firestore/DB for compatibility.
   final String oderId;
   final PrayerName prayer;
   final DateTime prayedAt;
@@ -50,12 +51,28 @@ class PrayerLogModel {
   }
 
   /// Convert to Firestore map
+  /// Convert to Firestore map
   Map<String, dynamic> toFirestore() {
     return {
       'oderId': oderId,
       'prayer': prayer.name,
       'prayedAt': Timestamp.fromDate(prayedAt),
       'adhanTime': Timestamp.fromDate(adhanTime),
+      'quality': quality.name,
+      'timingQuality': timingQuality?.name,
+      'addedByLeaderId': addedByLeaderId,
+      'note': note,
+    };
+  }
+
+  /// Convert to Map for local database (SQLite)
+  /// Uses ISO8601 strings for dates instead of Timestamps
+  Map<String, dynamic> toMap() {
+    return {
+      'oderId': oderId,
+      'prayer': prayer.name,
+      'prayedAt': prayedAt.toIso8601String(),
+      'adhanTime': adhanTime.toIso8601String(),
       'quality': quality.name,
       'timingQuality': timingQuality?.name,
       'addedByLeaderId': addedByLeaderId,

@@ -19,6 +19,9 @@ class ImageAssets {
   /// App icon
   static const String appIcon = '$_iconsPath/app_icon.png';
 
+  /// App logo (primary branding)
+  static const String appLogo = '$_iconsPath/salah_app_logo.png';
+
   // ============================================================
   // PRAYER TIME BACKGROUNDS
   // ============================================================

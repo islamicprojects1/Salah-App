@@ -5,11 +5,10 @@ import 'package:salah/core/services/theme_service.dart';
 import 'package:salah/core/services/localization_service.dart';
 import 'package:salah/core/theme/app_colors.dart';
 import 'package:salah/core/theme/app_fonts.dart';
-import 'package:salah/core/constants/app_dimensions.dart';
 import 'package:salah/view/widgets/app_dialogs.dart';
 
 /// Settings screen for app preferences
-/// 
+///
 /// Allows users to change language and theme
 class SettingsScreen extends GetView<SettingsController> {
   const SettingsScreen({super.key});
@@ -17,31 +16,38 @@ class SettingsScreen extends GetView<SettingsController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('settings'.tr),
-      ),
-      body: GetBuilder<SettingsController>(
-        builder: (controller) => ListView(
+      appBar: AppBar(title: Text('settings'.tr)),
+      body: Obx(() {
+        // Reactive to theme and language via services
+        final themeMode = Get.find<ThemeService>().currentThemeMode.value;
+        final language = Get.find<LocalizationService>().currentLanguage.value;
+        return ListView(
           padding: const EdgeInsets.all(16),
           children: [
             // Language Section
             _buildSectionTitle(context, 'language'.tr),
             const SizedBox(height: 8),
-            _buildLanguageSelector(context),
+            _buildLanguageSelector(context, language),
             const SizedBox(height: 24),
-            
+
+            // Location Section (prayer times depend on it)
+            _buildSectionTitle(context, 'الموقع'),
+            const SizedBox(height: 8),
+            _buildLocationCard(context),
+            const SizedBox(height: 24),
+
             // Theme Section
             _buildSectionTitle(context, 'theme'.tr),
             const SizedBox(height: 8),
-            _buildThemeSelector(context),
+            _buildThemeSelector(context, themeMode),
             const SizedBox(height: 24),
-            
+
             // Notifications Section
             _buildSectionTitle(context, 'notifications'.tr),
             const SizedBox(height: 8),
             _buildNotificationsCard(context),
             const SizedBox(height: 24),
-            
+
             // About Section
             _buildSectionTitle(context, 'about'.tr),
             const SizedBox(height: 8),
@@ -52,8 +58,8 @@ class SettingsScreen extends GetView<SettingsController> {
             _buildLogoutButton(context),
             const SizedBox(height: 40),
           ],
-        ),
-      ),
+        );
+      }),
     );
   }
 
@@ -70,11 +76,11 @@ class SettingsScreen extends GetView<SettingsController> {
     );
   }
 
-  Widget _buildLanguageSelector(BuildContext context) {
+  Widget _buildLanguageSelector(BuildContext context, AppLanguage currentLanguage) {
     return Card(
       child: Column(
         children: AppLanguage.values.map((language) {
-          final isSelected = controller.currentLanguage == language;
+          final isSelected = currentLanguage == language;
           return ListTile(
             leading: Container(
               padding: const EdgeInsets.all(8),
@@ -100,7 +106,7 @@ class SettingsScreen extends GetView<SettingsController> {
     );
   }
 
-  Widget _buildThemeSelector(BuildContext context) {
+  Widget _buildThemeSelector(BuildContext context, AppThemeMode currentThemeMode) {
     return Card(
       child: Column(
         children: [
@@ -109,22 +115,81 @@ class SettingsScreen extends GetView<SettingsController> {
             'theme_system'.tr,
             Icons.brightness_auto,
             AppThemeMode.system,
+            currentThemeMode,
           ),
           _buildThemeOption(
             context,
             'theme_light'.tr,
             Icons.light_mode,
             AppThemeMode.light,
+            currentThemeMode,
           ),
           _buildThemeOption(
             context,
             'theme_dark'.tr,
             Icons.dark_mode,
             AppThemeMode.dark,
+            currentThemeMode,
           ),
         ],
       ),
     );
+  }
+
+  Widget _buildLocationCard(BuildContext context) {
+    return Obx(() {
+      final isLoading = controller.isLocationLoading;
+      final label = controller.locationDisplayLabel;
+      final isDefault = controller.isUsingDefaultLocation;
+      return Card(
+        child: Column(
+          children: [
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.location_on_outlined,
+                  color: AppColors.primary,
+                ),
+              ),
+              title: Text(
+                label,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              subtitle: isDefault
+                  ? Text(
+                      'المواقيت مؤقتاً حسب مكة. فعّل الموقع أو انقر لتحديث.',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                    )
+                  : null,
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: isLoading ? null : () => controller.refreshLocation(),
+                  icon: isLoading
+                      ? SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Icon(Icons.refresh),
+                  label: Text(isLoading ? 'جاري التحديث...' : 'تحديث الموقع'),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    });
   }
 
   Widget _buildThemeOption(
@@ -132,8 +197,9 @@ class SettingsScreen extends GetView<SettingsController> {
     String title,
     IconData icon,
     AppThemeMode mode,
+    AppThemeMode currentThemeMode,
   ) {
-    final isSelected = controller.currentThemeMode == mode;
+    final isSelected = currentThemeMode == mode;
     return ListTile(
       leading: Container(
         padding: const EdgeInsets.all(8),
@@ -143,10 +209,7 @@ class SettingsScreen extends GetView<SettingsController> {
               : Colors.grey.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Icon(
-          icon,
-          color: isSelected ? AppColors.primary : Colors.grey,
-        ),
+        child: Icon(icon, color: isSelected ? AppColors.primary : Colors.grey),
       ),
       title: Text(title),
       trailing: isSelected
@@ -160,7 +223,7 @@ class SettingsScreen extends GetView<SettingsController> {
     return Card(
       child: Column(
         children: [
-          SwitchListTile(
+          Obx(() => SwitchListTile(
             secondary: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
@@ -173,11 +236,9 @@ class SettingsScreen extends GetView<SettingsController> {
               ),
             ),
             title: Text('prayer_notifications'.tr),
-            value: true, // TODO: Connect to actual notification state
-            onChanged: (value) {
-              // TODO: Implement notification toggle
-            },
-          ),
+            value: controller.notificationsEnabled.value,
+            onChanged: (value) => controller.setNotificationsEnabled(value),
+          )),
           ListTile(
             leading: Container(
               padding: const EdgeInsets.all(8),
@@ -185,15 +246,12 @@ class SettingsScreen extends GetView<SettingsController> {
                 color: Colors.grey.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(
-                Icons.music_note_outlined,
-                color: Colors.grey,
-              ),
+              child: const Icon(Icons.music_note_outlined, color: Colors.grey),
             ),
             title: Text('notification_sound'.tr),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
-              // TODO: Navigate to sound selection
+              Get.snackbar('notification_sound'.tr, 'قريباً');
             },
           ),
         ],
@@ -216,9 +274,7 @@ class SettingsScreen extends GetView<SettingsController> {
             ),
             title: Text('about'.tr),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              // TODO: Navigate to about screen
-            },
+            onTap: () => controller.showAboutDialog(),
           ),
           ListTile(
             leading: Container(
@@ -231,9 +287,7 @@ class SettingsScreen extends GetView<SettingsController> {
             ),
             title: Text('rate_app'.tr),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              // TODO: Open app store for rating
-            },
+            onTap: () => controller.openRateApp(),
           ),
           ListTile(
             leading: Container(
@@ -246,9 +300,7 @@ class SettingsScreen extends GetView<SettingsController> {
             ),
             title: Text('share_app'.tr),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              // TODO: Share app
-            },
+            onTap: () => controller.shareApp(),
           ),
           const Divider(),
           Padding(
@@ -276,7 +328,10 @@ class SettingsScreen extends GetView<SettingsController> {
         ),
         title: Text(
           'logout'.tr,
-          style: AppFonts.bodyLarge.copyWith(color: AppColors.error, fontWeight: FontWeight.bold),
+          style: AppFonts.bodyLarge.copyWith(
+            color: AppColors.error,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         onTap: () async {
           final confirm = await AppDialogs.confirm(

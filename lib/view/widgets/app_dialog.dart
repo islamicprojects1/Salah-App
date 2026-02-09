@@ -28,19 +28,21 @@ class AppDialog extends StatelessWidget {
       title: title != null
           ? Text(
               title!,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             )
           : null,
-      content: content ?? (message != null
-          ? Text(
-              message!,
-              style: Theme.of(context).textTheme.bodyMedium,
-              textAlign: TextAlign.center,
-            )
-          : null),
+      content:
+          content ??
+          (message != null
+              ? Text(
+                  message!,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                  textAlign: TextAlign.center,
+                )
+              : null),
       actionsAlignment: MainAxisAlignment.center,
       actionsPadding: const EdgeInsets.only(
         bottom: AppDimensions.paddingMD,
@@ -116,17 +118,10 @@ class AppDialog extends StatelessWidget {
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
-            Icons.check_circle,
-            color: AppColors.success,
-            size: 64,
-          ),
+          const Icon(Icons.check_circle, color: AppColors.success, size: 64),
           if (message != null) ...[
             const SizedBox(height: AppDimensions.paddingMD),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-            ),
+            Text(message, textAlign: TextAlign.center),
           ],
         ],
       ),
@@ -152,17 +147,10 @@ class AppDialog extends StatelessWidget {
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
-            Icons.error_outline,
-            color: AppColors.error,
-            size: 64,
-          ),
+          const Icon(Icons.error_outline, color: AppColors.error, size: 64),
           if (message != null) ...[
             const SizedBox(height: AppDimensions.paddingMD),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-            ),
+            Text(message, textAlign: TextAlign.center),
           ],
         ],
       ),

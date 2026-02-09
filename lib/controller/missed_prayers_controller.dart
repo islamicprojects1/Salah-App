@@ -1,9 +1,10 @@
 import 'package:get/get.dart';
-import 'package:salah/core/services/prayer_time_service.dart';
-import 'package:salah/core/services/firestore_service.dart';
+import 'package:salah/core/feedback/app_feedback.dart';
 import 'package:salah/core/services/auth_service.dart';
+import 'package:salah/core/services/prayer_time_service.dart';
 import 'package:salah/data/models/prayer_log_model.dart';
 import 'package:salah/data/models/prayer_time_model.dart';
+import 'package:salah/data/repositories/prayer_repository.dart';
 
 /// Controller for managing missed/unlogged prayers
 class MissedPrayersController extends GetxController {
@@ -12,8 +13,8 @@ class MissedPrayersController extends GetxController {
   // ============================================================
 
   final PrayerTimeService _prayerTimeService = Get.find<PrayerTimeService>();
-  final FirestoreService _firestoreService = Get.find<FirestoreService>();
   final AuthService _authService = Get.find<AuthService>();
+  final PrayerRepository _prayerRepo = Get.find<PrayerRepository>();
 
   // ============================================================
   // STATE
@@ -56,7 +57,7 @@ class MissedPrayersController extends GetxController {
       final startOfDay = DateTime(today.year, today.month, today.day);
       final endOfDay = startOfDay.add(const Duration(days: 1));
 
-      final logs = await _firestoreService.getPrayerLogs(
+      final logs = await _prayerRepo.getPrayerLogsInRange(
         userId: userId,
         startDate: startOfDay,
         endDate: endOfDay,
@@ -84,8 +85,8 @@ class MissedPrayersController extends GetxController {
       }
 
       missedPrayers.value = unlogged;
-    } catch (e) {
-      print('Error loading missed prayers: $e');
+    } catch (_) {
+      AppFeedback.showError('خطأ', 'فشل تحميل الصلوات الفائتة');
     } finally {
       isLoading.value = false;
     }
@@ -166,26 +167,14 @@ class MissedPrayersController extends GetxController {
               : 'Batch logged',
         );
 
-        // Save to Firestore
-        await _firestoreService.addPrayerLog(userId, log.toFirestore());
+        // Save using Repository (handles offline)
+        await _prayerRepo.addPrayerLog(userId: userId, log: log);
       }
 
-      // Show success message
-      Get.snackbar(
-        'success'.tr,
-        'prayers_saved'.tr,
-        snackPosition: SnackPosition.BOTTOM,
-      );
-
-      // Go back
+      AppFeedback.showSuccess('success'.tr, 'prayers_saved'.tr);
       Get.back();
-    } catch (e) {
-      print('Error saving prayers: $e');
-      Get.snackbar(
-        'error'.tr,
-        'error_saving_prayers'.tr,
-        snackPosition: SnackPosition.BOTTOM,
-      );
+    } catch (_) {
+      AppFeedback.showError('error'.tr, 'error_saving_prayers'.tr);
     } finally {
       isSaving.value = false;
     }

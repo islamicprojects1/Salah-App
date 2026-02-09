@@ -4,6 +4,10 @@
 class StorageKeys {
   StorageKeys._();
   
+  // ============================================================
+  // APP SETTINGS
+  // ============================================================
+  
   /// Key for storing the selected language code (e.g., 'ar', 'en')
   static const String language = 'language';
   
@@ -13,8 +17,22 @@ class StorageKeys {
   /// Key for checking if this is the user's first time opening the app
   static const String isFirstTime = 'is_first_time';
   
+  /// Key for checking if onboarding is completed
+  static const String onboardingCompleted = 'onboarding_completed';
+
+  // ============================================================
+  // PRAYER TIMES
+  // ============================================================
+  
   /// Key for storing the last known prayer times fetch timestamp
   static const String lastPrayerTimesFetch = 'last_prayer_times_fetch';
+  
+  /// Key for storing cached prayer times
+  static const String cachedPrayerTimes = 'cached_prayer_times';
+
+  // ============================================================
+  // LOCATION
+  // ============================================================
   
   /// Key for storing user's location latitude
   static const String latitude = 'latitude';
@@ -24,6 +42,10 @@ class StorageKeys {
   
   /// Key for storing user's city name
   static const String cityName = 'city_name';
+
+  // ============================================================
+  // NOTIFICATIONS
+  // ============================================================
   
   /// Key for storing notification preferences
   static const String notificationsEnabled = 'notifications_enabled';
@@ -43,6 +65,62 @@ class StorageKeys {
   /// Key for storing Isha notification preference
   static const String ishaNotification = 'isha_notification';
   
-  /// Key for checking if onboarding is completed
-  static const String onboardingCompleted = 'onboarding_completed';
+  /// Key for reminder notification preference
+  static const String reminderNotification = 'reminder_notification';
+  
+  /// Key for family notification preference
+  static const String familyNotification = 'family_notification';
+
+  // ============================================================
+  // PENDING ACTIONS (for notification quick actions)
+  // ============================================================
+  
+  /// Key for storing pending prayer log from notification
+  static const String pendingPrayerLog = 'pending_prayer_log';
+  
+  /// Key for storing pending missed prayer from notification
+  static const String pendingMissedPrayer = 'pending_missed_prayer';
+  
+  /// Key for storing pending will pray action
+  static const String pendingWillPray = 'pending_will_pray';
+
+  // ============================================================
+  // OFFLINE SYNC
+  // ============================================================
+  
+  /// Key for storing offline sync queue
+  static const String offlineSyncQueue = 'offline_sync_queue';
+  
+  /// Key for storing last sync timestamp
+  static const String lastSyncTimestamp = 'last_sync_timestamp';
+  
+  /// Key for storing offline prayer logs
+  static const String offlinePrayerLogs = 'offline_prayer_logs';
+
+  // ============================================================
+  // USER PATTERNS (for smart notifications)
+  // ============================================================
+  
+  /// Key prefix for storing user prayer patterns
+  static const String userPatternPrefix = 'user_pattern_';
+  
+  /// Key for storing last logged prayers
+  static const String lastLoggedPrayers = 'last_logged_prayers';
+
+  // ============================================================
+  // USER DATA CACHE
+  // ============================================================
+  
+  /// Key for storing cached user data
+  static const String cachedUserData = 'cached_user_data';
+  
+  /// Key for storing cached family data
+  static const String cachedFamilyData = 'cached_family_data';
+  
+  /// Key for storing user's current streak
+  static const String currentStreak = 'current_streak';
+  
+  /// Key for storing today's logged prayers
+  static const String todayLoggedPrayers = 'today_logged_prayers';
 }
+

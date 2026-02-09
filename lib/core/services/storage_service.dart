@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import '../constants/storage_keys.dart';
@@ -78,6 +79,16 @@ class StorageService extends GetxService {
     await write(StorageKeys.isFirstTime, false);
   }
   
+  /// Check if onboarding is completed
+  bool isOnboardingCompleted() {
+    return read<bool>(StorageKeys.onboardingCompleted) ?? false;
+  }
+  
+  /// Mark onboarding as completed
+  Future<void> setOnboardingCompleted() async {
+    await write(StorageKeys.onboardingCompleted, true);
+  }
+  
   // ==================== Location Operations ====================
   
   /// Get stored latitude
@@ -121,4 +132,119 @@ class StorageService extends GetxService {
   Future<void> setPrayerNotification(String prayerKey, bool enabled) async {
     await write(prayerKey, enabled);
   }
+
+  // ==================== Pending Actions (from notifications) ====================
+  
+  /// Set pending prayer log from notification action
+  Future<void> setPendingPrayerLog(String prayerName, DateTime time) async {
+    final data = {
+      'prayer': prayerName,
+      'time': time.toIso8601String(),
+    };
+    await write(StorageKeys.pendingPrayerLog, jsonEncode(data));
+  }
+  
+  /// Get pending prayer log
+  Map<String, dynamic>? getPendingPrayerLog() {
+    final data = read<String>(StorageKeys.pendingPrayerLog);
+    if (data == null) return null;
+    return jsonDecode(data) as Map<String, dynamic>;
+  }
+  
+  /// Clear pending prayer log
+  Future<void> clearPendingPrayerLog() async {
+    await remove(StorageKeys.pendingPrayerLog);
+  }
+  
+  /// Set pending missed prayer from notification action
+  Future<void> setPendingMissedPrayer(String prayerName, DateTime time) async {
+    final data = {
+      'prayer': prayerName,
+      'time': time.toIso8601String(),
+    };
+    await write(StorageKeys.pendingMissedPrayer, jsonEncode(data));
+  }
+  
+  /// Get pending missed prayer
+  Map<String, dynamic>? getPendingMissedPrayer() {
+    final data = read<String>(StorageKeys.pendingMissedPrayer);
+    if (data == null) return null;
+    return jsonDecode(data) as Map<String, dynamic>;
+  }
+  
+  /// Clear pending missed prayer
+  Future<void> clearPendingMissedPrayer() async {
+    await remove(StorageKeys.pendingMissedPrayer);
+  }
+
+  // ==================== Offline Sync Queue ====================
+  
+  /// Add item to offline sync queue
+  Future<void> addToSyncQueue(Map<String, dynamic> item) async {
+    final queue = getSyncQueue();
+    queue.add({
+      ...item,
+      'id': DateTime.now().millisecondsSinceEpoch.toString(),
+      'createdAt': DateTime.now().toIso8601String(),
+    });
+    await write(StorageKeys.offlineSyncQueue, jsonEncode(queue));
+  }
+  
+  /// Get offline sync queue
+  List<Map<String, dynamic>> getSyncQueue() {
+    final data = read<String>(StorageKeys.offlineSyncQueue);
+    if (data == null) return [];
+    final list = jsonDecode(data) as List;
+    return list.map((e) => Map<String, dynamic>.from(e)).toList();
+  }
+  
+  /// Remove item from sync queue by id
+  Future<void> removeFromSyncQueue(String id) async {
+    final queue = getSyncQueue();
+    queue.removeWhere((item) => item['id'] == id);
+    await write(StorageKeys.offlineSyncQueue, jsonEncode(queue));
+  }
+  
+  /// Clear sync queue
+  Future<void> clearSyncQueue() async {
+    await remove(StorageKeys.offlineSyncQueue);
+  }
+  
+  /// Update last sync timestamp
+  Future<void> updateLastSync() async {
+    await write(StorageKeys.lastSyncTimestamp, DateTime.now().toIso8601String());
+  }
+  
+  /// Get last sync timestamp
+  DateTime? getLastSync() {
+    final data = read<String>(StorageKeys.lastSyncTimestamp);
+    if (data == null) return null;
+    return DateTime.parse(data);
+  }
+
+  // ==================== User Data Cache ====================
+  
+  /// Cache user streak
+  Future<void> cacheStreak(int streak) async {
+    await write(StorageKeys.currentStreak, streak);
+  }
+  
+  /// Get cached streak
+  int getCachedStreak() {
+    return read<int>(StorageKeys.currentStreak) ?? 0;
+  }
+  
+  /// Cache today's logged prayers
+  Future<void> cacheTodayPrayers(List<String> prayers) async {
+    await write(StorageKeys.todayLoggedPrayers, jsonEncode(prayers));
+  }
+  
+  /// Get cached today's prayers
+  List<String> getCachedTodayPrayers() {
+    final data = read<String>(StorageKeys.todayLoggedPrayers);
+    if (data == null) return [];
+    final list = jsonDecode(data) as List;
+    return list.map((e) => e.toString()).toList();
+  }
 }
+

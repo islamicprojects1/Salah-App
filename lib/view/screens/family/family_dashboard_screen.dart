@@ -8,7 +8,10 @@ import 'package:salah/core/constants/app_dimensions.dart';
 import 'package:salah/core/constants/image_assets.dart';
 import 'package:salah/controller/family_controller.dart';
 import 'package:salah/core/routes/app_routes.dart';
+import 'package:salah/core/helpers/prayer_names.dart';
 import 'package:salah/core/services/auth_service.dart';
+import 'package:salah/core/services/prayer_time_service.dart';
+import 'package:salah/data/models/family_model.dart';
 import 'package:salah/view/widgets/app_button.dart';
 import 'package:salah/view/widgets/app_loading.dart';
 
@@ -90,7 +93,7 @@ class FamilyDashboardScreen extends GetView<FamilyController> {
 
   Widget _buildFamilyView(BuildContext context) {
     final family = controller.currentFamily!;
-    
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppDimensions.paddingLG),
       child: Column(
@@ -109,7 +112,9 @@ class FamilyDashboardScreen extends GetView<FamilyController> {
                 children: [
                   Text(
                     family.name,
-                    style: AppFonts.headlineMedium.copyWith(color: Colors.white),
+                    style: AppFonts.headlineMedium.copyWith(
+                      color: Colors.white,
+                    ),
                   ),
                   const SizedBox(height: AppDimensions.paddingMD),
                   Container(
@@ -119,7 +124,9 @@ class FamilyDashboardScreen extends GetView<FamilyController> {
                     ),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
+                      borderRadius: BorderRadius.circular(
+                        AppDimensions.radiusMD,
+                      ),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -134,9 +141,15 @@ class FamilyDashboardScreen extends GetView<FamilyController> {
                         ),
                         const SizedBox(width: AppDimensions.paddingMD),
                         IconButton(
-                          icon: const Icon(Icons.share, color: Colors.white, size: 20),
+                          icon: const Icon(
+                            Icons.share,
+                            color: Colors.white,
+                            size: 20,
+                          ),
                           onPressed: () {
-                            Share.share('انضم لعائلتي في تطبيق صلاة! كود الدعوة: ${family.inviteCode}');
+                            SharePlus.instance.share(ShareParams(
+                              text: 'انضم لعائلتي في تطبيق صلاة! كود الدعوة: ${family.inviteCode}',
+                            ));
                           },
                           constraints: const BoxConstraints(),
                           padding: EdgeInsets.zero,
@@ -148,14 +161,24 @@ class FamilyDashboardScreen extends GetView<FamilyController> {
                     const SizedBox(height: AppDimensions.paddingMD),
                     TextButton.icon(
                       onPressed: () => _showAddChildDialog(context),
-                      icon: const Icon(Icons.person_add_alt_1, color: Colors.white),
+                      icon: const Icon(
+                        Icons.person_add_alt_1,
+                        color: Colors.white,
+                      ),
                       label: Text(
                         'إضافة طفل (بدون هاتف)',
-                        style: AppFonts.bodyMedium.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
+                        style: AppFonts.bodyMedium.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       style: TextButton.styleFrom(
                         backgroundColor: Colors.white10,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimensions.radiusMD)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(
+                            AppDimensions.radiusMD,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -177,13 +200,14 @@ class FamilyDashboardScreen extends GetView<FamilyController> {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: family.members.length,
-            separatorBuilder: (_, __) => const SizedBox(height: AppDimensions.paddingMD),
+            separatorBuilder: (_, __) =>
+                const SizedBox(height: AppDimensions.paddingMD),
             itemBuilder: (context, index) {
               final member = family.members[index];
               return Obx(() {
                 final progress = controller.memberProgress[member.userId] ?? 0;
                 final streak = controller.memberStreaks[member.userId] ?? 0;
-                
+
                 return Card(
                   elevation: AppDimensions.cardElevationLow,
                   margin: EdgeInsets.zero,
@@ -191,11 +215,13 @@ class FamilyDashboardScreen extends GetView<FamilyController> {
                     borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
                   ),
                   child: ListTile(
-                    contentPadding: const EdgeInsets.all(AppDimensions.paddingMD),
+                    contentPadding: const EdgeInsets.all(
+                      AppDimensions.paddingMD,
+                    ),
                     leading: CircleAvatar(
                       radius: 24,
-                      backgroundImage: member.photoUrl != null 
-                          ? NetworkImage(member.photoUrl!) 
+                      backgroundImage: member.photoUrl != null
+                          ? NetworkImage(member.photoUrl!)
                           : null,
                       backgroundColor: AppColors.secondary.withOpacity(0.1),
                       child: member.photoUrl == null
@@ -216,36 +242,75 @@ class FamilyDashboardScreen extends GetView<FamilyController> {
                       children: [
                         Text(
                           member.role.name == 'parent' ? 'مدير العائلة' : 'عضو',
-                          style: AppFonts.bodySmall.copyWith(color: AppColors.textSecondary),
+                          style: AppFonts.bodySmall.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                         const SizedBox(width: 8),
                         if (streak > 0) ...[
-                          Icon(Icons.local_fire_department, color: Colors.orange, size: 14),
-                          Text('$streak', style: AppFonts.bodySmall.copyWith(color: Colors.orange, fontWeight: FontWeight.bold)),
+                          Icon(
+                            Icons.local_fire_department,
+                            color: Colors.orange,
+                            size: 14,
+                          ),
+                          Text(
+                            '$streak',
+                            style: AppFonts.bodySmall.copyWith(
+                              color: Colors.orange,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ],
                       ],
                     ),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        if (progress < 5 && member.userId != Get.find<AuthService>().userId)
+                        if (family.isAdmin(Get.find<AuthService>().userId ?? '') &&
+                            member.role == MemberRole.child) ...[
                           AppButton.small(
-                            text: 'تشجيع',
-                            onPressed: () => controller.pokeMember(member.userId, member.name ?? ''),
+                            text: 'log_for_him'.tr,
+                            onPressed: () => _showLogForMemberDialog(
+                              context,
+                              member.userId,
+                              member.name ?? 'عضو',
+                            ),
                           ),
+                          const SizedBox(width: 8),
+                        ],
+                        if (progress < 5 &&
+                            member.userId != Get.find<AuthService>().userId)
+                          AppButton.small(
+                            text: 'encourage'.tr,
+                            onPressed: () => controller.pokeMember(
+                              member.userId,
+                              member.name ?? '',
+                            ),
+                          ),
+                        if (progress < 5 &&
+                            member.userId != Get.find<AuthService>().userId)
+                          const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: AppDimensions.paddingSM,
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: (progress >= 5 ? AppColors.success : AppColors.primary).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(AppDimensions.radiusSM),
+                            color:
+                                (progress >= 5
+                                        ? AppColors.success
+                                        : AppColors.primary)
+                                    .withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(
+                              AppDimensions.radiusSM,
+                            ),
                           ),
                           child: Text(
                             '$progress/5',
                             style: AppFonts.bodySmall.copyWith(
-                              color: progress >= 5 ? AppColors.success : AppColors.primary,
+                              color: progress >= 5
+                                  ? AppColors.success
+                                  : AppColors.primary,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -262,6 +327,55 @@ class FamilyDashboardScreen extends GetView<FamilyController> {
     );
   }
 
+  void _showLogForMemberDialog(
+    BuildContext context,
+    String memberId,
+    String memberName,
+  ) {
+    final prayers = Get.find<PrayerTimeService>()
+        .getTodayPrayers()
+        .where((p) => p.prayerType != PrayerName.sunrise)
+        .toList();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('select_prayer_to_log'.tr),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: prayers
+                .map(
+                  (p) => ListTile(
+                    title: Text(
+                      PrayerNames.displayName(p.prayerType ?? PrayerName.fajr),
+                    ),
+                    subtitle: Text(
+                      '${p.dateTime.hour.toString().padLeft(2, '0')}:${p.dateTime.minute.toString().padLeft(2, '0')}',
+                    ),
+                    onTap: () {
+                      Get.back();
+                      final pt = p.prayerType ?? PrayerName.fajr;
+                      controller.logPrayerForMember(
+                        memberId: memberId,
+                        prayerName: pt.name,
+                        adhanTime: p.dateTime,
+                      );
+                    },
+                  ),
+                )
+                .toList(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text('cancel'.tr),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showAddChildDialog(BuildContext context) {
     final nameController = TextEditingController();
     String gender = 'male';
@@ -270,31 +384,32 @@ class FamilyDashboardScreen extends GetView<FamilyController> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('إضافة طفل', style: AppFonts.titleLarge),
+        title: Text('add_child'.tr, style: AppFonts.titleLarge),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: nameController,
-              decoration: const InputDecoration(labelText: 'اسم الطفل'),
+              decoration: InputDecoration(labelText: 'child_name'.tr),
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
               value: gender,
-              items: const [
-                DropdownMenuItem(value: 'male', child: Text('ذكر')),
-                DropdownMenuItem(value: 'female', child: Text('أنثى')),
+              items: [
+                DropdownMenuItem(value: 'male', child: Text('male'.tr)),
+                DropdownMenuItem(value: 'female', child: Text('female'.tr)),
               ],
               onChanged: (v) => gender = v ?? 'male',
-              decoration: const InputDecoration(labelText: 'الجنس'),
+              decoration: InputDecoration(labelText: 'gender'.tr),
             ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text('إلغاء')),
+          TextButton(onPressed: () => Get.back(), child: Text('cancel'.tr)),
           ElevatedButton(
-            onPressed: () => controller.addChild(nameController.text, birthDate, gender),
-            child: const Text('إضافة'),
+            onPressed: () =>
+                controller.addChild(nameController.text, birthDate, gender),
+            child: Text('add'.tr),
           ),
         ],
       ),

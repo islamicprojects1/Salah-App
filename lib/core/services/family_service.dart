@@ -1,7 +1,11 @@
+import 'dart:async';
+import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'dart:math';
 import 'package:salah/core/services/auth_service.dart';
+import 'package:salah/core/services/database_helper.dart';
 import 'package:salah/data/models/family_model.dart';
 import 'package:salah/data/models/user_model.dart';
 
@@ -9,22 +13,42 @@ import 'package:salah/data/models/user_model.dart';
 class FamilyService extends GetxService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final AuthService _authService = Get.find<AuthService>();
+  late final DatabaseHelper _database;
 
   final Rxn<FamilyModel> currentFamily = Rxn<FamilyModel>();
   final isLoading = false.obs;
   final errorMessage = ''.obs;
 
+  /// Stream subscription for family updates - prevents memory leaks
+  StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>?
+  _familySubscription;
+
   @override
   void onInit() {
     super.onInit();
+    _database = Get.find<DatabaseHelper>();
+
+    // Check if user is already logged in
+    if (_authService.currentUser.value != null) {
+      _subscribeToFamily();
+    }
+
     // Listen to auth changes to stream family data
     ever(_authService.currentUser, (user) {
       if (user != null) {
         _subscribeToFamily();
       } else {
+        _familySubscription?.cancel();
+        _familySubscription = null;
         currentFamily.value = null;
       }
     });
+  }
+
+  @override
+  void onClose() {
+    _familySubscription?.cancel();
+    super.onClose();
   }
 
   /// Create a new family
@@ -57,12 +81,26 @@ class FamilyService extends GetxService {
       );
 
       // Save to Firestore
-      final ref = await _firestore.collection('families').add(family.toFirestore());
-      
-      // Update user document with family ID (optional but recommended for fast lookup)
+      final ref = await _firestore
+          .collection('families')
+          .add(family.toFirestore());
+
+      // Update user document with family ID for fast lookup
       await _firestore.collection('users').doc(user.uid).set({
         'familyId': ref.id,
       }, SetOptions(merge: true));
+
+      // Update UI immediately so Family tab shows the new family (no empty state)
+      final createdFamily = FamilyModel(
+        id: ref.id,
+        name: name,
+        inviteCode: inviteCode,
+        adminId: user.uid,
+        members: [member],
+        createdAt: family.createdAt,
+      );
+      currentFamily.value = createdFamily;
+      _subscribeToFamily();
 
       return true;
     } catch (e) {
@@ -78,7 +116,7 @@ class FamilyService extends GetxService {
     try {
       isLoading.value = true;
       errorMessage.value = '';
-      
+
       final user = _authService.currentUser.value;
       if (user == null) throw Exception('يجب تسجيل الدخول أولاً');
 
@@ -116,10 +154,22 @@ class FamilyService extends GetxService {
         'members': FieldValue.arrayUnion([member.toMap()]),
       });
 
-      // Update user document
+      // Update user document with familyId
       await _firestore.collection('users').doc(user.uid).set({
         'familyId': doc.id,
       }, SetOptions(merge: true));
+
+      // Update UI immediately so Family tab shows the family (no empty state)
+      final updatedMembers = [...family.members, member];
+      currentFamily.value = FamilyModel(
+        id: family.id,
+        name: family.name,
+        inviteCode: family.inviteCode,
+        adminId: family.adminId,
+        members: updatedMembers,
+        createdAt: family.createdAt,
+      );
+      _subscribeToFamily();
 
       return true;
     } catch (e) {
@@ -196,18 +246,19 @@ class FamilyService extends GetxService {
         return false;
       }
 
-      // Add log to the member's collection
+      // Add log to the member's collection (oderId = owner of the log)
       await _firestore
           .collection('users')
           .doc(memberId)
           .collection('prayer_logs')
           .add({
-        'prayer': prayerName,
-        'prayedAt': FieldValue.serverTimestamp(),
-        'adhanTime': Timestamp.fromDate(prayerTime),
-        'addedByLeaderId': user.uid,
-        'quality': 'onTime', // Default if parent logs
-      });
+            'oderId': memberId,
+            'prayer': prayerName,
+            'prayedAt': FieldValue.serverTimestamp(),
+            'adhanTime': Timestamp.fromDate(prayerTime),
+            'addedByLeaderId': user.uid,
+            'quality': 'onTime',
+          });
 
       return true;
     } catch (e) {
@@ -222,28 +273,34 @@ class FamilyService extends GetxService {
       final user = _authService.currentUser.value;
       if (user == null) return false;
 
-      // In a real app, this would send an FCM. 
+      // In a real app, this would send an FCM.
       // For now, we'll store a "reaction" in Firestore that the other user listens to.
-      await _firestore.collection('users').doc(memberId).collection('notifications').add({
-        'fromId': user.uid,
-        'fromName': user.displayName,
-        'message': message,
-        'type': 'encouragement',
-        'createdAt': FieldValue.serverTimestamp(),
-      });
+      await _firestore
+          .collection('users')
+          .doc(memberId)
+          .collection('notifications')
+          .add({
+            'fromId': user.uid,
+            'fromName': user.displayName,
+            'message': message,
+            'type': 'encouragement',
+            'createdAt': FieldValue.serverTimestamp(),
+          });
 
       return true;
     } catch (e) {
-      print('Error sending encouragement: $e');
+      // Encouragement send failed
       return false;
     }
   }
 
   /// Get today's logs for a specific member
-  Stream<QuerySnapshot<Map<String, dynamic>>> getMemberTodayLogs(String userId) {
+  Stream<QuerySnapshot<Map<String, dynamic>>> getMemberTodayLogs(
+    String userId,
+  ) {
     final now = DateTime.now();
     final startOfDay = DateTime(now.year, now.month, now.day);
-    
+
     return _firestore
         .collection('users')
         .doc(userId)
@@ -257,23 +314,68 @@ class FamilyService extends GetxService {
     return _firestore.collection('users').doc(userId).snapshots();
   }
 
-  /// Subscribe to family updates
+  /// Call when Family tab is shown so family loads even if auth restored late.
+  void refreshFamily() {
+    if (_authService.currentUser.value != null) _subscribeToFamily();
+  }
+
+  /// Subscribe to family updates with cache-first approach
   void _subscribeToFamily() async {
     final user = _authService.currentUser.value;
     if (user == null) return;
 
-    // Get family ID from user doc first
-    final userDoc = await _firestore.collection('users').doc(user.uid).get();
-    final familyId = userDoc.data()?['familyId'];
+    // Cancel existing subscription to prevent duplicates
+    _familySubscription?.cancel();
 
-    if (familyId != null) {
-      _firestore.collection('families').doc(familyId).snapshots().listen((doc) {
-        if (doc.exists) {
-          currentFamily.value = FamilyModel.fromFirestore(doc);
-        } else {
-          currentFamily.value = null;
+    // 1. Try loading from local cache first (instant display)
+    final cachedFamilyId = await _database.getCachedFamilyId(user.uid);
+    if (cachedFamilyId != null) {
+      final cachedFamily = await _database.getCachedFamily(cachedFamilyId);
+      if (cachedFamily != null) {
+        try {
+          final familyData = jsonDecode(cachedFamily) as Map<String, dynamic>;
+          currentFamily.value = FamilyModel.fromMap(familyData, cachedFamilyId);
+        } catch (_) {
+          // Cache parsing failed, will load from network
         }
-      });
+      }
+    }
+
+    // 2. Fetch familyId from Firestore (for live updates)
+    try {
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      final familyId = userDoc.data()?['familyId'] as String?;
+
+      if (familyId != null) {
+        // Cache the familyId for next startup
+        await _database.cacheFamilyId(user.uid, familyId);
+
+        // Subscribe to live updates
+        _familySubscription = _firestore
+            .collection('families')
+            .doc(familyId)
+            .snapshots()
+            .listen((doc) async {
+              if (doc.exists) {
+                final family = FamilyModel.fromFirestore(doc);
+                currentFamily.value = family;
+                // Update local cache for offline access
+                await _database.cacheFamily(
+                  familyId,
+                  jsonEncode(family.toJsonCache()),
+                );
+              } else {
+                currentFamily.value = null;
+                await _database.clearFamilyCache(user.uid);
+              }
+            });
+      } else {
+        // User has no family
+        currentFamily.value = null;
+      }
+    } catch (e) {
+      // Network error - cache was already loaded above (if available)
+      debugPrint('FamilyService: Network error, using cached data: $e');
     }
   }
 
@@ -281,11 +383,14 @@ class FamilyService extends GetxService {
   Future<String> _generateUniqueCode() async {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     final rnd = Random();
-    
+
     while (true) {
-      final code = String.fromCharCodes(Iterable.generate(
-        6, (_) => chars.codeUnitAt(rnd.nextInt(chars.length)),
-      ));
+      final code = String.fromCharCodes(
+        Iterable.generate(
+          6,
+          (_) => chars.codeUnitAt(rnd.nextInt(chars.length)),
+        ),
+      );
 
       // Check uniqueness
       final query = await _firestore
@@ -293,7 +398,7 @@ class FamilyService extends GetxService {
           .where('inviteCode', isEqualTo: code)
           .count()
           .get();
-      
+
       if (query.count == 0) return code;
     }
   }

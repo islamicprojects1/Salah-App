@@ -1,0 +1,83 @@
+# 📋 Qurb Master Plan - Task Tracker
+
+## Phase 0: Foundation & Infrastructure (3 days)
+- [x] Setup Firestore Collections Structure (api_constants.dart)
+- [ ] Create Firebase Security Rules
+- [ ] Setup Cloud Functions scaffold
+- [x] Create base service classes (smart_notification_service, storage_service)
+
+## Phase 1: Smart Notifications System (5 days)
+- [x] Create SmartNotificationService
+- [x] Implement Quick Actions in notifications
+- [x] Create notification action handlers
+- [x] Implement smart reminder logic
+- [x] Add family encouragement notifications
+
+## Phase 2: Batch Logging & Missed Prayers (3 days)
+- [ ] Improve MissedPrayersScreen UI
+- [ ] Create MissedPrayerCard widget
+- [ ] Implement SmartLoggingService
+- [ ] Add batch logging functionality
+
+## Phase 3: Onboarding Experience (4 days)
+- [ ] Create OnboardingController
+- [ ] Create WelcomePage with animations
+- [ ] Create FeaturesPage
+- [ ] Create FamilyIntroPage
+- [ ] Create PermissionsPage
+- [ ] Create ProfileSetupPage
+
+## Phase 4: Offline Mode (5 days)
+- [ ] Add Hive dependencies
+- [ ] Create OfflineService
+- [ ] Implement offline prayer logging
+- [ ] Create sync mechanism
+- [ ] Add connection status indicator
+
+## Phase 5: Admin Panel (10 days)
+- [ ] Setup Flutter Web project
+- [ ] Create Admin Dashboard
+- [ ] Create Users Management
+- [ ] Create Notifications Center
+- [ ] Create Challenges Manager
+- [ ] Create Analytics Dashboard
+- [ ] Create Content Manager
+- [ ] Create Reports & Moderation
+- [ ] Create App Configuration
+- [ ] Create Admin Users Management
+
+## Phase 6: Community & Social (7 days)
+- [ ] Create CommunityController
+- [ ] Create GroupController
+- [ ] Create CommunityScreen
+- [ ] Create GroupDetailsScreen
+- [ ] Create LeaderboardScreen
+- [ ] Create Social Feed
+
+## Phase 7: Challenges & Achievements (5 days)
+- [x] Create ChallengeModel
+- [x] Create AchievementModel
+- [x] Create FeedItemModel (social timeline)
+- [x] Create AdminModels (admin panel)
+- [ ] Create ChallengesController
+- [ ] Create ChallengesScreen
+- [ ] Create AchievementsScreen
+
+## Phase 8: Advanced Settings (4 days)
+- [ ] Expand SettingsController
+- [ ] Create NotificationSettings section
+- [ ] Create PrayerSettings section
+- [ ] Create PrivacySettings section
+- [ ] Create AppearanceSettings section
+
+## Phase 9: Polish & UI (5 days)
+- [ ] Implement all Lottie animations
+- [ ] Create Custom Dialog System
+- [ ] Add Haptic Feedback
+- [ ] UI refinements
+
+## Phase 10: Widgets & Advanced (5 days)
+- [ ] Create Home Screen Widget
+- [ ] Create Statistics Screen
+- [ ] Create Tasbeeh Counter
+- [ ] Create Dua Library

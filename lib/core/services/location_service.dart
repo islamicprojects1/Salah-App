@@ -14,6 +14,8 @@ class LocationService extends GetxService {
   final countryName = ''.obs;
   final isLoading = false.obs;
   final errorMessage = ''.obs;
+  /// True when GPS failed and we're using Mecca as fallback (don't show "Makkah" as user's city).
+  final isUsingDefaultLocation = false.obs;
 
   // ============================================================
   // INITIALIZATION
@@ -38,8 +40,14 @@ class LocationService extends GetxService {
   /// Check if location is available
   bool get hasLocation => currentPosition.value != null;
 
-  /// Get current city name (reactive)
+  /// Display string for UI: real city when GPS worked, or clear fallback message.
   String get currentCity => cityName.value.isNotEmpty ? cityName.value : 'غير محدد';
+  /// When using default (Mecca), show this so user knows it's not their actual location.
+  String get locationDisplayLabel => isUsingDefaultLocation.value
+      ? 'المواقيت حسب مكة (لم يُحدد موقعك)'
+      : (cityName.value.isNotEmpty
+          ? (countryName.value.isNotEmpty ? '${cityName.value}, ${countryName.value}' : cityName.value)
+          : 'غير محدد');
 
   // ============================================================
   // LOCATION METHODS
@@ -55,7 +63,7 @@ class LocationService extends GetxService {
       final serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         errorMessage.value = 'location_services_disabled';
-        return null;
+        return _getDefaultLocation();
       }
       
       // Check permission
@@ -64,13 +72,13 @@ class LocationService extends GetxService {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
           errorMessage.value = 'location_permission_denied';
-          return null;
+          return _getDefaultLocation();
         }
       }
       
       if (permission == LocationPermission.deniedForever) {
         errorMessage.value = 'location_permission_permanently_denied';
-        return null;
+        return _getDefaultLocation();
       }
       
       // Get position
@@ -82,17 +90,36 @@ class LocationService extends GetxService {
       );
       
       currentPosition.value = position;
-      
-      // Get city name from coordinates
+      isUsingDefaultLocation.value = false;
       await _reverseGeocode(position.latitude, position.longitude);
-      
       return position;
     } catch (e) {
       errorMessage.value = e.toString();
-      return null;
+      return _getDefaultLocation();
     } finally {
       isLoading.value = false;
     }
+  }
+
+  /// Default location (Mecca) if GPS fails — used only for prayer times, not as "user's city".
+  Position _getDefaultLocation() {
+    final defaultPos = Position(
+      latitude: 21.4225,
+      longitude: 39.8262,
+      timestamp: DateTime.now(),
+      accuracy: 0,
+      altitude: 0,
+      heading: 0,
+      speed: 0,
+      speedAccuracy: 0,
+      altitudeAccuracy: 0,
+      headingAccuracy: 0,
+    );
+    currentPosition.value = defaultPos;
+    cityName.value = '';
+    countryName.value = '';
+    isUsingDefaultLocation.value = true;
+    return defaultPos;
   }
 
   /// Get last known location (faster, but might be outdated)
@@ -192,11 +219,14 @@ class LocationService extends GetxService {
         
         if (address != null) {
           // Try to get city name in order of preference
+          // Prioritize 'city' > 'town' > 'village' > 'state'
+          // Avoid 'county' or 'suburb' which often return districts (e.g. Marka)
+          
           cityName.value = address['city'] ?? 
                            address['town'] ?? 
                            address['village'] ?? 
-                           address['county'] ?? 
-                           address['state'] ?? 
+                           address['state'] ?? // "Amman" is often state too
+                           address['county'] ?? // Fallback
                            '';
           
           countryName.value = address['country'] ?? '';
@@ -204,7 +234,7 @@ class LocationService extends GetxService {
       }
     } catch (e) {
       // Silently fail - city name is not critical
-      print('Reverse geocoding failed: $e');
+      // Reverse geocoding failed silently
     }
   }
 }

@@ -150,9 +150,12 @@ const Map<String, String> enTranslations = {
   'share_code': 'Share Code',
   'family_members': 'Family Members',
   'add_child': 'Add Child',
+  'child_name': 'Child name',
   'add_child_no_phone': 'Add Child (No Phone)',
   'leave_family': 'Leave Family',
   'encourage': 'Encourage',
+  'log_for_him': 'Log for him',
+  'select_prayer_to_log': 'Select prayer to log for him',
   'send_encouragement': 'Send Encouragement',
   'create_or_join_family_desc': 'Create a new family or join an existing one\\nto share prayers and encourage each other',
 
@@ -209,6 +212,7 @@ const Map<String, String> enTranslations = {
   'improve_accuracy': 'Improve Accuracy',
   'calibration': 'Calibration',
   'calibration_instruction': 'Keep device away from metal (magnetic field), calibrate compass by moving phone in figure-8',
+  'qibla_hint_open_area': 'For best accuracy: use in an open area away from metal',
 
   // ==================== Additional UI ====================
   'add': 'Add',

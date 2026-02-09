@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
 import 'package:salah/controller/missed_prayers_controller.dart';
@@ -6,6 +7,7 @@ import 'package:salah/core/services/prayer_time_service.dart';
 import 'package:salah/core/helpers/prayer_timing_helper.dart';
 import 'package:salah/core/theme/app_colors.dart';
 import 'package:salah/data/models/prayer_time_model.dart';
+import 'package:salah/view/widgets/missed_prayer_card.dart';
 
 /// Screen for quickly logging missed/unlogged prayers
 class MissedPrayersScreen extends GetView<MissedPrayersController> {
@@ -93,7 +95,29 @@ class MissedPrayersScreen extends GetView<MissedPrayersController> {
                 itemCount: controller.missedPrayers.length,
                 itemBuilder: (context, index) {
                   final prayer = controller.missedPrayers[index];
-                  return _buildPrayerCard(prayer);
+                  final prayerType = prayer.prayerType;
+                  if (prayerType == null) return const SizedBox.shrink();
+                  
+                  return Obx(() {
+                    final status = controller.prayerStatuses[prayerType] ?? PrayerStatus.prayed;
+                    final timing = controller.prayerTimings[prayerType] ?? PrayerTimingQuality.onTime;
+                    
+                    return MissedPrayerCard(
+                      prayer: prayer,
+                      status: status,
+                      timing: timing,
+                      onStatusChanged: (newStatus) {
+                        HapticFeedback.mediumImpact();
+                        controller.setPrayerStatus(prayerType, newStatus);
+                      },
+                      onTimingChanged: (newTiming) {
+                        controller.setPrayerTiming(prayerType, newTiming);
+                      },
+                      onDismissed: () {
+                        controller.missedPrayers.removeAt(index);
+                      },
+                    );
+                  });
                 },
               ),
             ),

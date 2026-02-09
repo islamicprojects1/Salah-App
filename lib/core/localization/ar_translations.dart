@@ -150,9 +150,12 @@ const Map<String, String> arTranslations = {
   'share_code': 'مشاركة الرمز',
   'family_members': 'أفراد العائلة',
   'add_child': 'إضافة طفل',
+  'child_name': 'اسم الطفل',
   'add_child_no_phone': 'إضافة طفل بدون جوال',
   'leave_family': 'مغادرة العائلة',
   'encourage': 'شجّع',
+  'log_for_him': 'سجّل عنه',
+  'select_prayer_to_log': 'اختر الصلاة لتسجيلها عنه',
   'send_encouragement': 'أرسل تشجيع',
   'create_or_join_family_desc':
       'أنشئ عائلة جديدة أو انضم لعائلة موجودة\\nلمشاركة صلاتك وتشجيع بعضكم',
@@ -212,6 +215,7 @@ const Map<String, String> arTranslations = {
   'calibration': 'المعايرة',
   'calibration_instruction':
       'أبقِ جهازك بعيداً عن المعادن (مجال مغناطيسي)، قم بتقويم البوصلة عن طريق تحريك هاتفك على شكل 8',
+  'qibla_hint_open_area': 'لأفضل دقة: استخدم التطبيق في مكان مفتوح بعيداً عن المعادن',
 
    // ==================== Additional UI ====================
   'add': 'إضافة',

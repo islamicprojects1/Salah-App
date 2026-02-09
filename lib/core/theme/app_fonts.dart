@@ -20,6 +20,19 @@ class AppFonts {
   }
 
   // ============================================================
+  // ============================================================
+  // DISPLAY STYLES
+  // ============================================================
+  
+  /// Large display - for very large numbers
+  static TextStyle get displayLarge => TextStyle(
+    fontFamily: _fontFamily,
+    fontSize: 48,
+    fontWeight: FontWeight.bold,
+    height: 1.1,
+  );
+
+  // ============================================================
   // HEADLINE STYLES
   // ============================================================
   
