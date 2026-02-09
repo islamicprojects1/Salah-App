@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:share_plus/share_plus.dart';
+
+import 'package:salah/data/repositories/user_repository.dart';
+import 'package:salah/view/widgets/app_dialogs.dart';
 import 'package:salah/core/constants/storage_keys.dart';
 import 'package:salah/core/routes/app_routes.dart';
 import 'package:salah/core/services/auth_service.dart';
@@ -16,11 +19,17 @@ class SettingsController extends GetxController {
   final _localizationService = Get.find<LocalizationService>();
   final _storage = Get.find<StorageService>();
   final LocationService _locationService = Get.find<LocationService>();
+  // Lazy put might be better, but find is okay if registered
+  final _userRepository = Get.find<UserRepository>();
+  final _authService = Get.find<AuthService>();
 
   final RxBool notificationsEnabled = true.obs;
-
+  final Rx<NotificationSoundMode> notificationSoundMode =
+      NotificationSoundMode.adhan.obs;
+ 
   String get locationDisplayLabel => _locationService.locationDisplayLabel;
-  bool get isUsingDefaultLocation => _locationService.isUsingDefaultLocation.value;
+  bool get isUsingDefaultLocation =>
+      _locationService.isUsingDefaultLocation.value;
   bool get isLocationLoading => _locationService.isLoading.value;
 
   AppThemeMode get currentThemeMode => _themeService.currentThemeMode.value;
@@ -33,8 +42,48 @@ class SettingsController extends GetxController {
   }
 
   Future<void> logout() async {
-    await Get.find<AuthService>().signOut();
+    await _authService.signOut();
     Get.offAllNamed(AppRoutes.login);
+  }
+
+  Future<void> deleteAccount() async {
+    final confirmed = await AppDialogs.confirm(
+      title: 'delete_account'.tr,
+      message: 'delete_account_confirmation'.tr,
+      confirmText: 'delete'.tr,
+      cancelText: 'cancel'.tr,
+      isDestructive: true,
+    );
+
+    if (!confirmed) return;
+
+    AppDialogs.showLoading(message: 'deleting_account'.tr);
+
+    try {
+      final userId = _authService.userId;
+      if (userId != null) {
+        // 1. Delete user data
+        await _userRepository.deleteUser(userId);
+      }
+
+      // 2. Delete auth account
+      final success = await _authService.deleteAccount();
+
+      AppDialogs.hideLoading();
+
+      if (success) {
+        Get.offAllNamed(AppRoutes.login);
+        Get.snackbar('success'.tr, 'account_deleted_successfully'.tr);
+      } else {
+        final error = _authService.errorMessage.value.isNotEmpty
+            ? _authService.errorMessage.value
+            : 'delete_account_error'.tr;
+        Get.snackbar('error'.tr, error);
+      }
+    } catch (e) {
+      AppDialogs.hideLoading();
+      Get.snackbar('error'.tr, 'delete_account_error'.tr);
+    }
   }
 
   Future<void> changeLanguage(AppLanguage language) async {
@@ -52,12 +101,19 @@ class SettingsController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    notificationsEnabled.value = _storage.read<bool>(StorageKeys.notificationsEnabled) ?? true;
+    notificationsEnabled.value =
+        _storage.read<bool>(StorageKeys.notificationsEnabled) ?? true;
+    notificationSoundMode.value = _storage.getNotificationSoundMode();
   }
 
   Future<void> setNotificationsEnabled(bool value) async {
     await _storage.write(StorageKeys.notificationsEnabled, value);
     notificationsEnabled.value = value;
+  }
+
+  Future<void> setNotificationSoundMode(NotificationSoundMode mode) async {
+    await _storage.setNotificationSoundMode(mode);
+    notificationSoundMode.value = mode;
   }
 
   void showAboutDialog() {
@@ -66,10 +122,7 @@ class SettingsController extends GetxController {
         title: Text('about'.tr),
         content: Text('${'app_name'.tr}\n${'version'.tr}: 1.0.0'),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: Text('close'.tr),
-          ),
+          TextButton(onPressed: () => Get.back(), child: Text('close'.tr)),
         ],
       ),
     );
@@ -77,10 +130,12 @@ class SettingsController extends GetxController {
 
   Future<void> shareApp() async {
     try {
-      await SharePlus.instance.share(ShareParams(
-        text: 'تحميل تطبيق صلاة - متابعة الصلوات والعائلة',
-        subject: 'app_name'.tr,
-      ));
+      await SharePlus.instance.share(
+        ShareParams(
+          text: 'تحميل تطبيق صلاة - متابعة الصلوات والعائلة',
+          subject: 'app_name'.tr,
+        ),
+      );
     } catch (_) {}
   }
 

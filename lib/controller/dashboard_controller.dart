@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:salah/core/helpers/prayer_names.dart';
 import 'package:get/get.dart';
 import 'package:salah/core/constants/storage_keys.dart';
@@ -9,6 +8,8 @@ import 'package:salah/core/services/storage_service.dart';
 import 'package:salah/core/services/location_service.dart';
 import 'package:salah/core/services/notification_service.dart';
 import 'package:salah/core/services/prayer_time_service.dart';
+import 'package:salah/core/services/live_context_service.dart';
+import 'package:salah/core/services/firestore_service.dart';
 import 'package:salah/data/models/prayer_log_model.dart';
 import 'package:salah/data/models/prayer_time_model.dart';
 import 'package:salah/data/repositories/prayer_repository.dart';
@@ -24,6 +25,7 @@ class DashboardController extends GetxController {
   final UserRepository _userRepo;
   final PrayerRepository _prayerRepo;
   final NotificationService _notificationService;
+  final LiveContextService _liveContextService;
 
   DashboardController({
     required PrayerTimeService prayerService,
@@ -32,12 +34,14 @@ class DashboardController extends GetxController {
     required UserRepository userRepo,
     required PrayerRepository prayerRepo,
     required NotificationService notificationService,
-  })  : _prayerService = prayerService,
-        _locationService = locationService,
-        _authService = authService,
-        _userRepo = userRepo,
-        _prayerRepo = prayerRepo,
-        _notificationService = notificationService;
+    required LiveContextService liveContextService,
+  }) : _prayerService = prayerService,
+       _locationService = locationService,
+       _authService = authService,
+       _userRepo = userRepo,
+       _prayerRepo = prayerRepo,
+       _notificationService = notificationService,
+       _liveContextService = liveContextService;
 
   final isLoading = true.obs;
   final currentPrayer = Rxn<PrayerTimeModel>();
@@ -62,6 +66,14 @@ class DashboardController extends GetxController {
     ever(_locationService.cityName, (_) => _syncLocationLabel());
     ever(_locationService.isUsingDefaultLocation, (_) => _syncLocationLabel());
     _initDashboard();
+    ever(
+      _liveContextService.prayerContext,
+      (ctx) {
+        currentPrayer.value = ctx.currentPrayer;
+        nextPrayer.value = ctx.nextPrayer;
+        timeUntilNextPrayer.value = ctx.formattedCountdown;
+      },
+    );
   }
 
   void _syncLocationLabel() {
@@ -112,26 +124,62 @@ class DashboardController extends GetxController {
   Future<void> _scheduleNotifications() async {
     try {
       final storage = Get.find<StorageService>();
-      final enabled = storage.read<bool>(StorageKeys.notificationsEnabled) ?? true;
+      final enabled =
+          storage.read<bool>(StorageKeys.notificationsEnabled) ?? true;
       await _notificationService.cancelAllNotifications();
       if (!enabled) return;
-      for (int i = 0; i < todayPrayers.length; i++) {
-        final prayer = todayPrayers[i];
-        if (prayer.dateTime.isAfter(DateTime.now())) {
-          await _notificationService.schedulePrayerNotification(
-            id: i,
-            prayerName: prayer.name,
-            prayerTime: prayer.dateTime,
-          );
-          await _notificationService.schedulePrayerReminder(
-            id: i + 100,
-            prayerName: prayer.name,
-            prayerTime: prayer.dateTime,
-          );
-        }
+
+      final userId = _authService.userId;
+      if (userId == null) return;
+
+      final now = DateTime.now();
+      for (final prayer in todayPrayers) {
+        // نتجاوز الشروق لأنها ليست صلاة مفروضة
+        if (prayer.prayerType == PrayerName.sunrise) continue;
+
+        // لا نذكّر بصلاة وقتها مضى بالكامل
+        if (!prayer.dateTime.isAfter(now)) continue;
+
+        // إذا كانت الصلاة مسجّلة اليوم لا نرسل لا أذان ولا Reminder
+        final alreadyLogged = await _prayerRepo.hasLoggedPrayerToday(
+          userId,
+          prayer.prayerType ?? PrayerName.fajr,
+        );
+        if (alreadyLogged) continue;
+
+        final baseId =
+            _notificationIdForPrayer(prayer.prayerType ?? PrayerName.fajr);
+
+        await _notificationService.schedulePrayerNotification(
+          id: baseId,
+          prayerName: prayer.name,
+          prayerTime: prayer.dateTime,
+        );
+        await _notificationService.schedulePrayerReminder(
+          id: baseId + 100,
+          prayerName: prayer.name,
+          prayerTime: prayer.dateTime,
+        );
       }
     } catch (_) {
       AppFeedback.showError('تنبيه', 'فشل جدولة الإشعارات');
+    }
+  }
+
+  int _notificationIdForPrayer(PrayerName prayer) {
+    switch (prayer) {
+      case PrayerName.fajr:
+        return 1;
+      case PrayerName.dhuhr:
+        return 2;
+      case PrayerName.asr:
+        return 3;
+      case PrayerName.maghrib:
+        return 4;
+      case PrayerName.isha:
+        return 5;
+      case PrayerName.sunrise:
+        return 6;
     }
   }
 
@@ -139,19 +187,23 @@ class DashboardController extends GetxController {
     final userId = _authService.userId;
     if (userId == null) return;
     _notificationsSubscription?.cancel();
-    _notificationsSubscription = _userRepo.getUserNotificationsStream(userId).listen((snapshot) {
-      for (var change in snapshot.docChanges) {
-        if (change.type == DocumentChangeType.added) {
-          final data = change.doc.data();
-          if (data != null && data['type'] == 'encouragement') {
-            AppFeedback.showSnackbar(
-              data['fromName'] ?? 'عضو عائلة',
-              data['message'] ?? 'شجعك على الصلاة',
+    _notificationsSubscription = _userRepo
+        .getUnreadUserNotificationsStream(userId)
+        .listen((snapshot) {
+          for (final doc in snapshot.docs) {
+            final data = doc.data();
+            if (data['type'] == 'encouragement') {
+              AppFeedback.showSnackbar(
+                data['fromName'] ?? 'عضو عائلة',
+                data['message'] ?? 'شجعك على الصلاة',
+              );
+            }
+            _userRepo.markUserNotificationAsRead(
+              userId: userId,
+              notificationId: doc.id,
             );
           }
-        }
-      }
-    });
+        });
   }
 
   void _updateCurrentAndNextPrayer() {
@@ -163,7 +215,10 @@ class DashboardController extends GetxController {
         next = prayer;
         break;
       }
-      current = prayer;
+      // Skip Shuruq (Sunrise) as it's not an obligatory prayer to be performed
+      if (prayer.prayerType != PrayerName.sunrise) {
+        current = prayer;
+      }
     }
     currentPrayer.value = current;
     nextPrayer.value = next;
@@ -172,11 +227,17 @@ class DashboardController extends GetxController {
 
   void _startTimer() {
     _timer?.cancel();
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) => _updateTimeUntilNext());
+    _timer = Timer.periodic(
+      const Duration(seconds: 1),
+      (_) => _updateTimeUntilNext(),
+    );
   }
 
   void _updateTimeUntilNext() {
-    if (nextPrayer.value == null) return;
+    if (nextPrayer.value == null) {
+      timeUntilNextPrayer.value = '--:--:--';
+      return;
+    }
     final difference = nextPrayer.value!.dateTime.difference(DateTime.now());
     if (difference.isNegative) {
       _loadPrayerTimes();
@@ -194,7 +255,11 @@ class DashboardController extends GetxController {
     final userId = _authService.userId;
     if (userId == null) return;
     try {
-      final isLogged = PrayerNames.isPrayerLogged(todayLogs, prayer.name, prayer.prayerType);
+      final isLogged = PrayerNames.isPrayerLogged(
+        todayLogs,
+        prayer.name,
+        prayer.prayerType,
+      );
       if (isLogged) {
         AppFeedback.showSnackbar('تنبيه', 'لقد قمت بتسجيل هذه الصلاة مسبقاً');
         return;
@@ -205,6 +270,19 @@ class DashboardController extends GetxController {
         adhanTime: prayer.dateTime,
       );
       await _prayerRepo.addPrayerLog(userId: userId, log: log);
+      // بعد تسجيل الصلاة بنجاح نلغي إشعاراتها (الأذان والتذكير)
+      final baseId =
+          _notificationIdForPrayer(prayer.prayerType ?? PrayerName.fajr);
+      await _notificationService.cancelNotification(baseId);
+      await _notificationService.cancelNotification(baseId + 100);
+      await Get.find<FirestoreService>().addAnalyticsEvent(
+        userId: userId,
+        event: 'prayer_logged',
+        data: {
+          'prayer': PrayerNames.fromDisplayName(prayer.name).name,
+          'adhanTime': prayer.dateTime.toIso8601String(),
+        },
+      );
       if (todayLogs.length + 1 >= 5) {
         currentStreak.value = await _prayerRepo.updateStreak(userId);
       }
@@ -212,6 +290,15 @@ class DashboardController extends GetxController {
     } catch (e) {
       AppFeedback.showError('خطأ', 'فشل تسجيل الصلاة: $e');
     }
+  }
+
+  Future<void> refreshDashboard() async {
+    final userId = _authService.userId;
+    if (userId == null) return;
+    await _locationService.getCurrentLocation();
+    await _loadPrayerTimes();
+    _loadPrayerLogs();
+    await _loadStreak();
   }
 
   @override

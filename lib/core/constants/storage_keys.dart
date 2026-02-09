@@ -70,6 +70,9 @@ class StorageKeys {
   
   /// Key for family notification preference
   static const String familyNotification = 'family_notification';
+  
+  /// Key for notification sound mode ('adhan', 'vibrate', 'silent')
+  static const String notificationSoundMode = 'notification_sound_mode';
 
   // ============================================================
   // PENDING ACTIONS (for notification quick actions)

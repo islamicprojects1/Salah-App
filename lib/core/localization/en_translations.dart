@@ -179,6 +179,12 @@ const Map<String, String> enTranslations = {
   'male': 'Male',
   'female': 'Female',
   'logout': 'Logout',
+  'delete_account': 'Delete Account',
+  'delete_account_warning': 'This action cannot be undone',
+  'delete_account_confirmation': 'Are you sure you want to delete your account? All your data will be permanently deleted.',
+  'deleting_account': 'Deleting account...',
+  'account_deleted_successfully': 'Account deleted successfully',
+  'delete_account_error': 'Error deleting account',
 
   // ==================== Auth ====================
   'login': 'Login',

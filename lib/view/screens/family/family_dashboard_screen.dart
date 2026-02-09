@@ -20,29 +20,17 @@ class FamilyDashboardScreen extends GetView<FamilyController> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text(
-          'family'.tr,
-          style: AppFonts.titleLarge.copyWith(color: AppColors.textPrimary),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
-      body: Obx(() {
-        if (controller.isLoading) {
-          return const AppLoading();
-        }
+    return Obx(() {
+      if (controller.isLoading) {
+        return const AppLoading();
+      }
 
-        if (!controller.hasFamily) {
-          return _buildNoFamilyView();
-        }
+      if (!controller.hasFamily) {
+        return _buildNoFamilyView();
+      }
 
-        return _buildFamilyView(context);
-      }),
-    );
+      return _buildFamilyView(context);
+    });
   }
 
   Widget _buildNoFamilyView() {

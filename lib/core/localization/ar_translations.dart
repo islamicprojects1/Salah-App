@@ -180,6 +180,12 @@ const Map<String, String> arTranslations = {
   'male': 'ذكر',
   'female': 'أنثى',
   'logout': 'تسجيل خروج',
+  'delete_account': 'حذف الحساب',
+  'delete_account_warning': 'هذا الإجراء لا يمكن التراجع عنه',
+  'delete_account_confirmation': 'هل أنت متأكد من رغبتك في حذف حسابك؟ سيتم حذف جميع بياناتك نهائياً.',
+  'deleting_account': 'جاري حذف الحساب...',
+  'account_deleted_successfully': 'تم حذف الحساب بنجاح',
+  'delete_account_error': 'حدث خطأ أثناء حذف الحساب',
 
   // ==================== Auth ====================
   'login': 'تسجيل الدخول',

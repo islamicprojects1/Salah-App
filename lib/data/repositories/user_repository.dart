@@ -19,9 +19,9 @@ class UserRepository extends BaseRepository {
     required DatabaseHelper database,
     required ConnectivityService connectivity,
     required PrayerRepository prayerRepository,
-  })  : _databaseHelper = database,
-        _connectivity = connectivity,
-        _prayerRepository = prayerRepository;
+  }) : _databaseHelper = database,
+       _connectivity = connectivity,
+       _prayerRepository = prayerRepository;
 
   bool get _isOnline => _connectivity.isConnected.value;
 
@@ -67,7 +67,7 @@ class UserRepository extends BaseRepository {
         // Return null on network error
       }
     }
-    
+
     // 3. Fallback to cache if network failed but we ignored it earlier (unlikely if logic above matches)
     // Actually if cache existed we returned it.
     // If cache failed parsing, we tried network.
@@ -94,7 +94,10 @@ class UserRepository extends BaseRepository {
   }
 
   Future<void> _cacheUser(String userId, UserModel user) async {
-    await _databaseHelper.cacheUserProfile(userId, jsonEncode(user.toFirestore()));
+    await _databaseHelper.cacheUserProfile(
+      userId,
+      jsonEncode(user.toFirestore()),
+    );
   }
 
   /// Update user's streak (convenience method)
@@ -102,7 +105,10 @@ class UserRepository extends BaseRepository {
     required String userId,
     required int newStreak,
   }) async {
-    await updateUserProfile(userId: userId, updates: {'currentStreak': newStreak});
+    await updateUserProfile(
+      userId: userId,
+      updates: {'currentStreak': newStreak},
+    );
   }
 
   /// Get user's current streak
@@ -113,7 +119,35 @@ class UserRepository extends BaseRepository {
   }
 
   /// Stream of user notifications (e.g. encouragements from family). Used by Dashboard for real-time pokes.
-  Stream<QuerySnapshot<Map<String, dynamic>>> getUserNotificationsStream(String userId) {
+  Stream<QuerySnapshot<Map<String, dynamic>>> getUserNotificationsStream(
+    String userId,
+  ) {
     return firestore.getUserNotifications(userId);
+  }
+
+  Stream<QuerySnapshot<Map<String, dynamic>>> getUnreadUserNotificationsStream(
+    String userId,
+  ) {
+    return firestore.getUnreadUserNotifications(userId);
+  }
+
+  Future<void> markUserNotificationAsRead({
+    required String userId,
+    required String notificationId,
+  }) async {
+    await firestore.markUserNotificationAsRead(userId, notificationId);
+  }
+
+  /// Delete user account data
+  Future<void> deleteUser(String userId) async {
+    try {
+      if (_isOnline) {
+        await firestore.deleteUser(userId);
+      }
+      // Clear local cache regardless of online status
+      await _databaseHelper.clearAllData();
+    } catch (_) {
+      // Best effort deletion
+    }
   }
 }

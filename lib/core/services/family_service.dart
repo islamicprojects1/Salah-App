@@ -8,6 +8,7 @@ import 'package:salah/core/services/auth_service.dart';
 import 'package:salah/core/services/database_helper.dart';
 import 'package:salah/data/models/family_model.dart';
 import 'package:salah/data/models/user_model.dart';
+import 'package:salah/data/models/family_activity_model.dart';
 
 /// Service for managing family groups
 class FamilyService extends GetxService {
@@ -285,6 +286,7 @@ class FamilyService extends GetxService {
             'message': message,
             'type': 'encouragement',
             'createdAt': FieldValue.serverTimestamp(),
+            'isRead': false,
           });
 
       return true;
@@ -344,7 +346,26 @@ class FamilyService extends GetxService {
     // 2. Fetch familyId from Firestore (for live updates)
     try {
       final userDoc = await _firestore.collection('users').doc(user.uid).get();
-      final familyId = userDoc.data()?['familyId'] as String?;
+      var familyId = userDoc.data()?['familyId'] as String?;
+
+      // Auto-Repair: If familyId is missing but we have a valid cached one, verify and restore it
+      if (familyId == null && cachedFamilyId != null) {
+        try {
+          final familyCheck = await _firestore.collection('families').doc(cachedFamilyId).get();
+          if (familyCheck.exists) {
+            final familyData = FamilyModel.fromFirestore(familyCheck);
+            if (familyData.members.any((m) => m.userId == user.uid)) {
+              debugPrint('FamilyService: Auto-repairing missing familyId for user ${user.uid}');
+              await _firestore.collection('users').doc(user.uid).set({
+                'familyId': cachedFamilyId,
+              }, SetOptions(merge: true));
+              familyId = cachedFamilyId;
+            }
+          }
+        } catch (e) {
+          debugPrint('FamilyService: Auto-repair check failed: $e');
+        }
+      }
 
       if (familyId != null) {
         // Cache the familyId for next startup
@@ -361,7 +382,7 @@ class FamilyService extends GetxService {
                 currentFamily.value = family;
                 // Update local cache for offline access
                 await _database.cacheFamily(
-                  familyId,
+                  familyId!,
                   jsonEncode(family.toJsonCache()),
                 );
               } else {
@@ -372,6 +393,7 @@ class FamilyService extends GetxService {
       } else {
         // User has no family
         currentFamily.value = null;
+        await _database.clearFamilyCache(user.uid);
       }
     } catch (e) {
       // Network error - cache was already loaded above (if available)
@@ -401,5 +423,72 @@ class FamilyService extends GetxService {
 
       if (query.count == 0) return code;
     }
+  }
+
+  /// Create a new activity in the family feed
+  Future<void> createActivity({
+    required String familyId,
+    required ActivityType type,
+    required String userId,
+    required String userName,
+    String? userPhoto,
+    required Map<String, dynamic> data,
+  }) async {
+    try {
+      if (familyId.isEmpty) return;
+
+      final activity = {
+        'type': type.name,
+        'userId': userId,
+        'userName': userName,
+        'userPhoto': userPhoto,
+        'timestamp': FieldValue.serverTimestamp(),
+        'data': data,
+      };
+
+      await _firestore
+          .collection('families')
+          .doc(familyId)
+          .collection('activities')
+          .add(activity);
+    } catch (e) {
+      debugPrint('FamilyService: Failed to create activity: $e');
+    }
+  }
+
+  /// Stream activities for the family feed
+  Stream<List<FamilyActivityModel>> streamFamilyActivities(String familyId) {
+    if (familyId.isEmpty) return Stream.value([]);
+
+    return _firestore
+        .collection('families')
+        .doc(familyId)
+        .collection('activities')
+        .orderBy('timestamp', descending: true)
+        .limit(20)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        Timestamp? timestamp = data['timestamp'] as Timestamp?;
+        // Handle server timestamp pending write
+        if (timestamp == null) {
+            timestamp = Timestamp.now();
+        }
+        
+        return FamilyActivityModel(
+            id: doc.id,
+            type: ActivityType.values.firstWhere(
+                (e) => e.name == data['type'],
+                orElse: () => ActivityType.prayerLog,
+            ),
+            userId: data['userId'] ?? '',
+            userName: data['userName'] ?? 'Unknown',
+            userPhoto: data['userPhoto'],
+            timestamp: timestamp.toDate(),
+            data: data['data'] as Map<String, dynamic>? ?? {},
+        );
+      }).toList();
+    });
   }
 }

@@ -8,30 +8,30 @@ class FirestoreService extends GetxService {
   // ============================================================
   // PRIVATE
   // ============================================================
-  
+
   late final FirebaseFirestore _firestore;
 
   // ============================================================
   // INITIALIZATION
   // ============================================================
-  
+
   /// Initialize the service
   Future<FirestoreService> init() async {
     _firestore = FirebaseFirestore.instance;
-    
+
     // Enable offline persistence
     _firestore.settings = const Settings(
       persistenceEnabled: true,
       cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
     );
-    
+
     return this;
   }
 
   // ============================================================
   // USERS
   // ============================================================
-  
+
   /// Get users collection reference
   CollectionReference<Map<String, dynamic>> get _usersCollection =>
       _firestore.collection(ApiConstants.usersCollection);
@@ -67,21 +67,23 @@ class FirestoreService extends GetxService {
       // Fetch last 30 days of logs to calculate streak
       final now = DateTime.now();
       int streak = 0;
-      
+
       // We look back day by day
       for (int i = 0; i < 30; i++) {
         final date = now.subtract(Duration(days: i));
         final startOfDay = DateTime(date.year, date.month, date.day);
         final endOfDay = startOfDay.add(const Duration(days: 1));
-        
+
         final snapshot = await _prayerLogsCollection(userId)
             .where('prayedAt', isGreaterThanOrEqualTo: startOfDay)
             .where('prayedAt', isLessThan: endOfDay)
             .get();
-        
+
         // Check if 5 prayers completed (excluding sunrise for MVP, or including if required)
         // Specification says 5/5 = 1 day
-        final completedPrayers = snapshot.docs.map((d) => d.data()['prayer'] as String).toSet();
+        final completedPrayers = snapshot.docs
+            .map((d) => d.data()['prayer'] as String)
+            .toSet();
         // Remove sunrise if it's there
         completedPrayers.remove('sunrise');
         completedPrayers.remove('الشروق');
@@ -89,9 +91,9 @@ class FirestoreService extends GetxService {
         if (completedPrayers.length >= 5) {
           streak++;
         } else if (i == 0) {
-          // If today isn't finished, don't break the streak yet, 
+          // If today isn't finished, don't break the streak yet,
           // but if yesterday wasn't finished, the streak definitely broke.
-          continue; 
+          continue;
         } else {
           // Streak broken
           break;
@@ -107,7 +109,9 @@ class FirestoreService extends GetxService {
   }
 
   /// Get real-time notifications for a user
-  Stream<QuerySnapshot<Map<String, dynamic>>> getUserNotifications(String userId) {
+  Stream<QuerySnapshot<Map<String, dynamic>>> getUserNotifications(
+    String userId,
+  ) {
     return _usersCollection
         .doc(userId)
         .collection('notifications')
@@ -116,10 +120,46 @@ class FirestoreService extends GetxService {
         .snapshots();
   }
 
+  Stream<QuerySnapshot<Map<String, dynamic>>> getUnreadUserNotifications(
+    String userId,
+  ) {
+    return _usersCollection
+        .doc(userId)
+        .collection('notifications')
+        .where('isRead', isEqualTo: false)
+        .orderBy('createdAt', descending: true)
+        .limit(10)
+        .snapshots();
+  }
+
+  Future<void> markUserNotificationAsRead(
+    String userId,
+    String notificationId,
+  ) async {
+    await _usersCollection
+        .doc(userId)
+        .collection('notifications')
+        .doc(notificationId)
+        .update({'isRead': true});
+  }
+
+  Future<void> addAnalyticsEvent({
+    required String userId,
+    required String event,
+    Map<String, dynamic>? data,
+  }) async {
+    await _firestore.collection(ApiConstants.analyticsCollection).add({
+      'userId': userId,
+      'event': event,
+      'data': data ?? {},
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
   // ============================================================
   // GROUPS
   // ============================================================
-  
+
   /// Get groups collection reference
   CollectionReference<Map<String, dynamic>> get _groupsCollection =>
       _firestore.collection(ApiConstants.groupsCollection);
@@ -131,12 +171,16 @@ class FirestoreService extends GetxService {
   }
 
   /// Get group document
-  Future<DocumentSnapshot<Map<String, dynamic>>> getGroup(String groupId) async {
+  Future<DocumentSnapshot<Map<String, dynamic>>> getGroup(
+    String groupId,
+  ) async {
     return await _groupsCollection.doc(groupId).get();
   }
 
   /// Get group stream
-  Stream<DocumentSnapshot<Map<String, dynamic>>> getGroupStream(String groupId) {
+  Stream<DocumentSnapshot<Map<String, dynamic>>> getGroupStream(
+    String groupId,
+  ) {
     return _groupsCollection.doc(groupId).snapshots();
   }
 
@@ -160,12 +204,13 @@ class FirestoreService extends GetxService {
   // ============================================================
   // PRAYER LOGS
   // ============================================================
-  
+
   /// Get prayer logs collection for a user
-  CollectionReference<Map<String, dynamic>> _prayerLogsCollection(String userId) =>
-      _usersCollection
-          .doc(userId)
-          .collection(ApiConstants.prayerLogsCollection);
+  CollectionReference<Map<String, dynamic>> _prayerLogsCollection(
+    String userId,
+  ) => _usersCollection
+      .doc(userId)
+      .collection(ApiConstants.prayerLogsCollection);
 
   /// Add prayer log (server-generated doc id).
   Future<String> addPrayerLog(String userId, Map<String, dynamic> data) async {
@@ -189,7 +234,7 @@ class FirestoreService extends GetxService {
   ) {
     final startOfDay = DateTime(date.year, date.month, date.day);
     final endOfDay = startOfDay.add(const Duration(days: 1));
-    
+
     return _prayerLogsCollection(userId)
         .where('prayedAt', isGreaterThanOrEqualTo: startOfDay)
         .where('prayedAt', isLessThan: endOfDay)
@@ -197,7 +242,9 @@ class FirestoreService extends GetxService {
   }
 
   /// Get today's prayer logs
-  Stream<QuerySnapshot<Map<String, dynamic>>> getTodayPrayerLogs(String userId) {
+  Stream<QuerySnapshot<Map<String, dynamic>>> getTodayPrayerLogs(
+    String userId,
+  ) {
     return getPrayerLogsForDate(userId, DateTime.now());
   }
 
@@ -225,7 +272,7 @@ class FirestoreService extends GetxService {
   // ============================================================
   // REACTIONS (Social interactions)
   // ============================================================
-  
+
   /// Get reactions collection reference
   CollectionReference<Map<String, dynamic>> get _reactionsCollection =>
       _firestore.collection(ApiConstants.reactionsCollection);
@@ -250,7 +297,9 @@ class FirestoreService extends GetxService {
   }
 
   /// Get user's unread reactions
-  Stream<QuerySnapshot<Map<String, dynamic>>> getUnreadReactions(String userId) {
+  Stream<QuerySnapshot<Map<String, dynamic>>> getUnreadReactions(
+    String userId,
+  ) {
     return _reactionsCollection
         .where('receiverId', isEqualTo: userId)
         .where('isRead', isEqualTo: false)
@@ -266,7 +315,7 @@ class FirestoreService extends GetxService {
   // ============================================================
   // BATCH OPERATIONS
   // ============================================================
-  
+
   /// Get batch for multiple writes
   WriteBatch get batch => _firestore.batch();
 
@@ -284,36 +333,43 @@ class FirestoreService extends GetxService {
       _firestore.collection(ApiConstants.achievementsCollection);
 
   /// Get user achievements collection
-  CollectionReference<Map<String, dynamic>> _userAchievementsCollection(String userId) =>
-      _usersCollection.doc(userId).collection(ApiConstants.userAchievementsCollection);
+  CollectionReference<Map<String, dynamic>> _userAchievementsCollection(
+    String userId,
+  ) => _usersCollection
+      .doc(userId)
+      .collection(ApiConstants.userAchievementsCollection);
 
   /// Get all achievements (definitions)
   Future<List<DocumentSnapshot<Map<String, dynamic>>>> getAchievements() async {
-    final snapshot = await _achievementsCollection.where('isActive', isEqualTo: true).get();
+    final snapshot = await _achievementsCollection
+        .where('isActive', isEqualTo: true)
+        .get();
     return snapshot.docs;
   }
 
   /// Get user's achievements progress
-  Future<List<DocumentSnapshot<Map<String, dynamic>>>> getUserAchievements(String userId) async {
+  Future<List<DocumentSnapshot<Map<String, dynamic>>>> getUserAchievements(
+    String userId,
+  ) async {
     final snapshot = await _userAchievementsCollection(userId).get();
     return snapshot.docs;
   }
 
   /// Update user achievement
   Future<void> updateUserAchievement(
-    String userId, 
-    String achievementId, 
+    String userId,
+    String achievementId,
     Map<String, dynamic> data,
   ) async {
-    await _userAchievementsCollection(userId)
-        .doc(achievementId)
-        .set(data, SetOptions(merge: true));
+    await _userAchievementsCollection(
+      userId,
+    ).doc(achievementId).set(data, SetOptions(merge: true));
   }
 
   // ============================================================
   // HELPER METHODS
   // ============================================================
-  
+
   /// Convert Firestore timestamp to DateTime
   DateTime? timestampToDateTime(dynamic timestamp) {
     if (timestamp == null) return null;

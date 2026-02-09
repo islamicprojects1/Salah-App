@@ -5,6 +5,7 @@ import 'package:salah/controller/qibla_controller.dart';
 import 'package:salah/controller/settings_controller.dart';
 import 'package:salah/data/repositories/family_repository.dart';
 import 'package:salah/data/repositories/achievement_repository.dart';
+import 'package:salah/core/services/live_context_service.dart';
 
 /// Dashboard bindings: repositories are registered in main (PrayerRepository) or lazy here.
 /// Controllers get dependencies via Get.find() or constructor injection.
@@ -26,6 +27,15 @@ class DashboardBinding extends Bindings {
       ),
     );
 
+    Get.lazyPut<LiveContextService>(
+      () => LiveContextService(
+        prayerTimeService: Get.find(),
+        prayerRepository: Get.find(),
+        authService: Get.find(),
+      ),
+      fenix: true,
+    );
+
     Get.lazyPut<DashboardController>(
       () => DashboardController(
         prayerService: Get.find(),
@@ -34,6 +44,7 @@ class DashboardBinding extends Bindings {
         userRepo: Get.find(),
         prayerRepo: Get.find(),
         notificationService: Get.find(),
+        liveContextService: Get.find(),
       ),
       fenix: true,
     );

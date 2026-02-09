@@ -3,6 +3,13 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import '../constants/storage_keys.dart';
 
+/// Sound mode for notifications
+enum NotificationSoundMode {
+  adhan,   // Full sound
+  vibrate, // Vibration only
+  silent,  // No sound or vibration
+}
+
 /// Service for handling local storage operations using GetStorage
 /// 
 /// This service provides a centralized way to read/write persistent data.
@@ -131,6 +138,21 @@ class StorageService extends GetxService {
   /// Set notification preference for a specific prayer
   Future<void> setPrayerNotification(String prayerKey, bool enabled) async {
     await write(prayerKey, enabled);
+  }
+
+  /// Get the stored notification sound mode
+  NotificationSoundMode getNotificationSoundMode() {
+    final mode = read<String>(StorageKeys.notificationSoundMode);
+    if (mode == null) return NotificationSoundMode.adhan; // Default
+    return NotificationSoundMode.values.firstWhere(
+      (e) => e.name == mode,
+      orElse: () => NotificationSoundMode.adhan,
+    );
+  }
+
+  /// Save the notification sound mode
+  Future<void> setNotificationSoundMode(NotificationSoundMode mode) async {
+    await write(StorageKeys.notificationSoundMode, mode.name);
   }
 
   // ==================== Pending Actions (from notifications) ====================

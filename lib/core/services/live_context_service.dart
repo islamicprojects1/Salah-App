@@ -1,0 +1,189 @@
+import 'dart:async';
+
+import 'package:get/get.dart';
+import 'package:salah/core/services/auth_service.dart';
+import 'package:salah/core/services/prayer_time_service.dart';
+import 'package:salah/data/models/live_context_models.dart';
+import 'package:salah/data/models/prayer_log_model.dart';
+import 'package:salah/data/models/prayer_time_model.dart';
+import 'package:salah/data/repositories/prayer_repository.dart';
+
+/// LiveContextService
+///
+/// Central orchestrator that understands:
+/// - current prayer & next prayer (based on [PrayerTimeService])
+/// - today's logged prayers (via [PrayerRepository])
+/// - high-level status for the current prayer and daily summary
+///
+/// UI (e.g. Dashboard/Home) should bind to:
+/// - [prayerContext] for current card/countdown
+/// - [todaySummary] for progress/streak-like visuals
+class LiveContextService extends GetxService {
+  final PrayerTimeService _prayerTimeService;
+  final PrayerRepository _prayerRepository;
+  final AuthService _authService;
+
+  LiveContextService({
+    required PrayerTimeService prayerTimeService,
+    required PrayerRepository prayerRepository,
+    required AuthService authService,
+  })  : _prayerTimeService = prayerTimeService,
+        _prayerRepository = prayerRepository,
+        _authService = authService;
+
+  // Observables
+  final Rx<PrayerContextModel> prayerContext =
+      PrayerContextModel.empty().obs;
+  final Rx<DaySummary> todaySummary =
+      DaySummary.empty(DateTime.now()).obs;
+  final RxList<PrayerLogModel> todayLogs = <PrayerLogModel>[].obs;
+
+  // Internal state
+  Timer? _timer;
+  StreamSubscription<List<PrayerLogModel>>? _logsSubscription;
+
+  Future<LiveContextService> init() async {
+    _subscribeToTodayLogs();
+    _recomputeContext();
+    _startTimer();
+    return this;
+  }
+
+  /// Should be called when a prayer is logged from anywhere
+  /// (e.g. DashboardController, notification action).
+  Future<void> onPrayerLogged() async {
+    // We already listen to the repository stream, but forcing a recompute
+    // ensures instant UI response even before the next event tick.
+    _recomputeContext();
+  }
+
+  void _subscribeToTodayLogs() {
+    final userId = _authService.userId;
+    if (userId == null) return;
+    _logsSubscription?.cancel();
+    _logsSubscription =
+        _prayerRepository.getTodayPrayerLogs(userId).listen((logs) {
+      todayLogs.assignAll(logs);
+      _recomputeContext();
+    });
+  }
+
+  void _startTimer() {
+    _timer?.cancel();
+    _timer = Timer.periodic(
+      const Duration(seconds: 1),
+      (_) => _recomputeContext(),
+    );
+  }
+
+  void _recomputeContext() {
+    final prayers = _prayerTimeService.getTodayPrayers();
+    if (prayers.isEmpty) {
+      prayerContext.value = PrayerContextModel.empty();
+      todaySummary.value = DaySummary.empty(DateTime.now());
+      return;
+    }
+
+    final now = DateTime.now();
+    PrayerTimeModel? current;
+    PrayerTimeModel? next;
+
+    for (final prayer in prayers) {
+      if (prayer.dateTime.isAfter(now)) {
+        next = prayer;
+        break;
+      }
+      if (prayer.prayerType != PrayerName.sunrise) {
+        current = prayer;
+      }
+    }
+
+    final status = _computeStatusForCurrent(now, current, next);
+    final timeUntilNext =
+        next != null ? next.dateTime.difference(now) : null;
+
+    prayerContext.value = PrayerContextModel(
+      currentPrayer: current,
+      nextPrayer: next,
+      status: status,
+      timeUntilNext: timeUntilNext,
+    );
+
+    todaySummary.value = _buildDaySummary(now);
+  }
+
+  PrayerStatus _computeStatusForCurrent(
+    DateTime now,
+    PrayerTimeModel? current,
+    PrayerTimeModel? next,
+  ) {
+    if (current == null) {
+      // قبل الفجر
+      return PrayerStatus.notStarted;
+    }
+
+    final currentName = current.prayerType;
+    final log = todayLogs.firstWhereOrNull(
+      (l) => l.prayer == currentName,
+    );
+
+    // Determine prayer time window using PrayerTimeRange helper
+    final prayerTimes = _prayerTimeService.prayerTimes.value;
+    PrayerTimeRange? range;
+    if (prayerTimes != null) {
+      final nonNullPrayer = currentName ?? PrayerName.fajr;
+      range = PrayerTimeRange.fromPrayerTimes(
+        prayerTimes: prayerTimes,
+        prayer: nonNullPrayer,
+      );
+    }
+
+    if (log == null) {
+      // لم يُسجَّل بعد
+      if (range != null && now.isAfter(range.nextPrayerTime)) {
+        return PrayerStatus.missed;
+      }
+      if (now.isBefore(current.dateTime)) {
+        return PrayerStatus.notStarted;
+      }
+      return PrayerStatus.pending;
+    }
+
+    // Logged: decide if on-time or late based on quality
+    switch (log.quality) {
+      case PrayerQuality.early:
+      case PrayerQuality.onTime:
+        return PrayerStatus.prayedOnTime;
+      case PrayerQuality.late:
+        return PrayerStatus.prayedLate;
+      case PrayerQuality.missed:
+        return PrayerStatus.missed;
+    }
+  }
+
+  DaySummary _buildDaySummary(DateTime now) {
+    final date = DateTime(now.year, now.month, now.day);
+    final map = <PrayerName, PrayerLogModel?>{
+      PrayerName.fajr: null,
+      PrayerName.dhuhr: null,
+      PrayerName.asr: null,
+      PrayerName.maghrib: null,
+      PrayerName.isha: null,
+    };
+
+    for (final log in todayLogs) {
+      if (map.containsKey(log.prayer) && map[log.prayer] == null) {
+        map[log.prayer] = log;
+      }
+    }
+    return DaySummary(date: date, prayers: map);
+  }
+
+  @override
+  void onClose() {
+    _timer?.cancel();
+    _logsSubscription?.cancel();
+    super.onClose();
+  }
+}
+

@@ -6,6 +6,7 @@ import 'package:salah/core/helpers/input_validators.dart';
 import 'package:salah/core/routes/app_routes.dart';
 import 'package:salah/core/services/auth_service.dart';
 import 'package:salah/core/services/family_service.dart';
+import 'package:salah/core/services/firestore_service.dart';
 import 'package:salah/data/models/family_model.dart';
 import 'package:salah/data/models/user_model.dart';
 
@@ -45,7 +46,9 @@ class FamilyController extends GetxController {
   // Actions
 
   Future<void> createFamily() async {
-    final (name, err) = InputValidators.validateFamilyName(familyNameController.text);
+    final (name, err) = InputValidators.validateFamilyName(
+      familyNameController.text,
+    );
     if (err != null) {
       AppFeedback.showSnackbar('تنبيه', err);
       return;
@@ -60,7 +63,9 @@ class FamilyController extends GetxController {
   }
 
   Future<void> joinFamily() async {
-    final (code, err) = InputValidators.validateInviteCode(inviteCodeController.text);
+    final (code, err) = InputValidators.validateInviteCode(
+      inviteCodeController.text,
+    );
     if (err != null) {
       AppFeedback.showSnackbar('تنبيه', err);
       return;
@@ -152,6 +157,14 @@ class FamilyController extends GetxController {
       'شجعك ${_authService.currentUser.value?.displayName ?? 'عضو'} على الصلاة! ✨',
     );
     if (success) {
+      final myId = _authService.currentUser.value?.uid;
+      if (myId != null) {
+        Get.find<FirestoreService>().addAnalyticsEvent(
+          userId: myId,
+          event: 'encouragement_sent',
+          data: {'toUserId': userId},
+        );
+      }
       AppFeedback.showSuccess('تم', 'تم إرسال تشجيع لـ $name');
     } else {
       AppFeedback.showError('خطأ', errorMessage);

@@ -89,19 +89,11 @@ class _SplashScreenState extends State<SplashScreen>
         height: double.infinity,
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
             colors: isDark
-                ? [
-                    const Color(0xFF0D1B2A),
-                    const Color(0xFF1B263B),
-                    AppColors.primary.withValues(alpha: 0.4),
-                  ]
-                : [
-                    const Color(0xFF1B5E20),
-                    const Color(0xFF2E7D32),
-                    const Color(0xFF4CAF50),
-                  ],
+                ? AppColors.splashDarkGradient
+                : AppColors.splashLightGradient,
           ),
         ),
         child: Stack(
@@ -109,36 +101,39 @@ class _SplashScreenState extends State<SplashScreen>
             // Decorative elements
             _buildDecorativeElements(),
 
-            // Main content
-            AnimatedBuilder(
-              animation: _controller,
-              builder: (context, child) {
-                return Opacity(
-                  opacity: _fadeAnimation.value,
-                  child: Transform.scale(
-                    scale: _scaleAnimation.value,
-                    child: child,
-                  ),
-                );
-              },
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Enhanced Logo with glow effect
-                  _buildLogoWithGlow(),
-                  const SizedBox(height: 32),
+            // Main content - Centered
+            Center(
+              child: AnimatedBuilder(
+                animation: _controller,
+                builder: (context, child) {
+                  return Opacity(
+                    opacity: _fadeAnimation.value,
+                    child: Transform.scale(
+                      scale: _scaleAnimation.value,
+                      child: child,
+                    ),
+                  );
+                },
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // Enhanced Logo with glow effect
+                    _buildLogoWithGlow(),
+                    const SizedBox(height: 32),
 
-                  // App Name with better typography
-                  _buildAppName(),
-                  const SizedBox(height: 12),
+                    // App Name with better typography
+                    _buildAppName(),
+                    const SizedBox(height: 12),
 
-                  // Enhanced tagline
-                  _buildTagline(),
-                  const SizedBox(height: 60),
+                    // Enhanced tagline
+                    _buildTagline(),
+                    const SizedBox(height: 60),
 
-                  // Beautiful loading indicator
-                  _buildLoadingIndicator(),
-                ],
+                    // Beautiful loading indicator
+                    _buildLoadingIndicator(),
+                  ],
+                ),
               ),
             ),
           ],
@@ -165,7 +160,7 @@ class _SplashScreenState extends State<SplashScreen>
                     shape: BoxShape.circle,
                     gradient: RadialGradient(
                       colors: [
-                        AppColors.secondary.withValues(
+                        AppColors.splashGlowColor.withValues(
                           alpha: 0.1 * _glowAnimation.value,
                         ),
                         Colors.transparent,
@@ -185,7 +180,7 @@ class _SplashScreenState extends State<SplashScreen>
                     shape: BoxShape.circle,
                     gradient: RadialGradient(
                       colors: [
-                        Colors.white.withValues(
+                        AppColors.splashWhite.withValues(
                           alpha: 0.05 * _glowAnimation.value,
                         ),
                         Colors.transparent,
@@ -211,27 +206,28 @@ class _SplashScreenState extends State<SplashScreen>
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(35),
             gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
               colors: [
-                Colors.white.withValues(alpha: 0.9),
-                Colors.white.withValues(alpha: 0.7),
+                Colors.white.withValues(alpha: 0.1),
+                Colors.white.withValues(alpha: 0.05),
               ],
+            ),
+            border: Border.all(
+              color: AppColors.secondary.withValues(alpha: 0.5),
+              width: 1.5,
             ),
             boxShadow: [
               BoxShadow(
                 color: AppColors.secondary.withValues(
-                  alpha: 0.3 * _glowAnimation.value,
+                  alpha: 0.2 * _glowAnimation.value,
                 ),
                 blurRadius: 30 + (10 * _glowAnimation.value),
-                offset: const Offset(0, 15),
-              ),
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.2),
-                blurRadius: 20,
                 offset: const Offset(0, 10),
               ),
             ],
           ),
-          child: Icon(Icons.mosque, size: 70, color: AppColors.primary),
+          child: const Icon(Icons.mosque, size: 70, color: AppColors.secondary),
         );
       },
     );
@@ -241,14 +237,16 @@ class _SplashScreenState extends State<SplashScreen>
     return Text(
       'صلاة',
       style: TextStyle(
-        fontSize: 42,
+        fontFamily: 'Tajawal',
+        fontSize: 48,
         fontWeight: FontWeight.bold,
-        color: Colors.white,
+        color: AppColors.splashWhite,
+        letterSpacing: 2,
         shadows: [
           Shadow(
             color: Colors.black.withValues(alpha: 0.3),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
@@ -259,8 +257,10 @@ class _SplashScreenState extends State<SplashScreen>
     return Text(
       'مواقيت الصلاة',
       style: TextStyle(
+        fontFamily: 'Tajawal',
         fontSize: 18,
-        color: Colors.white.withValues(alpha: 0.9),
+        fontWeight: FontWeight.w500,
+        color: AppColors.secondary.withValues(alpha: 0.9),
         letterSpacing: 1.2,
         shadows: [
           Shadow(
@@ -276,25 +276,21 @@ class _SplashScreenState extends State<SplashScreen>
   Widget _buildLoadingIndicator() {
     return Column(
       children: [
-        Container(
+        SizedBox(
           width: 40,
           height: 40,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: LinearGradient(
-              colors: [AppColors.secondary, AppColors.secondaryLight],
-            ),
-          ),
-          child: const CircularProgressIndicator(
+          child: CircularProgressIndicator(
             strokeWidth: 3,
-            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            valueColor: const AlwaysStoppedAnimation<Color>(
+              AppColors.secondary,
+            ),
           ),
         ),
         const SizedBox(height: 16),
         Text(
           'جاري التحميل...',
           style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.8),
+            color: AppColors.splashWhite.withValues(alpha: 0.8),
             fontSize: 14,
             letterSpacing: 0.5,
           ),

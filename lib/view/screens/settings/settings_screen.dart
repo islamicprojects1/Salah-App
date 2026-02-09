@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:salah/controller/settings_controller.dart';
+import 'package:salah/core/services/storage_service.dart';
 import 'package:salah/core/services/theme_service.dart';
 import 'package:salah/core/services/localization_service.dart';
 import 'package:salah/core/theme/app_colors.dart';
@@ -56,6 +57,10 @@ class SettingsScreen extends GetView<SettingsController> {
 
             // Logout Section
             _buildLogoutButton(context),
+            const SizedBox(height: 24),
+
+            // Delete Account Section
+            _buildDeleteAccountButton(context),
             const SizedBox(height: 40),
           ],
         );
@@ -239,21 +244,85 @@ class SettingsScreen extends GetView<SettingsController> {
             value: controller.notificationsEnabled.value,
             onChanged: (value) => controller.setNotificationsEnabled(value),
           )),
-          ListTile(
-            leading: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.grey.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
+          Obx(() => Column(
+            children: [
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.music_note_outlined, color: Colors.grey),
+                ),
+                title: Text('notification_sound'.tr),
               ),
-              child: const Icon(Icons.music_note_outlined, color: Colors.grey),
-            ),
-            title: Text('notification_sound'.tr),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              Get.snackbar('notification_sound'.tr, 'قريباً');
-            },
-          ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  children: NotificationSoundMode.values.map((mode) {
+                    final isSelected = controller.notificationSoundMode.value == mode;
+                    String label = '';
+                    IconData icon = Icons.notifications;
+                    
+                    switch (mode) {
+                      case NotificationSoundMode.adhan:
+                        label = 'أذان';
+                        icon = Icons.volume_up_rounded;
+                        break;
+                      case NotificationSoundMode.vibrate:
+                        label = 'هزاز';
+                        icon = Icons.vibration_rounded;
+                        break;
+                      case NotificationSoundMode.silent:
+                        label = 'صامت';
+                        icon = Icons.notifications_off_rounded;
+                        break;
+                    }
+                    
+                    return Expanded(
+                      child: GestureDetector(
+                        onTap: () => controller.setNotificationSoundMode(mode),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            color: isSelected 
+                                ? AppColors.primary.withOpacity(0.1)
+                                : AppColors.surface,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isSelected 
+                                  ? AppColors.primary 
+                                  : Colors.grey.withOpacity(0.2),
+                            ),
+                          ),
+                          child: Column(
+                            children: [
+                              Icon(
+                                icon, 
+                                color: isSelected ? AppColors.primary : Colors.grey,
+                                size: 20,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                label,
+                                style: AppFonts.labelSmall.copyWith(
+                                  color: isSelected ? AppColors.primary : Colors.grey,
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ],
+          )),
         ],
       ),
     );
@@ -348,6 +417,34 @@ class SettingsScreen extends GetView<SettingsController> {
             AppDialogs.hideLoading();
           }
         },
+      ),
+    );
+  }
+
+  Widget _buildDeleteAccountButton(BuildContext context) {
+    return Card(
+      color: AppColors.error.withValues(alpha: 0.05),
+      child: ListTile(
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: AppColors.error.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Icon(Icons.delete_forever, color: AppColors.error),
+        ),
+        title: Text(
+          'delete_account'.tr,
+          style: AppFonts.bodyLarge.copyWith(
+            color: AppColors.error,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        subtitle: Text(
+          'delete_account_warning'.tr,
+          style: AppFonts.bodySmall.copyWith(color: AppColors.error),
+        ),
+        onTap: () => controller.deleteAccount(),
       ),
     );
   }

@@ -76,17 +76,20 @@ class SmartNotificationService extends GetxService {
         ? 'هيا لنصلي معاً'
         : "Let's pray together";
     
+    final soundMode = _storageService.getNotificationSoundMode();
+    final channelId = _getPrayerChannelId(soundMode);
+
     // Android notification details with actions
     final androidDetails = AndroidNotificationDetails(
-      ApiConstants.prayerNotificationChannelId,
+      channelId,
       isArabic ? 'إشعارات الصلاة' : 'Prayer Notifications',
       channelDescription: isArabic 
           ? 'إشعارات مواقيت الصلاة'
           : 'Prayer time notifications',
       importance: Importance.high,
       priority: Priority.high,
-      playSound: true,
-      enableVibration: true,
+      playSound: soundMode == NotificationSoundMode.adhan,
+      enableVibration: soundMode != NotificationSoundMode.silent,
       category: AndroidNotificationCategory.reminder,
       actions: <AndroidNotificationAction>[
         AndroidNotificationAction(
@@ -114,10 +117,10 @@ class SmartNotificationService extends GetxService {
     
     final notificationDetails = NotificationDetails(
       android: androidDetails,
-      iOS: const DarwinNotificationDetails(
+      iOS: DarwinNotificationDetails(
         presentAlert: true,
         presentBadge: true,
-        presentSound: true,
+        presentSound: soundMode != NotificationSoundMode.silent,
       ),
     );
     
@@ -148,6 +151,8 @@ class SmartNotificationService extends GetxService {
         ? 'مرّت 30 دقيقة على الأذان'
         : '30 minutes since Adhan';
     
+    final soundMode = _storageService.getNotificationSoundMode();
+
     final androidDetails = AndroidNotificationDetails(
       ApiConstants.reminderNotificationChannelId,
       isArabic ? 'تذكيرات الصلاة' : 'Prayer Reminders',
@@ -156,6 +161,8 @@ class SmartNotificationService extends GetxService {
           : 'Reminders after prayer time',
       importance: Importance.high,
       priority: Priority.high,
+      playSound: soundMode == NotificationSoundMode.adhan,
+      enableVibration: soundMode != NotificationSoundMode.silent,
       actions: <AndroidNotificationAction>[
         AndroidNotificationAction(
           NotificationActionType.confirmPrayed.name,
@@ -175,10 +182,10 @@ class SmartNotificationService extends GetxService {
     
     final notificationDetails = NotificationDetails(
       android: androidDetails,
-      iOS: const DarwinNotificationDetails(
+      iOS: DarwinNotificationDetails(
         presentAlert: true,
         presentBadge: true,
-        presentSound: true,
+        presentSound: soundMode != NotificationSoundMode.silent,
       ),
     );
     
@@ -499,6 +506,17 @@ class SmartNotificationService extends GetxService {
   // CLEANUP
   // ============================================================
   
+  String _getPrayerChannelId(NotificationSoundMode mode) {
+    switch (mode) {
+      case NotificationSoundMode.adhan:
+        return 'prayer_adhan';
+      case NotificationSoundMode.vibrate:
+        return 'prayer_vibrate';
+      case NotificationSoundMode.silent:
+        return 'prayer_silent';
+    }
+  }
+
   @override
   void onClose() {
     _actionStreamController.close();

@@ -3,6 +3,9 @@ import 'package:get/get.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:salah/core/routes/app_routes.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
+import 'package:salah/core/services/firestore_service.dart';
+import 'package:salah/core/services/auth_service.dart';
+import 'package:salah/core/services/storage_service.dart';
 import '../constants/api_constants.dart';
 
 /// Service for managing local notifications
@@ -72,18 +75,44 @@ class NotificationService extends GetxService {
         >();
 
     if (androidPlugin != null) {
-      // Prayer notifications channel
+      // 1. Prayer Channels (Three variants)
+      
+      // Adhan Channel
       await androidPlugin.createNotificationChannel(
         const AndroidNotificationChannel(
-          ApiConstants.prayerNotificationChannelId,
-          'Prayer Notifications',
-          description: 'Notifications for prayer times',
+          'prayer_adhan',
+          'Prayer (Adhan)',
+          description: 'Prayer notifications with Adhan sound',
           importance: Importance.high,
           sound: RawResourceAndroidNotificationSound('adhan'),
         ),
       );
 
-      // Social notifications channel
+      // Vibrate Channel
+      await androidPlugin.createNotificationChannel(
+        const AndroidNotificationChannel(
+          'prayer_vibrate',
+          'Prayer (Vibrate)',
+          description: 'Prayer notifications with vibration only',
+          importance: Importance.high,
+          enableVibration: true,
+          playSound: false,
+        ),
+      );
+
+      // Silent Channel
+      await androidPlugin.createNotificationChannel(
+        const AndroidNotificationChannel(
+          'prayer_silent',
+          'Prayer (Silent)',
+          description: 'Prayer notifications without sound or vibration',
+          importance: Importance.high,
+          enableVibration: false,
+          playSound: false,
+        ),
+      );
+
+      // 2. Social & Reminders
       await androidPlugin.createNotificationChannel(
         const AndroidNotificationChannel(
           ApiConstants.socialNotificationChannelId,
@@ -93,7 +122,6 @@ class NotificationService extends GetxService {
         ),
       );
 
-      // Reminder notifications channel
       await androidPlugin.createNotificationChannel(
         const AndroidNotificationChannel(
           ApiConstants.reminderNotificationChannelId,
@@ -109,6 +137,17 @@ class NotificationService extends GetxService {
   void _onNotificationTapped(NotificationResponse response) {
     try {
       Get.toNamed(AppRoutes.dashboard);
+      final auth = Get.find<AuthService>();
+      final userId = auth.currentUser.value?.uid;
+      if (userId != null) {
+        Get.find<FirestoreService>().addAnalyticsEvent(
+          userId: userId,
+          event: 'notification_tapped',
+          data: {
+            'payload': response.payload,
+          },
+        );
+      }
     } catch (_) {}
   }
 
@@ -117,25 +156,43 @@ class NotificationService extends GetxService {
   // ============================================================
 
   NotificationDetails _getNotificationDetails(String channelId) {
+    final storage = Get.find<StorageService>();
+    final soundMode = storage.getNotificationSoundMode();
+    
+    // If it's the prayer channel, use the dynamic one
+    String finalChannelId = channelId;
+    if (channelId == ApiConstants.prayerNotificationChannelId) {
+       finalChannelId = _getPrayerChannelId(soundMode);
+    }
+
     final androidDetails = AndroidNotificationDetails(
-      channelId,
-      channelId == ApiConstants.prayerNotificationChannelId
-          ? 'Prayer Notifications'
-          : 'Notifications',
+      finalChannelId,
+      finalChannelId.contains('prayer') ? 'Prayer Notifications' : 'Notifications',
       importance: Importance.high,
       priority: Priority.high,
     );
 
-    const iosDetails = DarwinNotificationDetails(
+    final iosDetails = DarwinNotificationDetails(
       presentAlert: true,
       presentBadge: true,
-      presentSound: true,
+      presentSound: soundMode != NotificationSoundMode.silent,
     );
 
     return NotificationDetails(
       android: androidDetails,
       iOS: iosDetails,
     );
+  }
+
+  String _getPrayerChannelId(NotificationSoundMode mode) {
+    switch (mode) {
+      case NotificationSoundMode.adhan:
+        return 'prayer_adhan';
+      case NotificationSoundMode.vibrate:
+        return 'prayer_vibrate';
+      case NotificationSoundMode.silent:
+        return 'prayer_silent';
+    }
   }
 
   // ============================================================
@@ -197,7 +254,7 @@ class NotificationService extends GetxService {
       body: 'حيّ على الصلاة',
       scheduledTime: prayerTime,
       payload: 'prayer_$prayerName',
-      channelId: ApiConstants.prayerNotificationChannelId,
+      channelId: ApiConstants.prayerNotificationChannelId, // This will be mapped in _getNotificationDetails
     );
   }
 
