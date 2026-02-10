@@ -107,6 +107,6 @@ class AppColors {
   /// White with transparency for splash screen elements
   static const Color splashWhite = Color(0xFFFFFFFF);
 
-  static const Color qiblaPointer = secondary;
+  // static const Color qiblaPointer = secondary,;
   static const Color locationMarker = primary;
 }

@@ -1,25 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-
-/// Challenge type enum
-enum ChallengeType {
-  consecutivePrayer,    // صلِّ صلاة معينة متتالية
-  consecutiveStreak,    // سلسلة أيام متتالية
-  totalPrayers,         // عدد صلوات معين
-  fullCompletion,       // إكمال كل الصلوات
-  earlyPrayer,          // صلاة في أول الوقت
-  familyGoal,           // هدف عائلي
-  groupGoal,            // هدف جماعي
-  nightPrayer,          // قيام الليل
-  custom,               // مخصص
-}
-
-/// Challenge status enum
-enum ChallengeStatus {
-  upcoming,    // قادم
-  active,      // نشط
-  completed,   // مكتمل
-  expired,     // منتهي
-}
+import 'package:salah/core/constants/enums.dart';
 
 /// Challenge model for Firestore
 class ChallengeModel {

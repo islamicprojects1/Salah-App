@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:get/get.dart';
+import 'package:salah/core/constants/enums.dart';
 import 'package:salah/core/services/auth_service.dart';
 import 'package:salah/core/services/prayer_time_service.dart';
 import 'package:salah/data/models/live_context_models.dart';
@@ -112,14 +113,14 @@ class LiveContextService extends GetxService {
     todaySummary.value = _buildDaySummary(now);
   }
 
-  PrayerStatus _computeStatusForCurrent(
+  LivePrayerStatus _computeStatusForCurrent(
     DateTime now,
     PrayerTimeModel? current,
     PrayerTimeModel? next,
   ) {
     if (current == null) {
       // قبل الفجر
-      return PrayerStatus.notStarted;
+      return LivePrayerStatus.notStarted;
     }
 
     final currentName = current.prayerType;
@@ -141,23 +142,23 @@ class LiveContextService extends GetxService {
     if (log == null) {
       // لم يُسجَّل بعد
       if (range != null && now.isAfter(range.nextPrayerTime)) {
-        return PrayerStatus.missed;
+        return LivePrayerStatus.missed;
       }
       if (now.isBefore(current.dateTime)) {
-        return PrayerStatus.notStarted;
+        return LivePrayerStatus.notStarted;
       }
-      return PrayerStatus.pending;
+      return LivePrayerStatus.pending;
     }
 
     // Logged: decide if on-time or late based on quality
     switch (log.quality) {
       case PrayerQuality.early:
       case PrayerQuality.onTime:
-        return PrayerStatus.prayedOnTime;
+        return LivePrayerStatus.prayedOnTime;
       case PrayerQuality.late:
-        return PrayerStatus.prayedLate;
+        return LivePrayerStatus.prayedLate;
       case PrayerQuality.missed:
-        return PrayerStatus.missed;
+        return LivePrayerStatus.missed;
     }
   }
 

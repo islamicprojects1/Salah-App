@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
 import 'package:salah/controller/missed_prayers_controller.dart';
+import 'package:salah/core/constants/enums.dart';
 import 'package:salah/core/services/prayer_time_service.dart';
 import 'package:salah/core/helpers/prayer_timing_helper.dart';
 import 'package:salah/core/theme/app_colors.dart';
@@ -59,7 +60,7 @@ class MissedPrayersScreen extends GetView<MissedPrayersController> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
+                color: AppColors.primary.withValues(alpha: 0.1),
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(30),
                   bottomRight: Radius.circular(30),
@@ -99,7 +100,7 @@ class MissedPrayersScreen extends GetView<MissedPrayersController> {
                   if (prayerType == null) return const SizedBox.shrink();
                   
                   return Obx(() {
-                    final status = controller.prayerStatuses[prayerType] ?? PrayerStatus.prayed;
+                    final status = controller.prayerStatuses[prayerType] ?? PrayerCardStatus.prayed;
                     final timing = controller.prayerTimings[prayerType] ?? PrayerTimingQuality.onTime;
                     
                     return MissedPrayerCard(
@@ -129,7 +130,7 @@ class MissedPrayersScreen extends GetView<MissedPrayersController> {
                 color: Colors.white,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 10,
                     offset: const Offset(0, -5),
                   ),
@@ -196,7 +197,7 @@ class MissedPrayersScreen extends GetView<MissedPrayersController> {
   Widget _buildPrayerCard(PrayerTimeModel prayer) {
     return Obx(() {
       final status =
-          controller.prayerStatuses[prayer.prayerType] ?? PrayerStatus.prayed;
+          controller.prayerStatuses[prayer.prayerType] ?? PrayerCardStatus.prayed;
       final timing =
           controller.prayerTimings[prayer.prayerType] ??
           PrayerTimingQuality.onTime;
@@ -209,7 +210,7 @@ class MissedPrayersScreen extends GetView<MissedPrayersController> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 2),
             ),
@@ -224,7 +225,7 @@ class MissedPrayersScreen extends GetView<MissedPrayersController> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
+                    color: AppColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
@@ -267,10 +268,10 @@ class MissedPrayersScreen extends GetView<MissedPrayersController> {
                   child: _buildStatusButton(
                     label: 'i_prayed'.tr,
                     icon: Icons.check_circle,
-                    isSelected: status == PrayerStatus.prayed,
+                    isSelected: status == PrayerCardStatus.prayed,
                     onTap: () => controller.setPrayerStatus(
                       prayer.prayerType!,
-                      PrayerStatus.prayed,
+                      PrayerCardStatus.prayed,
                     ),
                   ),
                 ),
@@ -279,10 +280,10 @@ class MissedPrayersScreen extends GetView<MissedPrayersController> {
                   child: _buildStatusButton(
                     label: 'i_missed'.tr,
                     icon: Icons.cancel,
-                    isSelected: status == PrayerStatus.missed,
+                    isSelected: status == PrayerCardStatus.missed,
                     onTap: () => controller.setPrayerStatus(
                       prayer.prayerType!,
-                      PrayerStatus.missed,
+                      PrayerCardStatus.missed,
                     ),
                   ),
                 ),
@@ -290,7 +291,7 @@ class MissedPrayersScreen extends GetView<MissedPrayersController> {
             ),
 
             // Timing Selection (only if prayed)
-            if (status == PrayerStatus.prayed) ...[
+            if (status == PrayerCardStatus.prayed) ...[
               const SizedBox(height: 16),
               Text(
                 'when_did_you_pray'.tr,
@@ -356,7 +357,7 @@ class MissedPrayersScreen extends GetView<MissedPrayersController> {
         decoration: BoxDecoration(
           color: isSelected
               ? AppColors.primary
-              : AppColors.primary.withOpacity(0.1),
+              : AppColors.primary.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? AppColors.primary : Colors.transparent,
@@ -400,7 +401,7 @@ class MissedPrayersScreen extends GetView<MissedPrayersController> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? color : color.withOpacity(0.1),
+          color: isSelected ? color : color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected ? color : Colors.transparent,

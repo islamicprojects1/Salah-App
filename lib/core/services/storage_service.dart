@@ -1,14 +1,8 @@
 import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:salah/core/constants/enums.dart';
 import '../constants/storage_keys.dart';
-
-/// Sound mode for notifications
-enum NotificationSoundMode {
-  adhan,   // Full sound
-  vibrate, // Vibration only
-  silent,  // No sound or vibration
-}
 
 /// Service for handling local storage operations using GetStorage
 /// 

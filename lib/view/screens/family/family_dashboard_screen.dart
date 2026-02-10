@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
+import 'package:salah/core/constants/enums.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:salah/core/theme/app_colors.dart';
 import 'package:salah/core/theme/app_fonts.dart';
@@ -9,9 +10,11 @@ import 'package:salah/core/constants/image_assets.dart';
 import 'package:salah/controller/family_controller.dart';
 import 'package:salah/core/routes/app_routes.dart';
 import 'package:salah/core/helpers/prayer_names.dart';
+import 'package:salah/core/helpers/prayer_timing_helper.dart';
 import 'package:salah/core/services/auth_service.dart';
 import 'package:salah/core/services/prayer_time_service.dart';
 import 'package:salah/data/models/family_model.dart';
+import 'package:salah/core/helpers/date_time_helper.dart';
 import 'package:salah/view/widgets/app_button.dart';
 import 'package:salah/view/widgets/app_loading.dart';
 
@@ -111,7 +114,7 @@ class FamilyDashboardScreen extends GetView<FamilyController> {
                       vertical: AppDimensions.paddingXS,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(
                         AppDimensions.radiusMD,
                       ),
@@ -120,7 +123,7 @@ class FamilyDashboardScreen extends GetView<FamilyController> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'كود الدعوة: ${family.inviteCode}',
+                          '${'invite_code_label'.tr}: ${family.inviteCode}',
                           style: AppFonts.bodyLarge.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
@@ -135,9 +138,14 @@ class FamilyDashboardScreen extends GetView<FamilyController> {
                             size: 20,
                           ),
                           onPressed: () {
-                            SharePlus.instance.share(ShareParams(
-                              text: 'انضم لعائلتي في تطبيق صلاة! كود الدعوة: ${family.inviteCode}',
-                            ));
+                            SharePlus.instance.share(
+                              ShareParams(
+                                text: 'share_family_invite'.tr.replaceAll(
+                                  '@code',
+                                  family.inviteCode,
+                                ),
+                              ),
+                            );
                           },
                           constraints: const BoxConstraints(),
                           padding: EdgeInsets.zero,
@@ -154,7 +162,7 @@ class FamilyDashboardScreen extends GetView<FamilyController> {
                         color: Colors.white,
                       ),
                       label: Text(
-                        'إضافة طفل (بدون هاتف)',
+                        'add_child_no_phone_btn'.tr,
                         style: AppFonts.bodyMedium.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -175,10 +183,20 @@ class FamilyDashboardScreen extends GetView<FamilyController> {
             ),
           ),
 
+          // ----- Family Daily Summary -----
+          _buildFamilySummaryCard(family),
+
+          const SizedBox(height: AppDimensions.paddingMD),
+
+          _buildPulseSection(),
+
           const SizedBox(height: AppDimensions.paddingXL),
 
           Text(
-            'أفراد العائلة (${family.members.length})',
+            'family_members_count'.tr.replaceAll(
+              '@count',
+              '${family.members.length}',
+            ),
             style: AppFonts.titleLarge.copyWith(color: AppColors.textPrimary),
           ),
 
@@ -211,7 +229,9 @@ class FamilyDashboardScreen extends GetView<FamilyController> {
                       backgroundImage: member.photoUrl != null
                           ? NetworkImage(member.photoUrl!)
                           : null,
-                      backgroundColor: AppColors.secondary.withOpacity(0.1),
+                      backgroundColor: AppColors.secondary.withValues(
+                        alpha: 0.1,
+                      ),
                       child: member.photoUrl == null
                           ? Text(
                               (member.name ?? '?')[0].toUpperCase(),
@@ -223,13 +243,15 @@ class FamilyDashboardScreen extends GetView<FamilyController> {
                           : null,
                     ),
                     title: Text(
-                      member.name ?? 'عضو',
+                      member.name ?? 'member_role'.tr,
                       style: AppFonts.titleMedium,
                     ),
                     subtitle: Row(
                       children: [
                         Text(
-                          member.role.name == 'parent' ? 'مدير العائلة' : 'عضو',
+                          member.role.name == 'parent'
+                              ? 'family_admin'.tr
+                              : 'member_role'.tr,
                           style: AppFonts.bodySmall.copyWith(
                             color: AppColors.textSecondary,
                           ),
@@ -254,14 +276,16 @@ class FamilyDashboardScreen extends GetView<FamilyController> {
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        if (family.isAdmin(Get.find<AuthService>().userId ?? '') &&
+                        if (family.isAdmin(
+                              Get.find<AuthService>().userId ?? '',
+                            ) &&
                             member.role == MemberRole.child) ...[
                           AppButton.small(
                             text: 'log_for_him'.tr,
                             onPressed: () => _showLogForMemberDialog(
                               context,
                               member.userId,
-                              member.name ?? 'عضو',
+                              member.name ?? 'member_role'.tr,
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -284,11 +308,9 @@ class FamilyDashboardScreen extends GetView<FamilyController> {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color:
-                                (progress >= 5
-                                        ? AppColors.success
-                                        : AppColors.primary)
-                                    .withOpacity(0.1),
+                            color: _getMemberProgressColor(
+                              progress,
+                            ).withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(
                               AppDimensions.radiusSM,
                             ),
@@ -296,9 +318,7 @@ class FamilyDashboardScreen extends GetView<FamilyController> {
                           child: Text(
                             '$progress/5',
                             style: AppFonts.bodySmall.copyWith(
-                              color: progress >= 5
-                                  ? AppColors.success
-                                  : AppColors.primary,
+                              color: _getMemberProgressColor(progress),
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -313,6 +333,155 @@ class FamilyDashboardScreen extends GetView<FamilyController> {
         ],
       ),
     );
+  }
+
+  Widget _buildPulseSection() {
+    return Obx(() {
+      final events = controller.pulseEvents;
+      if (events.isEmpty) return const SizedBox.shrink();
+      return Card(
+        elevation: AppDimensions.cardElevationLow,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(AppDimensions.paddingMD),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.favorite, color: AppColors.primary, size: 20),
+                  const SizedBox(width: AppDimensions.paddingSM),
+                  Text(
+                    'family_pulse'.tr,
+                    style: AppFonts.titleMedium.copyWith(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppDimensions.paddingMD),
+              ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: events.length > 15 ? 15 : events.length,
+                separatorBuilder: (_, __) =>
+                    const SizedBox(height: AppDimensions.paddingXS),
+                itemBuilder: (context, index) {
+                  final e = events[index];
+                  return Row(
+                    children: [
+                      Icon(
+                        e.type == PulseEventType.encouragement
+                            ? Icons.thumb_up
+                            : Icons.mosque,
+                        size: 18,
+                        color: AppColors.primary.withValues(alpha: 0.8),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          e.displayText,
+                          style: AppFonts.bodyMedium.copyWith(
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        _relativeTime(e.timestamp),
+                        style: AppFonts.bodySmall.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      );
+    });
+  }
+
+  /// Family daily summary card – total prayers logged across all members
+  Widget _buildFamilySummaryCard(FamilyModel family) {
+    return Obx(() {
+      final totalMembers = family.members.length;
+      final totalPossible = totalMembers * 5;
+      int totalLogged = 0;
+      for (final m in family.members) {
+        totalLogged += (controller.memberProgress[m.userId] ?? 0);
+      }
+      final progress = totalPossible > 0 ? totalLogged / totalPossible : 0.0;
+
+      return Card(
+        elevation: AppDimensions.cardElevationLow,
+        margin: const EdgeInsets.only(top: AppDimensions.paddingMD),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(AppDimensions.paddingMD),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.bar_chart_rounded, color: AppColors.primary, size: 20),
+                  const SizedBox(width: AppDimensions.paddingSM),
+                  Text(
+                    'family_daily_summary'.tr,
+                    style: AppFonts.titleMedium.copyWith(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    '$totalLogged/$totalPossible',
+                    style: AppFonts.titleLarge.copyWith(
+                      color: _getMemberProgressColor(totalLogged ~/ (totalMembers > 0 ? totalMembers : 1)),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppDimensions.paddingSM),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: LinearProgressIndicator(
+                  value: progress,
+                  minHeight: 8,
+                  backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    _getMemberProgressColor(totalLogged ~/ (totalMembers > 0 ? totalMembers : 1)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    });
+  }
+
+  /// Map member prayer count (0-5) to a descriptive color
+  Color _getMemberProgressColor(int count) {
+    if (count >= 5) return PrayerTimingHelper.getQualityColor(PrayerTimingQuality.veryEarly);
+    if (count >= 3) return Colors.amber;
+    if (count >= 1) return Colors.orange;
+    return Colors.red.shade300;
+  }
+
+  String _relativeTime(DateTime time) {
+    final diff = DateTime.now().difference(time);
+    if (diff.inMinutes < 1) return 'now_label'.tr;
+    if (diff.inMinutes < 60) return '${diff.inMinutes} ${'minutes_short'.tr}';
+    if (diff.inHours < 24) return '${diff.inHours} ${'hours_short'.tr}';
+    return DateTimeHelper.formatTime24(time);
   }
 
   void _showLogForMemberDialog(
@@ -355,10 +524,7 @@ class FamilyDashboardScreen extends GetView<FamilyController> {
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: Text('cancel'.tr),
-          ),
+          TextButton(onPressed: () => Get.back(), child: Text('cancel'.tr)),
         ],
       ),
     );

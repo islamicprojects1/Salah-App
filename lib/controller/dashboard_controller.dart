@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'package:salah/core/constants/enums.dart';
 import 'package:salah/core/helpers/prayer_names.dart';
 import 'package:get/get.dart';
 import 'package:salah/core/constants/storage_keys.dart';
@@ -14,6 +16,7 @@ import 'package:salah/data/models/prayer_log_model.dart';
 import 'package:salah/data/models/prayer_time_model.dart';
 import 'package:salah/data/repositories/prayer_repository.dart';
 import 'package:salah/data/repositories/user_repository.dart';
+import 'package:salah/core/services/family_service.dart';
 
 /// Dashboard controller – UI logic only. All data comes from [PrayerRepository],
 /// [UserRepository], [PrayerTimeService], [LocationService], [NotificationService].
@@ -88,6 +91,7 @@ class DashboardController extends GetxController {
       await _loadPrayerTimes();
       await _notificationService.requestPermissions();
       _loadPrayerLogs();
+      await _processPendingPrayerLogFromNotification();
       await _loadStreak();
       _listenForEncouragements();
       _startTimer();
@@ -115,6 +119,59 @@ class DashboardController extends GetxController {
     });
   }
 
+  /// Process prayer log that was requested from notification action (when app wasn't ready)
+  Future<void> _processPendingPrayerLogFromNotification() async {
+    final storage = Get.find<StorageService>();
+    final raw = storage.read<String>(StorageKeys.pendingPrayerLog);
+    if (raw == null || raw.isEmpty) return;
+    try {
+      final map = jsonDecode(raw) as Map<String, dynamic>;
+      final prayerKey = map['prayerKey'] as String?;
+      final adhanIso = map['adhanTime'] as String?;
+      final baseId = map['baseId'] as int?;
+      if (prayerKey == null || adhanIso == null) return;
+      final userId = _authService.userId;
+      if (userId == null) return;
+      final adhanTime = DateTime.tryParse(adhanIso);
+      if (adhanTime == null) return;
+      final prayer = PrayerNames.fromKey(prayerKey);
+      final displayName = PrayerNames.displayName(prayer);
+      final log = PrayerLogModel.create(
+        oderId: userId,
+        prayer: prayer,
+        adhanTime: adhanTime,
+      );
+      await _prayerRepo.addPrayerLog(userId: userId, log: log);
+      _addPulseIfFamily(displayName);
+      if (baseId != null) {
+        await _notificationService.cancelNotification(baseId);
+        await _notificationService.cancelNotification(baseId + 100);
+      }
+      await storage.remove(StorageKeys.pendingPrayerLog);
+      _liveContextService.onPrayerLogged();
+      AppFeedback.showSuccess('تم', 'تم تسجيل صلاة $displayName من الإشعار');
+    } catch (_) {}
+  }
+
+  // _prayerKeyToName removed – use PrayerNames.fromKey() instead
+
+  void _addPulseIfFamily(String prayerDisplayName) {
+    try {
+      if (!Get.isRegistered<FamilyService>()) return;
+      final familyService = Get.find<FamilyService>();
+      final family = familyService.currentFamily.value;
+      final user = _authService.currentUser.value;
+      if (family == null || user == null) return;
+      familyService.addPulseEvent(
+        familyId: family.id,
+        type: 'prayer_logged',
+        userId: user.uid,
+        userName: user.displayName ?? 'أنا',
+        prayerName: prayerDisplayName,
+      );
+    } catch (_) {}
+  }
+
   Future<void> _loadStreak() async {
     final userId = _authService.userId;
     if (userId == null) return;
@@ -131,6 +188,12 @@ class DashboardController extends GetxController {
 
       final userId = _authService.userId;
       if (userId == null) return;
+
+      // Per-type toggles
+      final adhanOn =
+          storage.read<bool>(StorageKeys.fajrNotification) ?? true;
+      final reminderOn =
+          storage.read<bool>(StorageKeys.reminderNotification) ?? true;
 
       final now = DateTime.now();
       for (final prayer in todayPrayers) {
@@ -150,19 +213,23 @@ class DashboardController extends GetxController {
         final baseId =
             _notificationIdForPrayer(prayer.prayerType ?? PrayerName.fajr);
 
-        await _notificationService.schedulePrayerNotification(
-          id: baseId,
-          prayerName: prayer.name,
-          prayerTime: prayer.dateTime,
-        );
-        await _notificationService.schedulePrayerReminder(
-          id: baseId + 100,
-          prayerName: prayer.name,
-          prayerTime: prayer.dateTime,
-        );
+        if (adhanOn) {
+          await _notificationService.schedulePrayerNotification(
+            id: baseId,
+            prayerName: prayer.name,
+            prayerTime: prayer.dateTime,
+          );
+        }
+        if (reminderOn) {
+          await _notificationService.schedulePrayerReminder(
+            id: baseId + 100,
+            prayerName: prayer.name,
+            prayerTime: prayer.dateTime,
+          );
+        }
       }
     } catch (_) {
-      AppFeedback.showError('تنبيه', 'فشل جدولة الإشعارات');
+      AppFeedback.showError('error'.tr, 'notification_schedule_error'.tr);
     }
   }
 
@@ -270,7 +337,7 @@ class DashboardController extends GetxController {
         adhanTime: prayer.dateTime,
       );
       await _prayerRepo.addPrayerLog(userId: userId, log: log);
-      // بعد تسجيل الصلاة بنجاح نلغي إشعاراتها (الأذان والتذكير)
+      _addPulseIfFamily(prayer.name);
       final baseId =
           _notificationIdForPrayer(prayer.prayerType ?? PrayerName.fajr);
       await _notificationService.cancelNotification(baseId);

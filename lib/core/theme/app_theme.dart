@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:salah/core/constants/enums.dart';
 import 'app_colors.dart';
 import '../services/localization_service.dart';
 

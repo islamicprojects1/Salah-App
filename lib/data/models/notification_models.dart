@@ -1,16 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-
-/// Notification action type enum
-enum NotificationActionType {
-  prayNow,          // تسجيل الصلاة
-  snooze5,          // تذكير بعد 5 دقائق
-  snooze10,         // تذكير بعد 10 دقائق
-  snooze15,         // تذكير بعد 15 دقائق
-  markMissed,       // تسجيل فاتتني
-  confirmPrayed,    // تأكيد صليت
-  willPrayNow,      // سأصلي الآن
-  dismiss,          // إغلاق
-}
+import 'package:salah/core/constants/enums.dart';
 
 /// Notification action model
 class NotificationActionModel {
@@ -278,21 +267,4 @@ class ReportModel {
         return ReportStatus.pending;
     }
   }
-}
-
-/// Report type enum
-enum ReportType {
-  userReport,       // بلاغ عن مستخدم
-  bugReport,        // بلاغ عن خلل
-  featureRequest,   // طلب ميزة
-  contentReport,    // بلاغ عن محتوى
-  other,            // أخرى
-}
-
-/// Report status enum
-enum ReportStatus {
-  pending,      // قيد الانتظار
-  inProgress,   // جارٍ المراجعة
-  resolved,     // تم الحل
-  dismissed,    // مرفوض
 }

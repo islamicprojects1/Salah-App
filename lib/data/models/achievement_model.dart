@@ -1,23 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-
-/// Achievement tier enum
-enum AchievementTier {
-  bronze,    // 🥉
-  silver,    // 🥈
-  gold,      // 🥇
-  platinum,  // 💎
-  diamond,   // 💠
-}
-
-/// Achievement category enum
-enum AchievementCategory {
-  streak,       // سلاسل
-  prayers,      // عدد الصلوات
-  early,        // الصلاة المبكرة
-  social,       // اجتماعي
-  family,       // عائلي
-  special,      // خاصة (رمضان، العيد)
-}
+import 'package:salah/core/constants/enums.dart';
 
 /// Achievement model for Firestore
 class AchievementModel {

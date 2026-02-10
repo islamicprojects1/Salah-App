@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:salah/core/constants/enums.dart';
 import 'package:salah/core/feedback/app_feedback.dart';
 import 'package:salah/core/helpers/input_validators.dart';
 import 'package:salah/core/routes/app_routes.dart';
@@ -8,6 +9,7 @@ import 'package:salah/core/services/auth_service.dart';
 import 'package:salah/core/services/family_service.dart';
 import 'package:salah/core/services/firestore_service.dart';
 import 'package:salah/data/models/family_model.dart';
+import 'package:salah/data/models/family_pulse_model.dart';
 import 'package:salah/data/models/user_model.dart';
 
 class FamilyController extends GetxController {
@@ -20,11 +22,28 @@ class FamilyController extends GetxController {
   FamilyModel? get currentFamily => _familyService.currentFamily.value;
   bool get hasFamily => currentFamily != null;
 
+  final RxList<FamilyPulseEvent> pulseEvents = <FamilyPulseEvent>[].obs;
+  StreamSubscription<List<FamilyPulseEvent>>? _pulseSubscription;
+
   @override
   void onInit() {
     super.onInit();
     ever(_familyService.currentFamily, (family) {
-      if (family != null) loadMembersData();
+      if (family != null) {
+        loadMembersData();
+        _subscribePulse(family.id);
+      } else {
+        _pulseSubscription?.cancel();
+        pulseEvents.clear();
+      }
+    });
+    if (currentFamily != null) _subscribePulse(currentFamily!.id);
+  }
+
+  void _subscribePulse(String familyId) {
+    _pulseSubscription?.cancel();
+    _pulseSubscription = _familyService.getPulseStream(familyId).listen((list) {
+      pulseEvents.assignAll(list);
     });
   }
 
@@ -173,6 +192,7 @@ class FamilyController extends GetxController {
 
   @override
   void onClose() {
+    _pulseSubscription?.cancel();
     for (final sub in _memberSubscriptions) {
       sub.cancel();
     }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:salah/core/constants/enums.dart';
 import 'package:salah/core/services/prayer_time_service.dart';
 import 'package:salah/core/helpers/prayer_timing_helper.dart';
 import 'package:salah/core/theme/app_colors.dart';
@@ -10,9 +11,9 @@ import 'package:salah/controller/missed_prayers_controller.dart';
 /// Premium missed prayer card with smooth animations and swipe gestures
 class MissedPrayerCard extends StatefulWidget {
   final PrayerTimeModel prayer;
-  final PrayerStatus status;
+  final PrayerCardStatus status;
   final PrayerTimingQuality timing;
-  final Function(PrayerStatus) onStatusChanged;
+  final Function(PrayerCardStatus) onStatusChanged;
   final Function(PrayerTimingQuality) onTimingChanged;
   final VoidCallback? onDismissed;
 
@@ -56,7 +57,7 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
     _animationController.forward();
     
     // Auto-expand if prayed
-    if (widget.status == PrayerStatus.prayed) {
+    if (widget.status == PrayerCardStatus.prayed) {
       _isExpanded = true;
     }
   }
@@ -72,7 +73,7 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
     super.didUpdateWidget(oldWidget);
     if (widget.status != oldWidget.status) {
       setState(() {
-        _isExpanded = widget.status == PrayerStatus.prayed;
+        _isExpanded = widget.status == PrayerCardStatus.prayed;
       });
     }
   }
@@ -161,19 +162,19 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
           end: Alignment.bottomRight,
           colors: [
             Colors.white,
-            _getCardGradientColor().withOpacity(0.05),
+            _getCardGradientColor().withValues(alpha: 0.05),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: _getCardShadowColor().withOpacity(0.1),
+            color: _getCardShadowColor().withValues(alpha: 0.1),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
         ],
         border: Border.all(
-          color: _getCardBorderColor().withOpacity(0.2),
+          color: _getCardBorderColor().withValues(alpha: 0.2),
           width: 1.5,
         ),
       ),
@@ -216,13 +217,13 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
                   end: Alignment.bottomRight,
                   colors: [
                     _getPrayerColor(prayerType),
-                    _getPrayerColor(prayerType).withOpacity(0.7),
+                    _getPrayerColor(prayerType).withValues(alpha: 0.7),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: _getPrayerColor(prayerType).withOpacity(0.3),
+                    color: _getPrayerColor(prayerType).withValues(alpha: 0.3),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -274,7 +275,7 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: _getTimeAgoColor().withOpacity(0.1),
+                        color: _getTimeAgoColor().withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -300,11 +301,11 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
   }
 
   Widget _buildStatusIndicator() {
-    if (widget.status == PrayerStatus.prayed) {
+    if (widget.status == PrayerCardStatus.prayed) {
       return Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: AppColors.success.withOpacity(0.1),
+          color: AppColors.success.withValues(alpha: 0.1),
           shape: BoxShape.circle,
         ),
         child: Icon(
@@ -313,11 +314,11 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
           size: 24,
         ),
       );
-    } else if (widget.status == PrayerStatus.missed) {
+    } else if (widget.status == PrayerCardStatus.missed) {
       return Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: Colors.red.withOpacity(0.1),
+          color: Colors.red.withValues(alpha: 0.1),
           shape: BoxShape.circle,
         ),
         child: const Icon(
@@ -339,11 +340,11 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
             child: _buildStatusButton(
               label: 'i_prayed'.tr,
               icon: Icons.check_circle_outline,
-              isSelected: widget.status == PrayerStatus.prayed,
+              isSelected: widget.status == PrayerCardStatus.prayed,
               color: AppColors.success,
               onTap: () {
                 HapticFeedback.lightImpact();
-                widget.onStatusChanged(PrayerStatus.prayed);
+                widget.onStatusChanged(PrayerCardStatus.prayed);
               },
             ),
           ),
@@ -352,11 +353,11 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
             child: _buildStatusButton(
               label: 'i_missed'.tr,
               icon: Icons.cancel_outlined,
-              isSelected: widget.status == PrayerStatus.missed,
+              isSelected: widget.status == PrayerCardStatus.missed,
               color: Colors.red,
               onTap: () {
                 HapticFeedback.lightImpact();
-                widget.onStatusChanged(PrayerStatus.missed);
+                widget.onStatusChanged(PrayerCardStatus.missed);
               },
             ),
           ),
@@ -381,16 +382,16 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
-            color: isSelected ? color : color.withOpacity(0.08),
+            color: isSelected ? color : color.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: isSelected ? color : color.withOpacity(0.3),
+              color: isSelected ? color : color.withValues(alpha: 0.3),
               width: isSelected ? 2 : 1,
             ),
             boxShadow: isSelected
                 ? [
                     BoxShadow(
-                      color: color.withOpacity(0.3),
+                      color: color.withValues(alpha: 0.3),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -497,10 +498,10 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
-            color: isSelected ? color : color.withOpacity(0.1),
+            color: isSelected ? color : color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
-              color: isSelected ? color : color.withOpacity(0.3),
+              color: isSelected ? color : color.withValues(alpha: 0.3),
               width: isSelected ? 2 : 1,
             ),
           ),
@@ -529,20 +530,20 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
   // ============================================================
 
   Color _getCardGradientColor() {
-    if (widget.status == PrayerStatus.prayed) return AppColors.success;
-    if (widget.status == PrayerStatus.missed) return Colors.red;
+    if (widget.status == PrayerCardStatus.prayed) return AppColors.success;
+    if (widget.status == PrayerCardStatus.missed) return Colors.red;
     return AppColors.primary;
   }
 
   Color _getCardShadowColor() {
-    if (widget.status == PrayerStatus.prayed) return AppColors.success;
-    if (widget.status == PrayerStatus.missed) return Colors.red;
+    if (widget.status == PrayerCardStatus.prayed) return AppColors.success;
+    if (widget.status == PrayerCardStatus.missed) return Colors.red;
     return AppColors.primary;
   }
 
   Color _getCardBorderColor() {
-    if (widget.status == PrayerStatus.prayed) return AppColors.success;
-    if (widget.status == PrayerStatus.missed) return Colors.red;
+    if (widget.status == PrayerCardStatus.prayed) return AppColors.success;
+    if (widget.status == PrayerCardStatus.missed) return Colors.red;
     return Colors.grey;
   }
 

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:salah/controller/settings_controller.dart';
-import 'package:salah/core/services/storage_service.dart';
+import 'package:salah/core/constants/enums.dart';
 import 'package:salah/core/services/theme_service.dart';
 import 'package:salah/core/services/localization_service.dart';
 import 'package:salah/core/theme/app_colors.dart';
@@ -32,7 +32,7 @@ class SettingsScreen extends GetView<SettingsController> {
             const SizedBox(height: 24),
 
             // Location Section (prayer times depend on it)
-            _buildSectionTitle(context, 'الموقع'),
+            _buildSectionTitle(context, 'location_section'.tr),
             const SizedBox(height: 8),
             _buildLocationCard(context),
             const SizedBox(height: 24),
@@ -81,7 +81,10 @@ class SettingsScreen extends GetView<SettingsController> {
     );
   }
 
-  Widget _buildLanguageSelector(BuildContext context, AppLanguage currentLanguage) {
+  Widget _buildLanguageSelector(
+    BuildContext context,
+    AppLanguage currentLanguage,
+  ) {
     return Card(
       child: Column(
         children: AppLanguage.values.map((language) {
@@ -111,7 +114,10 @@ class SettingsScreen extends GetView<SettingsController> {
     );
   }
 
-  Widget _buildThemeSelector(BuildContext context, AppThemeMode currentThemeMode) {
+  Widget _buildThemeSelector(
+    BuildContext context,
+    AppThemeMode currentThemeMode,
+  ) {
     return Card(
       child: Column(
         children: [
@@ -161,16 +167,13 @@ class SettingsScreen extends GetView<SettingsController> {
                   color: AppColors.primary,
                 ),
               ),
-              title: Text(
-                label,
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
+              title: Text(label, style: Theme.of(context).textTheme.bodyMedium),
               subtitle: isDefault
                   ? Text(
-                      'المواقيت مؤقتاً حسب مكة. فعّل الموقع أو انقر لتحديث.',
+                      'location_default_hint'.tr,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
+                        color: AppColors.textSecondary,
+                      ),
                     )
                   : null,
             ),
@@ -179,7 +182,9 @@ class SettingsScreen extends GetView<SettingsController> {
               child: SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
-                  onPressed: isLoading ? null : () => controller.refreshLocation(),
+                  onPressed: isLoading
+                      ? null
+                      : () => controller.refreshLocation(),
                   icon: isLoading
                       ? SizedBox(
                           width: 18,
@@ -187,7 +192,9 @@ class SettingsScreen extends GetView<SettingsController> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : Icon(Icons.refresh),
-                  label: Text(isLoading ? 'جاري التحديث...' : 'تحديث الموقع'),
+                  label: Text(
+                    isLoading ? 'updating_location'.tr : 'update_location'.tr,
+                  ),
                 ),
               ),
             ),
@@ -228,101 +235,214 @@ class SettingsScreen extends GetView<SettingsController> {
     return Card(
       child: Column(
         children: [
-          Obx(() => SwitchListTile(
-            secondary: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                Icons.notifications_outlined,
-                color: AppColors.primary,
-              ),
-            ),
-            title: Text('prayer_notifications'.tr),
-            value: controller.notificationsEnabled.value,
-            onChanged: (value) => controller.setNotificationsEnabled(value),
-          )),
-          Obx(() => Column(
-            children: [
-              ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(Icons.music_note_outlined, color: Colors.grey),
+          // Master toggle
+          Obx(
+            () => SwitchListTile(
+              secondary: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                title: Text('notification_sound'.tr),
+                child: const Icon(
+                  Icons.notifications_outlined,
+                  color: AppColors.primary,
+                ),
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Row(
-                  children: NotificationSoundMode.values.map((mode) {
-                    final isSelected = controller.notificationSoundMode.value == mode;
-                    String label = '';
-                    IconData icon = Icons.notifications;
-                    
-                    switch (mode) {
-                      case NotificationSoundMode.adhan:
-                        label = 'أذان';
-                        icon = Icons.volume_up_rounded;
-                        break;
-                      case NotificationSoundMode.vibrate:
-                        label = 'هزاز';
-                        icon = Icons.vibration_rounded;
-                        break;
-                      case NotificationSoundMode.silent:
-                        label = 'صامت';
-                        icon = Icons.notifications_off_rounded;
-                        break;
-                    }
-                    
-                    return Expanded(
-                      child: GestureDetector(
-                        onTap: () => controller.setNotificationSoundMode(mode),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          margin: const EdgeInsets.symmetric(horizontal: 4),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          decoration: BoxDecoration(
-                            color: isSelected 
-                                ? AppColors.primary.withOpacity(0.1)
-                                : AppColors.surface,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: isSelected 
-                                  ? AppColors.primary 
-                                  : Colors.grey.withOpacity(0.2),
+              title: Text('prayer_notifications'.tr),
+              value: controller.notificationsEnabled.value,
+              onChanged: (value) => controller.setNotificationsEnabled(value),
+            ),
+          ),
+
+          // Per-type toggles (only visible when master is on)
+          Obx(() {
+            if (!controller.notificationsEnabled.value)
+              return const SizedBox.shrink();
+            return Column(
+              children: [
+                const Divider(height: 1),
+                // Adhan notification
+                SwitchListTile(
+                  secondary: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.teal.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.mosque_outlined,
+                      color: Colors.teal,
+                      size: 20,
+                    ),
+                  ),
+                  title: Text(
+                    'adhan_notification'.tr,
+                    style: AppFonts.bodyMedium,
+                  ),
+                  subtitle: Text(
+                    'adhan_notification_desc'.tr,
+                    style: AppFonts.labelSmall.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  value: controller.adhanEnabled.value,
+                  onChanged: (v) => controller.setAdhanEnabled(v),
+                ),
+                // Reminder notification
+                SwitchListTile(
+                  secondary: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.alarm_outlined,
+                      color: Colors.amber,
+                      size: 20,
+                    ),
+                  ),
+                  title: Text(
+                    'reminder_notification'.tr,
+                    style: AppFonts.bodyMedium,
+                  ),
+                  subtitle: Text(
+                    'reminder_notification_desc'.tr,
+                    style: AppFonts.labelSmall.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  value: controller.reminderEnabled.value,
+                  onChanged: (v) => controller.setReminderEnabled(v),
+                ),
+                // Family notification
+                SwitchListTile(
+                  secondary: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.purple.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.family_restroom_outlined,
+                      color: Colors.purple,
+                      size: 20,
+                    ),
+                  ),
+                  title: Text(
+                    'family_notification_label'.tr,
+                    style: AppFonts.bodyMedium,
+                  ),
+                  subtitle: Text(
+                    'family_notification_desc'.tr,
+                    style: AppFonts.labelSmall.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  value: controller.familyNotificationsEnabled.value,
+                  onChanged: (v) => controller.setFamilyNotificationsEnabled(v),
+                ),
+              ],
+            );
+          }),
+
+          // Sound mode selector
+          Obx(
+            () => Column(
+              children: [
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.music_note_outlined,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  title: Text('notification_sound'.tr),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  child: Row(
+                    children: NotificationSoundMode.values.map((mode) {
+                      final isSelected =
+                          controller.notificationSoundMode.value == mode;
+                      String label = '';
+                      IconData icon = Icons.notifications;
+
+                      switch (mode) {
+                        case NotificationSoundMode.adhan:
+                          label = 'sound_adhan'.tr;
+                          icon = Icons.volume_up_rounded;
+                          break;
+                        case NotificationSoundMode.vibrate:
+                          label = 'sound_vibrate'.tr;
+                          icon = Icons.vibration_rounded;
+                          break;
+                        case NotificationSoundMode.silent:
+                          label = 'sound_silent'.tr;
+                          icon = Icons.notifications_off_rounded;
+                          break;
+                      }
+
+                      return Expanded(
+                        child: GestureDetector(
+                          onTap: () =>
+                              controller.setNotificationSoundMode(mode),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? AppColors.primary.withValues(alpha: 0.1)
+                                  : AppColors.surface,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: isSelected
+                                    ? AppColors.primary
+                                    : Colors.grey.withValues(alpha: 0.2),
+                              ),
+                            ),
+                            child: Column(
+                              children: [
+                                Icon(
+                                  icon,
+                                  color: isSelected
+                                      ? AppColors.primary
+                                      : Colors.grey,
+                                  size: 20,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  label,
+                                  style: AppFonts.labelSmall.copyWith(
+                                    color: isSelected
+                                        ? AppColors.primary
+                                        : Colors.grey,
+                                    fontWeight: isSelected
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          child: Column(
-                            children: [
-                              Icon(
-                                icon, 
-                                color: isSelected ? AppColors.primary : Colors.grey,
-                                size: 20,
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                label,
-                                style: AppFonts.labelSmall.copyWith(
-                                  color: isSelected ? AppColors.primary : Colors.grey,
-                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                ),
-                              ),
-                            ],
-                          ),
                         ),
-                      ),
-                    );
-                  }).toList(),
+                      );
+                    }).toList(),
+                  ),
                 ),
-              ),
-            ],
-          )),
+              ],
+            ),
+          ),
         ],
       ),
     );

@@ -1,14 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:salah/core/constants/enums.dart';
 import '../theme/app_theme.dart';
 import 'storage_service.dart';
-
-/// Supported theme modes
-enum AppThemeMode {
-  system,
-  light,
-  dark,
-}
 
 /// Service for managing app theme
 /// 

@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_dimensions.dart';
+import '../../core/constants/enums.dart';
 import '../../core/theme/app_colors.dart';
 
 /// Member card widget for community/family screens
 class MemberCard extends StatelessWidget {
   final String name;
   final String? photoUrl;
-  final List<PrayerStatus> todayPrayers; // 5 prayers status
+  final List<PrayerCardStatus> todayPrayers; // 5 prayers status
   final bool showInteractionButtons;
   final VoidCallback? onEncourage;
   final VoidCallback? onRemind;
@@ -73,7 +74,7 @@ class MemberCard extends StatelessWidget {
   Widget _buildAvatar(BuildContext context) {
     return CircleAvatar(
       radius: 24,
-      backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+      backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
       backgroundImage: photoUrl != null ? NetworkImage(photoUrl!) : null,
       child: photoUrl == null
           ? Text(
@@ -96,7 +97,7 @@ class MemberCard extends StatelessWidget {
       children: List.generate(5, (index) {
         final status = index < todayPrayers.length 
             ? todayPrayers[index] 
-            : PrayerStatus.notYet;
+            : PrayerCardStatus.notYet;
         
         return Padding(
           padding: EdgeInsets.only(
@@ -106,7 +107,7 @@ class MemberCard extends StatelessWidget {
             width: 24,
             height: 24,
             decoration: BoxDecoration(
-              color: _getStatusColor(status).withOpacity(0.15),
+              color: _getStatusColor(status).withValues(alpha: 0.15),
               shape: BoxShape.circle,
               border: Border.all(
                 color: _getStatusColor(status),
@@ -114,7 +115,7 @@ class MemberCard extends StatelessWidget {
               ),
             ),
             child: Center(
-              child: status == PrayerStatus.prayed
+              child: status == PrayerCardStatus.prayed
                   ? Icon(
                       Icons.check,
                       size: 14,
@@ -160,20 +161,17 @@ class MemberCard extends StatelessWidget {
     );
   }
 
-  Color _getStatusColor(PrayerStatus status) {
+  Color _getStatusColor(PrayerCardStatus status) {
     switch (status) {
-      case PrayerStatus.prayed:
+      case PrayerCardStatus.prayed:
         return AppColors.success;
-      case PrayerStatus.missed:
+      case PrayerCardStatus.missed:
         return AppColors.error;
-      case PrayerStatus.notYet:
+      case PrayerCardStatus.notYet:
         return Colors.grey;
     }
   }
 }
-
-/// Prayer status for member card
-enum PrayerStatus { prayed, missed, notYet }
 
 /// Compact member chip for inline display
 class MemberChip extends StatelessWidget {

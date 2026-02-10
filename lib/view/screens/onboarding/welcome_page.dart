@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
 import 'package:salah/controller/onboarding_controller.dart';
+import 'package:salah/core/constants/enums.dart';
 import 'package:salah/core/theme/app_colors.dart';
 
 /// Premium welcome page with animated entrance
@@ -19,9 +20,9 @@ class WelcomePage extends GetView<OnboardingController> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppColors.primary.withOpacity(0.05),
+            AppColors.primary.withValues(alpha: 0.05),
             Colors.white,
-            AppColors.secondary.withOpacity(0.03),
+            AppColors.secondary.withValues(alpha: 0.03),
           ],
         ),
       ),
@@ -39,7 +40,7 @@ class WelcomePage extends GetView<OnboardingController> {
                 decoration: BoxDecoration(
                   gradient: RadialGradient(
                     colors: [
-                      AppColors.primary.withOpacity(0.1),
+                      AppColors.primary.withValues(alpha: 0.1),
                       Colors.transparent,
                     ],
                   ),
@@ -113,7 +114,7 @@ class WelcomePage extends GetView<OnboardingController> {
           end: Alignment.bottomRight,
           colors: [
             AppColors.primary,
-            AppColors.primary.withOpacity(0.7),
+            AppColors.primary.withValues(alpha: 0.7),
           ],
         ),
         shape: BoxShape.circle,
@@ -166,13 +167,13 @@ class WelcomePage extends GetView<OnboardingController> {
               end: Alignment.bottomRight,
               colors: [
                 AppColors.primary,
-                AppColors.primary.withOpacity(0.8),
+                AppColors.primary.withValues(alpha: 0.8),
               ],
             ),
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withOpacity(0.3),
+                color: AppColors.primary.withValues(alpha: 0.3),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),
@@ -214,7 +215,7 @@ class WelcomePage extends GetView<OnboardingController> {
         Container(
           width: 1,
           height: 20,
-          color: AppColors.textSecondary.withOpacity(0.3),
+          color: AppColors.textSecondary.withValues(alpha: 0.3),
         ),
         const SizedBox(width: 16),
         _buildLanguageButton('EN', 'en'),
@@ -237,7 +238,7 @@ class WelcomePage extends GetView<OnboardingController> {
           color: isSelected ? AppColors.primary : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.textSecondary.withOpacity(0.3),
+            color: isSelected ? AppColors.primary : AppColors.textSecondary.withValues(alpha: 0.3),
           ),
         ),
         child: Text(

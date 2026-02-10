@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:salah/core/constants/enums.dart';
 import '../../core/constants/app_dimensions.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/services/prayer_time_service.dart';
@@ -50,7 +51,7 @@ class PrayerCard extends StatelessWidget {
                 height: 48,
                 decoration: BoxDecoration(
                   color: isPrayed
-                      ? _getQualityColor().withOpacity(0.15)
+                      ? _getQualityColor().withValues(alpha: 0.15)
                       : Theme.of(context).colorScheme.surfaceContainerHighest,
                   shape: BoxShape.circle,
                 ),
@@ -60,7 +61,7 @@ class PrayerCard extends StatelessWidget {
                       ? _getQualityColor()
                       : Theme.of(
                           context,
-                        ).colorScheme.onSurface.withOpacity(0.6),
+                        ).colorScheme.onSurface.withValues(alpha: 0.6),
                   size: 24,
                 ),
               ),
@@ -86,7 +87,7 @@ class PrayerCard extends StatelessWidget {
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: Theme.of(
                           context,
-                        ).colorScheme.onSurface.withOpacity(0.6),
+                        ).colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                     ),
                   ],
@@ -133,7 +134,7 @@ class PrayerCard extends StatelessWidget {
         vertical: 4,
       ),
       decoration: BoxDecoration(
-        color: _getQualityColor().withOpacity(0.15),
+        color: _getQualityColor().withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(AppDimensions.radiusSM),
       ),
       child: Text(

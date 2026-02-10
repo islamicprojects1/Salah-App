@@ -1,18 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:salah/core/constants/enums.dart';
 import 'package:salah/core/services/storage_service.dart';
 import 'package:salah/core/services/location_service.dart';
 import 'package:salah/core/services/notification_service.dart';
-
-/// Onboarding step enum
-enum OnboardingStep {
-  welcome,        // مرحبا بك
-  features,       // مميزات التطبيق
-  family,         // العائلة والتشجيع
-  permissions,    // الأذونات
-  profileSetup,   // إعداد الملف الشخصي
-  complete,       // اكتمل
-}
 
 /// Controller for premium onboarding experience
 class OnboardingController extends GetxController with GetTickerProviderStateMixin {

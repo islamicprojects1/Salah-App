@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:salah/core/constants/enums.dart';
 import 'package:salah/core/services/prayer_time_service.dart';
 import 'package:salah/core/theme/app_colors.dart';
 import 'package:salah/core/theme/app_fonts.dart';
@@ -7,8 +8,8 @@ import 'package:salah/core/constants/app_dimensions.dart';
 import 'package:salah/controller/dashboard_controller.dart';
 import 'package:salah/view/screens/family/family_dashboard_screen.dart';
 import 'package:salah/core/routes/app_routes.dart';
-import 'package:salah/core/helpers/prayer_names.dart';
-import 'package:salah/data/models/prayer_time_model.dart';
+import 'package:salah/core/helpers/prayer_timing_helper.dart';
+import 'package:salah/data/models/prayer_log_model.dart';
 import 'package:salah/view/widgets/app_loading.dart';
 import 'package:salah/view/widgets/connection_status_indicator.dart';
 import 'package:salah/view/widgets/smart_prayer_circle.dart';
@@ -82,8 +83,8 @@ class DashboardScreen extends GetView<DashboardController> {
         indicatorWeight: 3,
         labelStyle: AppFonts.titleSmall.copyWith(fontWeight: FontWeight.bold),
         tabs: [
-          Tab(text: 'الرئيسية'), // Dashboard
-          Tab(text: 'العائلة'), // Family
+          Tab(text: 'dashboard'.tr),
+          Tab(text: 'family_tab'.tr),
         ],
       ),
     );
@@ -99,7 +100,7 @@ class DashboardScreen extends GetView<DashboardController> {
     return SafeArea(
       child: Obx(() {
         if (controller.isLoading.value) {
-          return const AppLoading(message: 'جاري التحميل...');
+          return const AppLoading(message: '');
         }
 
         return SingleChildScrollView(
@@ -122,10 +123,10 @@ class DashboardScreen extends GetView<DashboardController> {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.orange.withOpacity(0.1),
+                        color: Colors.orange.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: Colors.orange.withOpacity(0.3),
+                          color: Colors.orange.withValues(alpha: 0.3),
                         ),
                       ),
                       child: Row(
@@ -138,7 +139,7 @@ class DashboardScreen extends GetView<DashboardController> {
                           const SizedBox(width: 4),
                           Obx(
                             () => Text(
-                              '${controller.currentStreak.value} يوم',
+                              '${controller.currentStreak.value} ${'day_unit'.tr}',
                               style: AppFonts.labelMedium.copyWith(
                                 color: Colors.orange,
                                 fontWeight: FontWeight.bold,
@@ -212,7 +213,7 @@ class DashboardScreen extends GetView<DashboardController> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'صلوات اليوم',
+                  'todays_prayers_label'.tr,
                   style: AppFonts.titleMedium.copyWith(
                     color: AppColors.textPrimary,
                   ),
@@ -234,7 +235,7 @@ class DashboardScreen extends GetView<DashboardController> {
               child: LinearProgressIndicator(
                 value: progress,
                 minHeight: 10,
-                backgroundColor: AppColors.primary.withOpacity(0.1),
+                backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                 valueColor: AlwaysStoppedAnimation<Color>(
                   completed >= total ? Colors.green : AppColors.primary,
                 ),
@@ -265,18 +266,24 @@ class DashboardScreen extends GetView<DashboardController> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: prayers.map((prayer) {
-            final isLogged = PrayerNames.isPrayerLogged(
-              controller.todayLogs,
-              prayer.name,
-              prayer.prayerType,
-            );
+            PrayerLogModel? log;
+            try {
+              log = controller.todayLogs.firstWhere(
+                (l) => l.prayer == (prayer.prayerType ?? PrayerName.fajr),
+              );
+            } catch (_) {
+              log = null;
+            }
+            final isLogged = log != null;
             final isNext = prayer == controller.nextPrayer.value;
             final isCurrent = prayer == controller.currentPrayer.value;
+            final quality = log?.quality;
 
             return _buildPrayerIcon(
               name: prayer.name,
               time: _formatTime(prayer.dateTime),
               isLogged: isLogged,
+              quality: quality,
               isNext: isNext,
               isCurrent: isCurrent,
               onTap: isCurrent && !isLogged
@@ -293,6 +300,7 @@ class DashboardScreen extends GetView<DashboardController> {
     required String name,
     required String time,
     required bool isLogged,
+    PrayerQuality? quality,
     required bool isNext,
     required bool isCurrent,
     VoidCallback? onTap,
@@ -301,20 +309,24 @@ class DashboardScreen extends GetView<DashboardController> {
     Color iconColor;
     IconData icon;
 
-    if (isLogged) {
-      bgColor = Colors.green.withOpacity(0.15);
+    if (isLogged && quality != null) {
+      iconColor = PrayerTimingHelper.getLegacyQualityColor(quality);
+      bgColor = iconColor.withValues(alpha: 0.15);
+      icon = Icons.check_circle;
+    } else if (isLogged) {
+      bgColor = Colors.green.withValues(alpha: 0.15);
       iconColor = Colors.green;
       icon = Icons.check_circle;
     } else if (isCurrent) {
-      bgColor = AppColors.primary.withOpacity(0.15);
+      bgColor = AppColors.primary.withValues(alpha: 0.15);
       iconColor = AppColors.primary;
       icon = Icons.access_time_filled;
     } else if (isNext) {
-      bgColor = Colors.orange.withOpacity(0.15);
+      bgColor = Colors.orange.withValues(alpha: 0.15);
       iconColor = Colors.orange;
       icon = Icons.schedule;
     } else {
-      bgColor = Colors.grey.withOpacity(0.1);
+      bgColor = Colors.grey.withValues(alpha: 0.1);
       iconColor = Colors.grey;
       icon = Icons.access_time;
     }
@@ -338,7 +350,11 @@ class DashboardScreen extends GetView<DashboardController> {
           Text(
             name,
             style: AppFonts.labelSmall.copyWith(
-              color: isLogged ? Colors.green : AppColors.textPrimary,
+              color: isLogged && quality != null
+                  ? PrayerTimingHelper.getLegacyQualityColor(quality)
+                  : isLogged
+                      ? Colors.green
+                      : AppColors.textPrimary,
               fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
             ),
           ),

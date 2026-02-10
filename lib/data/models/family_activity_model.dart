@@ -1,11 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-
-enum ActivityType {
-  prayerLog,
-  streakAchievement,
-  encouragement,
-  joinedFamily,
-}
+import 'package:salah/core/constants/enums.dart';
 
 class FamilyActivityModel {
   final String id;

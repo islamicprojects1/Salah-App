@@ -1,29 +1,7 @@
 import 'dart:ui';
 import 'package:get/get.dart';
+import 'package:salah/core/constants/enums.dart';
 import 'storage_service.dart';
-
-/// Supported languages
-enum AppLanguage {
-  arabic('ar', 'العربية', TextDirection.rtl),
-  english('en', 'English', TextDirection.ltr);
-  
-  final String code;
-  final String name;
-  final TextDirection direction;
-  
-  const AppLanguage(this.code, this.name, this.direction);
-  
-  /// Get locale from language
-  Locale get locale => Locale(code);
-  
-  /// Get language from code
-  static AppLanguage fromCode(String code) {
-    return AppLanguage.values.firstWhere(
-      (lang) => lang.code == code,
-      orElse: () => AppLanguage.arabic,
-    );
-  }
-}
 
 /// Service for managing app localization
 /// 

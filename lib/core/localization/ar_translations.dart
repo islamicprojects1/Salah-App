@@ -141,6 +141,7 @@ const Map<String, String> arTranslations = {
 
   // ==================== Family ====================
   'family': 'العائلة',
+  'family_pulse': 'نبض العائلة',
   'create_family': 'إنشاء عائلة',
   'join_family': 'انضم لعائلة',
   'no_family_yet': 'لم تنضم لعائلة بعد',
@@ -321,5 +322,45 @@ const Map<String, String> arTranslations = {
   'loading_prayers': 'جاري تحميل مواقيت الصلاة',
   'calculating_times': 'جاري حساب المواقيت',
   'fetching_location': 'جاري تحديد الموقع',
-};
 
+  // ==================== Dashboard & Tabs ====================
+  'dashboard': 'الرئيسية',
+  'family_tab': 'العائلة',
+  'todays_prayers_label': 'صلوات اليوم',
+  'day_unit': 'يوم',
+
+  // ==================== Location (Settings) ====================
+  'location_section': 'الموقع',
+  'updating_location': 'جاري التحديث...',
+  'update_location': 'تحديث الموقع',
+  'location_default_hint': 'المواقيت مؤقتاً حسب مكة. فعّل الموقع أو انقر لتحديث.',
+
+  // ==================== Notification Types (Settings) ====================
+  'adhan_notification': 'إشعار الأذان',
+  'adhan_notification_desc': 'تنبيه عند دخول وقت الصلاة',
+  'reminder_notification': 'تذكير بالصلاة',
+  'reminder_notification_desc': 'تذكير بعد 30 دقيقة إذا لم تسجّل',
+  'family_notification_label': 'إشعارات العائلة',
+  'family_notification_desc': 'تنبيه عندما يصلي أحد أفراد العائلة',
+  'sound_adhan': 'أذان',
+  'sound_vibrate': 'هزاز',
+  'sound_silent': 'صامت',
+
+  // ==================== Family Dashboard ====================
+  'invite_code_label': 'كود الدعوة',
+  'add_child_no_phone_btn': 'إضافة طفل (بدون هاتف)',
+  'family_members_count': 'أفراد العائلة (@count)',
+  'family_admin': 'مدير العائلة',
+  'member_role': 'عضو',
+  'family_daily_summary': 'ملخص العائلة اليوم',
+  'share_family_invite': 'انضم لعائلتي في تطبيق قُرب! كود الدعوة: @code',
+
+  // ==================== Misc / Sharing ====================
+  'share_app_text': 'تحميل تطبيق قُرب - متابعة الصلوات والعائلة',
+  'coming_soon_store': 'متوفر قريباً على متجر التطبيقات',
+  'now_label': 'الآن',
+  'minutes_short': 'د',
+  'hours_short': 'س',
+  'dashboard_load_error': 'فشل تحميل لوحة التحكم',
+  'notification_schedule_error': 'فشل جدولة الإشعارات',
+};

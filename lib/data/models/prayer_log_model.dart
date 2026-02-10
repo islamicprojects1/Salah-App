@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:salah/core/constants/enums.dart';
 import '../../core/services/prayer_time_service.dart';
 
 /// Prayer log model for tracking prayer completion

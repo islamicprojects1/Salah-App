@@ -1,13 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-
-/// Admin role enum
-enum AdminRole {
-  superAdmin,    // كل الصلاحيات
-  admin,         // كل شيء ما عدا حذف admins
-  moderator,     // Reports + Users
-  support,       // قراءة فقط + Reports
-  analyst,       // Analytics فقط
-}
+import 'package:salah/core/constants/enums.dart';
 
 /// Admin user model
 class AdminUserModel {

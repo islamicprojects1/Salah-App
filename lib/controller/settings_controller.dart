@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:share_plus/share_plus.dart';
 
+import 'package:salah/core/constants/enums.dart';
 import 'package:salah/data/repositories/user_repository.dart';
 import 'package:salah/view/widgets/app_dialogs.dart';
 import 'package:salah/core/constants/storage_keys.dart';
@@ -24,6 +25,9 @@ class SettingsController extends GetxController {
   final _authService = Get.find<AuthService>();
 
   final RxBool notificationsEnabled = true.obs;
+  final RxBool adhanEnabled = true.obs;
+  final RxBool reminderEnabled = true.obs;
+  final RxBool familyNotificationsEnabled = true.obs;
   final Rx<NotificationSoundMode> notificationSoundMode =
       NotificationSoundMode.adhan.obs;
  
@@ -103,12 +107,33 @@ class SettingsController extends GetxController {
     super.onInit();
     notificationsEnabled.value =
         _storage.read<bool>(StorageKeys.notificationsEnabled) ?? true;
+    adhanEnabled.value =
+        _storage.read<bool>(StorageKeys.fajrNotification) ?? true;
+    reminderEnabled.value =
+        _storage.read<bool>(StorageKeys.reminderNotification) ?? true;
+    familyNotificationsEnabled.value =
+        _storage.read<bool>(StorageKeys.familyNotification) ?? true;
     notificationSoundMode.value = _storage.getNotificationSoundMode();
   }
 
   Future<void> setNotificationsEnabled(bool value) async {
     await _storage.write(StorageKeys.notificationsEnabled, value);
     notificationsEnabled.value = value;
+  }
+
+  Future<void> setAdhanEnabled(bool value) async {
+    await _storage.write(StorageKeys.fajrNotification, value);
+    adhanEnabled.value = value;
+  }
+
+  Future<void> setReminderEnabled(bool value) async {
+    await _storage.write(StorageKeys.reminderNotification, value);
+    reminderEnabled.value = value;
+  }
+
+  Future<void> setFamilyNotificationsEnabled(bool value) async {
+    await _storage.write(StorageKeys.familyNotification, value);
+    familyNotificationsEnabled.value = value;
   }
 
   Future<void> setNotificationSoundMode(NotificationSoundMode mode) async {
@@ -132,7 +157,7 @@ class SettingsController extends GetxController {
     try {
       await SharePlus.instance.share(
         ShareParams(
-          text: 'تحميل تطبيق صلاة - متابعة الصلوات والعائلة',
+          text: 'share_app_text'.tr,
           subject: 'app_name'.tr,
         ),
       );
@@ -141,7 +166,7 @@ class SettingsController extends GetxController {
 
   void openRateApp() {
     // When app is on store: launch store URL
-    Get.snackbar('rate_app'.tr, 'متوفر قريباً على متجر التطبيقات');
+    Get.snackbar('rate_app'.tr, 'coming_soon_store'.tr);
   }
 
   /// Refresh GPS location, reverse geocode, and recalculate prayer times.

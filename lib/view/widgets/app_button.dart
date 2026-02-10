@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:salah/core/constants/app_dimensions.dart';
-
-/// Button types
-enum AppButtonType { primary, outlined, text }
+import 'package:salah/core/constants/enums.dart';
 
 /// Custom button widget with multiple types
 class AppButton extends StatelessWidget {

@@ -1,18 +1,5 @@
 import 'package:get/get.dart';
-
-/// Represents the current sync state for offline-first data.
-///
-/// Used with GetX Rx to drive UI: Obx(() => syncStatus.value == SyncStatus.loading ...).
-enum SyncStatus {
-  /// No sync in progress; last sync may have succeeded or failed.
-  idle,
-  /// Sync in progress (uploading pending items).
-  loading,
-  /// Last sync completed successfully.
-  success,
-  /// Last sync failed (e.g. network error).
-  error,
-}
+import 'package:salah/core/constants/enums.dart';
 
 /// Extension to use SyncStatus with optional error message.
 class SyncStatusResult {

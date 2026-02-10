@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
 import 'package:salah/controller/onboarding_controller.dart';
+import 'package:salah/core/constants/enums.dart';
 import 'package:salah/core/theme/app_colors.dart';
 
 /// Permissions setup page
@@ -13,12 +14,12 @@ class PermissionsPage extends GetView<OnboardingController> {
   Widget build(BuildContext context) {
     final pageData = controller.getPageData(OnboardingStep.permissions);
     final isArabic = Get.locale?.languageCode == 'ar';
-    
+
     return SafeArea(
       child: Column(
         children: [
           const Spacer(flex: 1),
-          
+
           // Animation
           SizedBox(
             height: 200,
@@ -34,9 +35,9 @@ class PermissionsPage extends GetView<OnboardingController> {
               },
             ),
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // Title
           Text(
             isArabic ? pageData.title : pageData.titleEn,
@@ -46,9 +47,9 @@ class PermissionsPage extends GetView<OnboardingController> {
               color: AppColors.textPrimary,
             ),
           ),
-          
+
           const SizedBox(height: 8),
-          
+
           Text(
             isArabic ? pageData.subtitle : pageData.subtitleEn,
             textAlign: TextAlign.center,
@@ -58,9 +59,9 @@ class PermissionsPage extends GetView<OnboardingController> {
               height: 1.5,
             ),
           ),
-          
+
           const Spacer(flex: 1),
-          
+
           // Permission Cards
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -69,7 +70,7 @@ class PermissionsPage extends GetView<OnboardingController> {
                 _buildPermissionCard(
                   icon: Icons.location_on_rounded,
                   title: isArabic ? 'الموقع' : 'Location',
-                  subtitle: isArabic 
+                  subtitle: isArabic
                       ? 'لمعرفة أوقات الصلاة واتجاه القبلة'
                       : 'For prayer times and Qibla direction',
                   isGranted: controller.locationPermissionGranted,
@@ -78,13 +79,13 @@ class PermissionsPage extends GetView<OnboardingController> {
                     controller.requestLocationPermission();
                   },
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
                 _buildPermissionCard(
                   icon: Icons.notifications_rounded,
                   title: isArabic ? 'الإشعارات' : 'Notifications',
-                  subtitle: isArabic 
+                  subtitle: isArabic
                       ? 'للتذكير بأوقات الصلاة'
                       : 'For prayer time reminders',
                   isGranted: controller.notificationPermissionGranted,
@@ -96,20 +97,22 @@ class PermissionsPage extends GetView<OnboardingController> {
               ],
             ),
           ),
-          
+
           const Spacer(flex: 2),
-          
+
           // Continue Button
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: Obx(() => _buildContinueButton(
-              isArabic: isArabic,
-              allGranted: controller.allPermissionsGranted,
-            )),
+            child: Obx(
+              () => _buildContinueButton(
+                isArabic: isArabic,
+                allGranted: controller.allPermissionsGranted,
+              ),
+            ),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Skip for now
           TextButton(
             onPressed: () {
@@ -118,13 +121,10 @@ class PermissionsPage extends GetView<OnboardingController> {
             },
             child: Text(
               isArabic ? 'تخطي الآن' : 'Skip for now',
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 14,
-              ),
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
             ),
           ),
-          
+
           const SizedBox(height: 24),
         ],
       ),
@@ -140,7 +140,7 @@ class PermissionsPage extends GetView<OnboardingController> {
   }) {
     return Obx(() {
       final granted = isGranted.value;
-      
+
       return Material(
         color: Colors.transparent,
         child: InkWell(
@@ -150,19 +150,19 @@ class PermissionsPage extends GetView<OnboardingController> {
             duration: const Duration(milliseconds: 300),
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: granted 
-                  ? AppColors.success.withOpacity(0.1) 
+              color: granted
+                  ? AppColors.success.withValues(alpha: 0.1)
                   : Colors.white,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: granted 
-                    ? AppColors.success 
-                    : AppColors.textSecondary.withOpacity(0.2),
+                color: granted
+                    ? AppColors.success
+                    : AppColors.textSecondary.withValues(alpha: 0.2),
                 width: granted ? 2 : 1,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -175,9 +175,9 @@ class PermissionsPage extends GetView<OnboardingController> {
                   width: 56,
                   height: 56,
                   decoration: BoxDecoration(
-                    color: granted 
-                        ? AppColors.success.withOpacity(0.1) 
-                        : AppColors.primary.withOpacity(0.1),
+                    color: granted
+                        ? AppColors.success.withValues(alpha: 0.1)
+                        : AppColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Icon(
@@ -186,9 +186,9 @@ class PermissionsPage extends GetView<OnboardingController> {
                     size: 28,
                   ),
                 ),
-                
+
                 const SizedBox(width: 16),
-                
+
                 // Text
                 Expanded(
                   child: Column(
@@ -213,7 +213,7 @@ class PermissionsPage extends GetView<OnboardingController> {
                     ],
                   ),
                 ),
-                
+
                 // Status
                 AnimatedSwitcher(
                   duration: const Duration(milliseconds: 300),
@@ -270,14 +270,20 @@ class PermissionsPage extends GetView<OnboardingController> {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: allGranted
-                  ? [AppColors.success, AppColors.success.withOpacity(0.8)]
-                  : [AppColors.primary, AppColors.primary.withOpacity(0.8)],
+                  ? [
+                      AppColors.success,
+                      AppColors.success.withValues(alpha: 0.8),
+                    ]
+                  : [
+                      AppColors.primary,
+                      AppColors.primary.withValues(alpha: 0.8),
+                    ],
             ),
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
                 color: (allGranted ? AppColors.success : AppColors.primary)
-                    .withOpacity(0.3),
+                    .withValues(alpha: 0.3),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),
@@ -288,11 +294,7 @@ class PermissionsPage extends GetView<OnboardingController> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (allGranted)
-                  const Icon(
-                    Icons.check_circle,
-                    color: Colors.white,
-                    size: 20,
-                  ),
+                  const Icon(Icons.check_circle, color: Colors.white, size: 20),
                 if (allGranted) const SizedBox(width: 8),
                 Text(
                   allGranted

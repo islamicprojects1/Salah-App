@@ -3,12 +3,14 @@ import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
+import 'package:salah/core/constants/enums.dart';
 import 'dart:math';
 import 'package:salah/core/services/auth_service.dart';
 import 'package:salah/core/services/database_helper.dart';
 import 'package:salah/data/models/family_model.dart';
 import 'package:salah/data/models/user_model.dart';
 import 'package:salah/data/models/family_activity_model.dart';
+import 'package:salah/data/models/family_pulse_model.dart';
 
 /// Service for managing family groups
 class FamilyService extends GetxService {
@@ -261,11 +263,58 @@ class FamilyService extends GetxService {
             'quality': 'onTime',
           });
 
+      final member = family.getMember(memberId);
+      await addPulseEvent(
+        familyId: family.id,
+        type: 'prayer_logged',
+        userId: memberId,
+        userName: member?.name ?? 'عضو',
+        prayerName: prayerName,
+      );
+
       return true;
     } catch (e) {
       errorMessage.value = 'فشل تسجيل الصلاة: $e';
       return false;
     }
+  }
+
+  /// Add an event to the family pulse (who prayed, encouragement, etc.)
+  Future<void> addPulseEvent({
+    required String familyId,
+    required String type,
+    required String userId,
+    required String userName,
+    String? prayerName,
+  }) async {
+    try {
+      await _firestore
+          .collection('families')
+          .doc(familyId)
+          .collection('pulse')
+          .add({
+            'type': type,
+            'userId': userId,
+            'userName': userName,
+            if (prayerName != null) 'prayer': prayerName,
+            'timestamp': FieldValue.serverTimestamp(),
+          });
+    } catch (_) {}
+  }
+
+  /// Live stream of family pulse events (last 25, newest first)
+  Stream<List<FamilyPulseEvent>> getPulseStream(String familyId) {
+    return _firestore
+        .collection('families')
+        .doc(familyId)
+        .collection('pulse')
+        .orderBy('timestamp', descending: true)
+        .limit(25)
+        .snapshots()
+        .map(
+          (snap) =>
+              snap.docs.map((d) => FamilyPulseEvent.fromFirestore(d)).toList(),
+        );
   }
 
   /// Send encouragement to a member
@@ -274,8 +323,6 @@ class FamilyService extends GetxService {
       final user = _authService.currentUser.value;
       if (user == null) return false;
 
-      // In a real app, this would send an FCM.
-      // For now, we'll store a "reaction" in Firestore that the other user listens to.
       await _firestore
           .collection('users')
           .doc(memberId)
@@ -289,9 +336,18 @@ class FamilyService extends GetxService {
             'isRead': false,
           });
 
+      final family = currentFamily.value;
+      if (family != null) {
+        await addPulseEvent(
+          familyId: family.id,
+          type: 'encouragement',
+          userId: user.uid,
+          userName: user.displayName ?? 'عضو',
+        );
+      }
+
       return true;
     } catch (e) {
-      // Encouragement send failed
       return false;
     }
   }
@@ -351,11 +407,16 @@ class FamilyService extends GetxService {
       // Auto-Repair: If familyId is missing but we have a valid cached one, verify and restore it
       if (familyId == null && cachedFamilyId != null) {
         try {
-          final familyCheck = await _firestore.collection('families').doc(cachedFamilyId).get();
+          final familyCheck = await _firestore
+              .collection('families')
+              .doc(cachedFamilyId)
+              .get();
           if (familyCheck.exists) {
             final familyData = FamilyModel.fromFirestore(familyCheck);
             if (familyData.members.any((m) => m.userId == user.uid)) {
-              debugPrint('FamilyService: Auto-repairing missing familyId for user ${user.uid}');
+              debugPrint(
+                'FamilyService: Auto-repairing missing familyId for user ${user.uid}',
+              );
               await _firestore.collection('users').doc(user.uid).set({
                 'familyId': cachedFamilyId,
               }, SetOptions(merge: true));
@@ -468,27 +529,27 @@ class FamilyService extends GetxService {
         .limit(20)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map((doc) {
-        final data = doc.data();
-        Timestamp? timestamp = data['timestamp'] as Timestamp?;
-        // Handle server timestamp pending write
-        if (timestamp == null) {
-            timestamp = Timestamp.now();
-        }
-        
-        return FamilyActivityModel(
-            id: doc.id,
-            type: ActivityType.values.firstWhere(
+          return snapshot.docs.map((doc) {
+            final data = doc.data();
+            Timestamp? timestamp = data['timestamp'] as Timestamp?;
+            // Handle server timestamp pending write
+            if (timestamp == null) {
+              timestamp = Timestamp.now();
+            }
+
+            return FamilyActivityModel(
+              id: doc.id,
+              type: ActivityType.values.firstWhere(
                 (e) => e.name == data['type'],
                 orElse: () => ActivityType.prayerLog,
-            ),
-            userId: data['userId'] ?? '',
-            userName: data['userName'] ?? 'Unknown',
-            userPhoto: data['userPhoto'],
-            timestamp: timestamp.toDate(),
-            data: data['data'] as Map<String, dynamic>? ?? {},
-        );
-      }).toList();
-    });
+              ),
+              userId: data['userId'] ?? '',
+              userName: data['userName'] ?? 'Unknown',
+              userPhoto: data['userPhoto'],
+              timestamp: timestamp.toDate(),
+              data: data['data'] as Map<String, dynamic>? ?? {},
+            );
+          }).toList();
+        });
   }
 }

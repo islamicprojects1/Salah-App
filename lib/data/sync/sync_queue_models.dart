@@ -1,14 +1,6 @@
 import 'dart:convert';
 
-/// Types of items that can be queued for offline sync.
-/// Sync is owned by [PrayerRepository] and [SyncService]; see [SyncService] for connectivity-triggered sync.
-enum SyncItemType {
-  prayerLog,
-  userUpdate,
-  reaction,
-  groupUpdate,
-  achievementUpdate,
-}
+import 'package:salah/core/constants/enums.dart';
 
 /// Single item in the sync queue (SQLite).
 class SyncQueueItem {

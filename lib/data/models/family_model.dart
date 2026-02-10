@@ -1,10 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-
-/// Role of the family member
-enum MemberRole {
-  parent,
-  child,
-}
+import 'package:salah/core/constants/enums.dart';
 
 /// Member model representing a user in a family
 class MemberModel {

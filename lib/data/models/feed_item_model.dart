@@ -1,25 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-
-/// Feed item type enum
-enum FeedItemType {
-  prayerLogged,       // سجّل صلاة
-  streakMilestone,    // أكمل سلسلة
-  challengeCompleted, // أتم تحدي
-  achievementUnlocked,// فتح إنجاز
-  familyJoined,       // انضم لعائلة
-  groupJoined,        // انضم لمجموعة
-  encouragement,      // تشجيع
-  milestone,          // إنجاز عام
-}
-
-/// Reaction type enum
-enum ReactionType {
-  like,       // 👍
-  celebrate,  // 🎉
-  pray,       // 🤲
-  encourage,  // 💪
-  love,       // ❤️
-}
+import 'package:salah/core/constants/enums.dart';
 
 /// Feed item model for social timeline
 class FeedItemModel {

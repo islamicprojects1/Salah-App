@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:salah/core/constants/enums.dart';
 import 'package:salah/core/feedback/app_feedback.dart';
 import 'package:salah/core/services/auth_service.dart';
 import 'package:salah/core/services/prayer_time_service.dart';
@@ -21,7 +22,7 @@ class MissedPrayersController extends GetxController {
   // ============================================================
 
   final missedPrayers = <PrayerTimeModel>[].obs;
-  final prayerStatuses = <PrayerName, PrayerStatus>{}.obs;
+  final prayerStatuses = <PrayerName, PrayerCardStatus>{}.obs;
   final prayerTimings = <PrayerName, PrayerTimingQuality>{}.obs;
   final isLoading = false.obs;
   final isSaving = false.obs;
@@ -77,7 +78,7 @@ class MissedPrayersController extends GetxController {
             // Default: user prayed but forgot to log (optimistic)
             final prayerType = prayer.prayerType;
             if (prayerType != null) {
-              prayerStatuses[prayerType] = PrayerStatus.prayed;
+              prayerStatuses[prayerType] = PrayerCardStatus.prayed;
               prayerTimings[prayerType] = PrayerTimingQuality.onTime;
             }
           }
@@ -93,11 +94,11 @@ class MissedPrayersController extends GetxController {
   }
 
   /// Set prayer status (prayed/missed)
-  void setPrayerStatus(PrayerName prayer, PrayerStatus status) {
+  void setPrayerStatus(PrayerName prayer, PrayerCardStatus status) {
     prayerStatuses[prayer] = status;
 
     // If missed, set timing to missed
-    if (status == PrayerStatus.missed) {
+    if (status == PrayerCardStatus.missed) {
       prayerTimings[prayer] = PrayerTimingQuality.missed;
     } else {
       // Default to on time
@@ -139,7 +140,7 @@ class MissedPrayersController extends GetxController {
 
         DateTime prayedAt;
 
-        if (status == PrayerStatus.missed) {
+        if (status == PrayerCardStatus.missed) {
           // If missed, use adhan time (will be marked as missed in quality)
           prayedAt = prayer.dateTime.add(
             Duration(minutes: range.totalMinutes + 1),
@@ -162,7 +163,7 @@ class MissedPrayersController extends GetxController {
             timing ?? PrayerTimingQuality.onTime,
           ),
           timingQuality: timing,
-          note: status == PrayerStatus.missed
+          note: status == PrayerCardStatus.missed
               ? 'Logged as missed'
               : 'Batch logged',
         );
@@ -202,6 +203,3 @@ class MissedPrayersController extends GetxController {
     Get.back();
   }
 }
-
-/// Prayer status enum
-enum PrayerStatus { prayed, missed }

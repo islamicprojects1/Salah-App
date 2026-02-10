@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:adhan/adhan.dart';
+import 'package:salah/core/constants/enums.dart';
 import 'package:salah/core/helpers/prayer_names.dart';
 import 'package:salah/core/services/database_helper.dart';
 import 'package:salah/core/services/location_service.dart';
@@ -7,34 +8,6 @@ import 'package:salah/core/services/storage_service.dart';
 import 'package:salah/data/models/prayer_time_model.dart';
 
 /// Service for calculating prayer times using Adhan package
-// ============================================================
-// ENUMS
-// ============================================================
-
-/// Prayer timing quality based on when prayer was logged
-/// relative to the prayer time window
-enum PrayerTimingQuality {
-  veryEarly, // 🟩 Dark Green - Beginning of time (0-15%)
-  early, // 🟢 Light Green - Early in time (15-40%)
-  onTime, // 🟡 Yellow - Middle of time (40-70%)
-  late, // 🟠 Orange - Late in time (70-90%)
-  veryLate, // 🔴 Light Red - Very late (90-100%)
-  missed, // ⚫ Dark Red - After time ended
-  notYet, // ⚪ White/Gray - Time hasn't come yet
-}
-
-/// Legacy enum for backward compatibility
-/// Will be gradually replaced with PrayerTimingQuality
-enum PrayerQuality {
-  early, // Within 15 minutes of adhan (green)
-  onTime, // Within 30 minutes of adhan (yellow/gold)
-  late, // After 30 minutes (orange)
-  missed, // Not prayed before next prayer
-}
-
-/// Prayer names
-enum PrayerName { fajr, sunrise, dhuhr, asr, maghrib, isha }
-
 class PrayerTimeService extends GetxService {
   // ============================================================
   // DEPENDENCIES

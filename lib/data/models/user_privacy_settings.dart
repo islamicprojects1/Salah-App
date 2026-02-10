@@ -1,9 +1,4 @@
-/// Privacy mode for user profile visibility
-enum PrivacyMode {
-  public,      // Everyone can see profile
-  anonymous,   // Only stats without name/photo
-  private,     // Only family can see
-}
+import 'package:salah/core/constants/enums.dart';
 
 /// User privacy settings model
 class UserPrivacySettings {

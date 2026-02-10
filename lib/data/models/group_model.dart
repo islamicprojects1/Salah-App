@@ -1,11 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-
-/// Group type enum
-enum GroupType {
-  family,  // عائلتي - Full transparency
-  guided,  // مجموعة بقائد - Leader controls settings
-  friends, // أصدقاء - Full transparency, competition mode
-}
+import 'package:salah/core/constants/enums.dart';
 
 /// Group settings model
 class GroupSettings {

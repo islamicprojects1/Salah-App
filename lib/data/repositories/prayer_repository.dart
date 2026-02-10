@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uuid/uuid.dart';
 import 'package:get/get.dart';
+import 'package:salah/core/constants/enums.dart';
 import 'package:salah/core/feedback/app_feedback.dart';
 import 'package:salah/core/services/auth_service.dart';
 import 'package:salah/core/services/connectivity_service.dart';

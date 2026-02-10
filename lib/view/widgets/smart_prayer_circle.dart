@@ -83,17 +83,17 @@ class _SmartPrayerCircleState extends State<SmartPrayerCircle>
                     boxShadow: [
                       BoxShadow(
                         color: isLogged
-                            ? Colors.green.withOpacity(0.3)
+                            ? Colors.green.withValues(alpha: 0.3)
                             : isPrayerTime
-                                ? AppColors.primary.withOpacity(0.4)
-                                : Colors.black.withOpacity(0.08),
+                                ? AppColors.primary.withValues(alpha: 0.4)
+                                : Colors.black.withValues(alpha: 0.08),
                         blurRadius: 40,
                         spreadRadius: 2,
                       ),
                       if (isPrayerTime || isLogged)
                         BoxShadow(
                           color: (isLogged ? Colors.green : AppColors.primary)
-                              .withOpacity(0.15),
+                              .withValues(alpha: 0.15),
                           blurRadius: 20,
                           spreadRadius: 10,
                         ),
@@ -124,9 +124,9 @@ class _SmartPrayerCircleState extends State<SmartPrayerCircle>
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                     decoration: BoxDecoration(
-                      color: AppColors.surface.withOpacity(0.8),
+                      color: AppColors.surface.withValues(alpha: 0.8),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: AppColors.primary.withOpacity(0.1)),
+                      border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
                     ),
                     child: Text(
                       intl.DateFormat('h:mm a').format(_currentTime),
@@ -193,7 +193,7 @@ class _SmartPrayerCircleState extends State<SmartPrayerCircle>
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
                           decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.1),
+                            color: AppColors.primary.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
@@ -218,10 +218,10 @@ class _SmartPrayerCircleState extends State<SmartPrayerCircle>
                     child: CustomPaint(
                       painter: _PrayerProgressPainter(
                         color: isLogged 
-                            ? Colors.green.withOpacity(0.3)
+                            ? Colors.green.withValues(alpha: 0.3)
                             : isPrayerTime 
-                                ? AppColors.primary.withOpacity(0.3)
-                                : AppColors.textSecondary.withOpacity(0.05),
+                                ? AppColors.primary.withValues(alpha: 0.3)
+                                : AppColors.textSecondary.withValues(alpha: 0.05),
                         progress: isPrayerTime ? 1.0 : 0.75, // Simplified progress for now
                         isActive: true,
                       ),
@@ -273,7 +273,7 @@ class _RealClockPainter extends CustomPainter {
       textPainter.text = TextSpan(
         text: '$i',
         style: AppFonts.bodyMedium.copyWith(
-          color: isMain ? textColor : textColor.withOpacity(0.6),
+          color: isMain ? textColor : textColor.withValues(alpha: 0.6),
           fontWeight: isMain ? FontWeight.bold : FontWeight.normal,
           fontSize: isMain ? 18 : 14,
         ),
@@ -289,7 +289,7 @@ class _RealClockPainter extends CustomPainter {
     // 2. Ticks for Minutes (small dots)
     final tickPaint = Paint()
       ..strokeCap = StrokeCap.round
-      ..color = textColor.withOpacity(0.2);
+      ..color = textColor.withValues(alpha: 0.2);
 
     for (int i = 0; i < 60; i++) {
       if (i % 5 != 0) {
@@ -360,7 +360,7 @@ class _RealClockPainter extends CustomPainter {
 
     // Shadow
     final shadowPaint = Paint()
-      ..color = Colors.black.withOpacity(0.2)
+      ..color = Colors.black.withValues(alpha: 0.2)
       ..strokeWidth = width
       ..strokeCap = StrokeCap.round
       ..maskFilter = const MaskFilter.blur(ui.BlurStyle.normal, 2);

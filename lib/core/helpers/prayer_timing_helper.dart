@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:salah/core/services/prayer_time_service.dart';
 import 'package:get/get.dart';
+import 'package:salah/core/constants/enums.dart';
+import 'package:salah/core/services/prayer_time_service.dart';
 
 /// Helper class for prayer timing quality related UI functions
 class PrayerTimingHelper {
@@ -115,9 +116,9 @@ class PrayerTimingHelper {
   static List<Color> getQualityGradient(PrayerTimingQuality quality) {
     final baseColor = getQualityColor(quality);
     return [
-      baseColor.withOpacity(0.7),
+      baseColor.withValues(alpha: 0.7),
       baseColor,
-      baseColor.withOpacity(0.9),
+      baseColor.withValues(alpha: 0.9),
     ];
   }
 

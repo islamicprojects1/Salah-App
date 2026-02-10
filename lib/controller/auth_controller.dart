@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:salah/core/constants/enums.dart';
 import 'package:salah/core/constants/storage_keys.dart';
 import 'package:salah/core/helpers/input_validators.dart';
 import 'package:salah/core/services/auth_service.dart';

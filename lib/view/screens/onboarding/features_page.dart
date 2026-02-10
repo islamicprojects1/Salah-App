@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
 import 'package:salah/controller/onboarding_controller.dart';
+import 'package:salah/core/constants/enums.dart';
 import 'package:salah/core/theme/app_colors.dart';
 
 /// Features showcase page with swipeable feature cards
@@ -13,12 +14,12 @@ class FeaturesPage extends GetView<OnboardingController> {
   Widget build(BuildContext context) {
     final pageData = controller.getPageData(OnboardingStep.features);
     final isArabic = Get.locale?.languageCode == 'ar';
-    
+
     return SafeArea(
       child: Column(
         children: [
           const Spacer(flex: 1),
-          
+
           // Animation
           SizedBox(
             height: 220,
@@ -34,9 +35,9 @@ class FeaturesPage extends GetView<OnboardingController> {
               },
             ),
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // Title
           Text(
             isArabic ? pageData.title : pageData.titleEn,
@@ -46,9 +47,9 @@ class FeaturesPage extends GetView<OnboardingController> {
               color: AppColors.textPrimary,
             ),
           ),
-          
+
           const SizedBox(height: 8),
-          
+
           Text(
             isArabic ? pageData.subtitle : pageData.subtitleEn,
             textAlign: TextAlign.center,
@@ -58,9 +59,9 @@ class FeaturesPage extends GetView<OnboardingController> {
               height: 1.5,
             ),
           ),
-          
+
           const Spacer(flex: 1),
-          
+
           // Feature highlights
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -82,22 +83,26 @@ class FeaturesPage extends GetView<OnboardingController> {
                 const SizedBox(height: 12),
                 _buildFeatureRow(
                   icon: Icons.celebration_rounded,
-                  title: isArabic ? 'إنجازات وتحديات' : 'Achievements & challenges',
-                  subtitle: isArabic ? 'حافز للاستمرار' : 'Motivation to continue',
+                  title: isArabic
+                      ? 'إنجازات وتحديات'
+                      : 'Achievements & challenges',
+                  subtitle: isArabic
+                      ? 'حافز للاستمرار'
+                      : 'Motivation to continue',
                   color: const Color(0xFFF59E0B),
                 ),
               ],
             ),
           ),
-          
+
           const Spacer(flex: 2),
-          
+
           // Navigation
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 32),
             child: _buildNavigationRow(),
           ),
-          
+
           const SizedBox(height: 40),
         ],
       ),
@@ -113,9 +118,9 @@ class FeaturesPage extends GetView<OnboardingController> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
@@ -169,7 +174,7 @@ class FeaturesPage extends GetView<OnboardingController> {
           icon: Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.textSecondary.withOpacity(0.1),
+              color: AppColors.textSecondary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
@@ -194,13 +199,13 @@ class FeaturesPage extends GetView<OnboardingController> {
                 gradient: LinearGradient(
                   colors: [
                     AppColors.primary,
-                    AppColors.primary.withOpacity(0.8),
+                    AppColors.primary.withValues(alpha: 0.8),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(14),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primary.withOpacity(0.3),
+                    color: AppColors.primary.withValues(alpha: 0.3),
                     blurRadius: 16,
                     offset: const Offset(0, 8),
                   ),
@@ -240,12 +245,12 @@ class FamilyPage extends GetView<OnboardingController> {
   Widget build(BuildContext context) {
     final pageData = controller.getPageData(OnboardingStep.family);
     final isArabic = Get.locale?.languageCode == 'ar';
-    
+
     return SafeArea(
       child: Column(
         children: [
           const Spacer(flex: 1),
-          
+
           // Animation
           SizedBox(
             height: 220,
@@ -261,17 +266,14 @@ class FamilyPage extends GetView<OnboardingController> {
               },
             ),
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // Title with emoji
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                pageData.emoji,
-                style: const TextStyle(fontSize: 32),
-              ),
+              Text(pageData.emoji, style: const TextStyle(fontSize: 32)),
               const SizedBox(width: 12),
               Text(
                 isArabic ? pageData.title : pageData.titleEn,
@@ -283,9 +285,9 @@ class FamilyPage extends GetView<OnboardingController> {
               ),
             ],
           ),
-          
+
           const SizedBox(height: 8),
-          
+
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 40),
             child: Text(
@@ -298,9 +300,9 @@ class FamilyPage extends GetView<OnboardingController> {
               ),
             ),
           ),
-          
+
           const Spacer(flex: 1),
-          
+
           // Family features
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -311,49 +313,55 @@ class FamilyPage extends GetView<OnboardingController> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    AppColors.secondary.withOpacity(0.1),
-                    AppColors.primary.withOpacity(0.05),
+                    AppColors.secondary.withValues(alpha: 0.1),
+                    AppColors.primary.withValues(alpha: 0.05),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: AppColors.primary.withOpacity(0.2),
-                ),
+                border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
               ),
               child: Column(
                 children: [
                   _buildFamilyFeature(
                     emoji: '👀',
-                    text: isArabic ? 'تابع صلاة أفراد عائلتك' : 'Track family prayers',
+                    text: isArabic
+                        ? 'تابع صلاة أفراد عائلتك'
+                        : 'Track family prayers',
                   ),
                   const SizedBox(height: 12),
                   _buildFamilyFeature(
                     emoji: '💚',
-                    text: isArabic ? 'أرسل تشجيعاً لمن تحب' : 'Send encouragements',
+                    text: isArabic
+                        ? 'أرسل تشجيعاً لمن تحب'
+                        : 'Send encouragements',
                   ),
                   const SizedBox(height: 12),
                   _buildFamilyFeature(
                     emoji: '🔔',
-                    text: isArabic ? 'تذكيرات لطيفة ومحفزة' : 'Gentle reminders',
+                    text: isArabic
+                        ? 'تذكيرات لطيفة ومحفزة'
+                        : 'Gentle reminders',
                   ),
                   const SizedBox(height: 12),
                   _buildFamilyFeature(
                     emoji: '🔒',
-                    text: isArabic ? 'الخصوصية محفوظة دائماً' : 'Privacy always protected',
+                    text: isArabic
+                        ? 'الخصوصية محفوظة دائماً'
+                        : 'Privacy always protected',
                   ),
                 ],
               ),
             ),
           ),
-          
+
           const Spacer(flex: 2),
-          
+
           // Navigation
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 32),
             child: _buildNavigationRow(),
           ),
-          
+
           const SizedBox(height: 40),
         ],
       ),
@@ -390,7 +398,7 @@ class FamilyPage extends GetView<OnboardingController> {
           icon: Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.textSecondary.withOpacity(0.1),
+              color: AppColors.textSecondary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
@@ -414,13 +422,13 @@ class FamilyPage extends GetView<OnboardingController> {
                 gradient: LinearGradient(
                   colors: [
                     AppColors.primary,
-                    AppColors.primary.withOpacity(0.8),
+                    AppColors.primary.withValues(alpha: 0.8),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(14),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primary.withOpacity(0.3),
+                    color: AppColors.primary.withValues(alpha: 0.3),
                     blurRadius: 16,
                     offset: const Offset(0, 8),
                   ),

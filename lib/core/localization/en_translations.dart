@@ -141,6 +141,7 @@ const Map<String, String> enTranslations = {
 
   // ==================== Family ====================
   'family': 'Family',
+  'family_pulse': 'Family Pulse',
   'create_family': 'Create Family',
   'join_family': 'Join Family',
   'no_family_yet': 'You haven\'t joined a family yet',
@@ -318,5 +319,45 @@ const Map<String, String> enTranslations = {
   'loading_prayers': 'Loading prayer times',
   'calculating_times': 'Calculating times',
   'fetching_location': 'Fetching location',
-};
 
+  // ==================== Dashboard & Tabs ====================
+  'dashboard': 'Dashboard',
+  'family_tab': 'Family',
+  'todays_prayers_label': 'Today\'s Prayers',
+  'day_unit': 'day',
+
+  // ==================== Location (Settings) ====================
+  'location_section': 'Location',
+  'updating_location': 'Updating...',
+  'update_location': 'Update Location',
+  'location_default_hint': 'Times are based on Makkah. Enable location or tap to update.',
+
+  // ==================== Notification Types (Settings) ====================
+  'adhan_notification': 'Adhan Alert',
+  'adhan_notification_desc': 'Alert when prayer time enters',
+  'reminder_notification': 'Prayer Reminder',
+  'reminder_notification_desc': 'Reminder after 30 min if not logged',
+  'family_notification_label': 'Family Notifications',
+  'family_notification_desc': 'Alert when a family member prays',
+  'sound_adhan': 'Adhan',
+  'sound_vibrate': 'Vibrate',
+  'sound_silent': 'Silent',
+
+  // ==================== Family Dashboard ====================
+  'invite_code_label': 'Invite Code',
+  'add_child_no_phone_btn': 'Add child (no phone)',
+  'family_members_count': 'Family Members (@count)',
+  'family_admin': 'Family Admin',
+  'member_role': 'Member',
+  'family_daily_summary': 'Family Summary Today',
+  'share_family_invite': 'Join my family on Qurb! Invite code: @code',
+
+  // ==================== Misc / Sharing ====================
+  'share_app_text': 'Download Qurb - Family Prayer Tracking App',
+  'coming_soon_store': 'Coming soon to the app store',
+  'now_label': 'Now',
+  'minutes_short': 'm',
+  'hours_short': 'h',
+  'dashboard_load_error': 'Failed to load dashboard',
+  'notification_schedule_error': 'Failed to schedule notifications',
+};

@@ -1,13 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:salah/core/constants/enums.dart';
 import 'user_privacy_settings.dart';
 
-/// Gender enum
-enum Gender { male, female }
-
-/// User role in the app
-enum UserRole { solo, parent, child }
-
-/// Calculation method for prayer times
+/// Calculation method for prayer times (Firestore/camelCase)
 enum CalculationMethod {
   muslimWorldLeague,
   egyptian,
@@ -23,7 +18,7 @@ enum CalculationMethod {
   northAmerica,
 }
 
-/// Madhab for Asr calculation
+/// Madhab for Asr calculation (Firestore)
 enum Madhab { shafi, hanafi }
 
 /// User model for Firestore

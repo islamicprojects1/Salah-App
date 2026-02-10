@@ -1,4 +1,4 @@
-import 'package:salah/core/services/prayer_time_service.dart';
+import 'package:salah/core/constants/enums.dart';
 import 'package:salah/data/models/prayer_log_model.dart';
 
 /// Single source of truth for prayer name ↔ enum mapping and "is logged" logic.
@@ -31,6 +31,20 @@ class PrayerNames {
       if (p.name == trimmed) return p;
     }
     return PrayerName.fajr;
+  }
+
+  /// Convert an English key string (e.g. 'fajr', 'dhuhr') to [PrayerName] enum.
+  /// Single source of truth – replaces duplicate `_prayerKeyToName` methods.
+  static PrayerName fromKey(String key) {
+    switch (key.toLowerCase()) {
+      case 'fajr': return PrayerName.fajr;
+      case 'sunrise': return PrayerName.sunrise;
+      case 'dhuhr': return PrayerName.dhuhr;
+      case 'asr': return PrayerName.asr;
+      case 'maghrib': return PrayerName.maghrib;
+      case 'isha': return PrayerName.isha;
+      default: return PrayerName.fajr;
+    }
   }
 
   /// Whether the given prayer is already in the logs (by name or enum, including sunrise).

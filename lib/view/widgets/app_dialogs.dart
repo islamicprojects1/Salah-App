@@ -4,6 +4,7 @@ import 'package:lottie/lottie.dart';
 import 'package:salah/core/theme/app_colors.dart';
 import 'package:salah/core/theme/app_fonts.dart';
 import 'package:salah/core/constants/app_dimensions.dart';
+import 'package:salah/core/constants/enums.dart';
 import 'package:salah/core/constants/image_assets.dart';
 
 /// Custom dialog utilities for the app
@@ -258,12 +259,6 @@ class AppDialogs {
     );
   }
 }
-
-// ============================================================
-// SNACKBAR TYPE ENUM
-// ============================================================
-
-enum SnackbarType { success, error, warning, info }
 
 // ============================================================
 // DIALOG WIDGETS

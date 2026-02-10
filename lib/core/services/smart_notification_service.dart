@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
+import 'package:salah/core/constants/enums.dart';
 import 'package:timezone/timezone.dart' as tz;
 
 import '../../data/models/notification_models.dart';
@@ -13,51 +14,56 @@ class SmartNotificationService extends GetxService {
   // ============================================================
   // PRIVATE MEMBERS
   // ============================================================
-  
+
   late final FlutterLocalNotificationsPlugin _notificationsPlugin;
   late final StorageService _storageService;
-  
+
   // Stream controller for notification actions
-  final _actionStreamController = StreamController<NotificationActionType>.broadcast();
-  
+  final _actionStreamController =
+      StreamController<NotificationActionType>.broadcast();
+
   /// Stream of notification actions
-  Stream<NotificationActionType> get actionStream => _actionStreamController.stream;
+  Stream<NotificationActionType> get actionStream =>
+      _actionStreamController.stream;
 
   // ============================================================
   // INITIALIZATION
   // ============================================================
-  
+
   /// Initialize the service
   Future<SmartNotificationService> init() async {
     _notificationsPlugin = FlutterLocalNotificationsPlugin();
     _storageService = Get.find<StorageService>();
-    
+
     // Initialize notification settings with action support
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidSettings = AndroidInitializationSettings(
+      '@mipmap/ic_launcher',
+    );
     const iosSettings = DarwinInitializationSettings(
       requestAlertPermission: true,
       requestBadgePermission: true,
       requestSoundPermission: true,
     );
-    
+
     const initSettings = InitializationSettings(
       android: androidSettings,
       iOS: iosSettings,
     );
-    
+
     await _notificationsPlugin.initialize(
       settings: initSettings,
       onDidReceiveNotificationResponse: _handleNotificationResponse,
-      onDidReceiveBackgroundNotificationResponse: _handleBackgroundNotificationResponse,
+      onDidReceiveBackgroundNotificationResponse:
+          _handleBackgroundNotificationResponse,
     );
-    
+
     return this;
   }
 
   // ============================================================
   // PRAYER TIME NOTIFICATIONS
   // ============================================================
-  
+
   /// Show prayer time notification with quick actions
   Future<void> showPrayerTimeNotification({
     required int id,
@@ -67,15 +73,13 @@ class SmartNotificationService extends GetxService {
     String language = 'ar',
   }) async {
     final isArabic = language == 'ar';
-    
-    final title = isArabic 
+
+    final title = isArabic
         ? 'حان وقت $prayerName 🕌'
         : 'Time for $prayerNameEn 🕌';
-    
-    final body = isArabic
-        ? 'هيا لنصلي معاً'
-        : "Let's pray together";
-    
+
+    final body = isArabic ? 'هيا لنصلي معاً' : "Let's pray together";
+
     final soundMode = _storageService.getNotificationSoundMode();
     final channelId = _getPrayerChannelId(soundMode);
 
@@ -83,7 +87,7 @@ class SmartNotificationService extends GetxService {
     final androidDetails = AndroidNotificationDetails(
       channelId,
       isArabic ? 'إشعارات الصلاة' : 'Prayer Notifications',
-      channelDescription: isArabic 
+      channelDescription: isArabic
           ? 'إشعارات مواقيت الصلاة'
           : 'Prayer time notifications',
       importance: Importance.high,
@@ -114,7 +118,7 @@ class SmartNotificationService extends GetxService {
       // Store prayer info in payload
       tag: prayerName,
     );
-    
+
     final notificationDetails = NotificationDetails(
       android: androidDetails,
       iOS: DarwinNotificationDetails(
@@ -123,7 +127,7 @@ class SmartNotificationService extends GetxService {
         presentSound: soundMode != NotificationSoundMode.silent,
       ),
     );
-    
+
     await _notificationsPlugin.show(
       id: id,
       title: title,
@@ -142,21 +146,21 @@ class SmartNotificationService extends GetxService {
     String language = 'ar',
   }) async {
     final isArabic = language == 'ar';
-    
-    final title = isArabic 
+
+    final title = isArabic
         ? 'هل صليت $prayerName؟ 🤲'
         : 'Did you pray $prayerNameEn? 🤲';
-    
+
     final body = isArabic
         ? 'مرّت 30 دقيقة على الأذان'
         : '30 minutes since Adhan';
-    
+
     final soundMode = _storageService.getNotificationSoundMode();
 
     final androidDetails = AndroidNotificationDetails(
       ApiConstants.reminderNotificationChannelId,
       isArabic ? 'تذكيرات الصلاة' : 'Prayer Reminders',
-      channelDescription: isArabic 
+      channelDescription: isArabic
           ? 'تذكيرات بعد وقت الصلاة'
           : 'Reminders after prayer time',
       importance: Importance.high,
@@ -179,7 +183,7 @@ class SmartNotificationService extends GetxService {
       ],
       tag: '$prayerName-reminder',
     );
-    
+
     final notificationDetails = NotificationDetails(
       android: androidDetails,
       iOS: DarwinNotificationDetails(
@@ -188,7 +192,7 @@ class SmartNotificationService extends GetxService {
         presentSound: soundMode != NotificationSoundMode.silent,
       ),
     );
-    
+
     await _notificationsPlugin.show(
       id: id + 100, // Different ID for reminder
       title: title,
@@ -208,17 +212,17 @@ class SmartNotificationService extends GetxService {
     String language = 'ar',
   }) async {
     Duration delay = const Duration(minutes: 30); // Default
-    
+
     if (pattern != null && pattern.confidence > 0.5) {
       delay = pattern.getOptimalReminderOffset();
     }
-    
+
     final scheduledTime = prayerTime.add(delay);
-    
+
     if (scheduledTime.isBefore(DateTime.now())) return;
-    
+
     final isArabic = language == 'ar';
-    
+
     final androidDetails = AndroidNotificationDetails(
       ApiConstants.reminderNotificationChannelId,
       isArabic ? 'تذكيرات ذكية' : 'Smart Reminders',
@@ -239,7 +243,7 @@ class SmartNotificationService extends GetxService {
         ),
       ],
     );
-    
+
     await _notificationsPlugin.zonedSchedule(
       id: id + 200,
       title: isArabic ? 'هل صليت $prayerName؟' : 'Did you pray $prayerNameEn?',
@@ -254,7 +258,7 @@ class SmartNotificationService extends GetxService {
   // ============================================================
   // FAMILY NOTIFICATIONS
   // ============================================================
-  
+
   /// Show family encouragement notification
   Future<void> showFamilyEncouragement({
     required int id,
@@ -264,22 +268,22 @@ class SmartNotificationService extends GetxService {
     String language = 'ar',
   }) async {
     final isArabic = language == 'ar';
-    
-    final title = isArabic 
+
+    final title = isArabic
         ? '🎉 $memberName صلّى $prayerName!'
         : '🎉 $memberName prayed $prayerNameEn!';
-    
+
     final body = isArabic
         ? 'لا تتأخر، صلِّ معهم'
         : "Don't be late, pray with them";
-    
+
     final androidDetails = AndroidNotificationDetails(
       ApiConstants.socialNotificationChannelId,
       isArabic ? 'إشعارات العائلة' : 'Family Notifications',
       importance: Importance.defaultImportance,
       priority: Priority.defaultPriority,
     );
-    
+
     await _notificationsPlugin.show(
       id: id,
       title: title,
@@ -296,34 +300,32 @@ class SmartNotificationService extends GetxService {
     String language = 'ar',
   }) async {
     final isArabic = language == 'ar';
-    
+
     String title;
     String body;
-    
+
     if (streakDays == 7) {
       title = isArabic ? '🔥 أسبوع كامل!' : '🔥 Full Week!';
-      body = isArabic 
+      body = isArabic
           ? 'ما شاء الله! أكملت أسبوعاً متواصلاً'
           : 'MashaAllah! You completed a full week';
     } else if (streakDays == 30) {
       title = isArabic ? '🏆 شهر كامل!' : '🏆 Full Month!';
-      body = isArabic 
+      body = isArabic
           ? 'إنجاز عظيم! شهر من الصلاة المتواصلة'
           : 'Great achievement! A month of consistent prayer';
     } else {
       title = isArabic ? '🔥 $streakDays يوم!' : '🔥 $streakDays Days!';
-      body = isArabic 
-          ? 'استمر على هذا الحال! 💪'
-          : 'Keep it up! 💪';
+      body = isArabic ? 'استمر على هذا الحال! 💪' : 'Keep it up! 💪';
     }
-    
+
     final androidDetails = AndroidNotificationDetails(
       ApiConstants.socialNotificationChannelId,
       isArabic ? 'إشعارات الإنجازات' : 'Achievement Notifications',
       importance: Importance.high,
       priority: Priority.high,
     );
-    
+
     await _notificationsPlugin.show(
       id: id,
       title: title,
@@ -336,7 +338,7 @@ class SmartNotificationService extends GetxService {
   // ============================================================
   // MISSED PRAYERS NOTIFICATION
   // ============================================================
-  
+
   /// Show missed prayers reminder (evening)
   Future<void> showMissedPrayersReminder({
     required int id,
@@ -345,16 +347,16 @@ class SmartNotificationService extends GetxService {
     String language = 'ar',
   }) async {
     final isArabic = language == 'ar';
-    
-    final title = isArabic 
+
+    final title = isArabic
         ? 'لم تسجل $missedCount صلوات 💙'
         : 'You haven\'t logged $missedCount prayers 💙';
-    
+
     final prayersText = missedPrayers.join(', ');
     final body = isArabic
         ? '$prayersText - سجّل الآن'
         : '$prayersText - Log now';
-    
+
     final androidDetails = AndroidNotificationDetails(
       ApiConstants.reminderNotificationChannelId,
       isArabic ? 'تذكيرات التسجيل' : 'Logging Reminders',
@@ -368,7 +370,7 @@ class SmartNotificationService extends GetxService {
         ),
       ],
     );
-    
+
     await _notificationsPlugin.show(
       id: id,
       title: title,
@@ -381,12 +383,12 @@ class SmartNotificationService extends GetxService {
   // ============================================================
   // NOTIFICATION HANDLERS
   // ============================================================
-  
+
   /// Handle notification response (when user taps or uses action)
   void _handleNotificationResponse(NotificationResponse response) {
     final actionId = response.actionId;
     final payload = response.payload;
-    
+
     if (actionId != null && actionId.isNotEmpty) {
       final actionType = _parseActionType(actionId);
       if (actionType != null) {
@@ -401,39 +403,44 @@ class SmartNotificationService extends GetxService {
 
   /// Handle background notification response
   @pragma('vm:entry-point')
-  static void _handleBackgroundNotificationResponse(NotificationResponse response) {
+  static void _handleBackgroundNotificationResponse(
+    NotificationResponse response,
+  ) {
     // Handle in background - limited capabilities
     // Store action to process when app opens
   }
 
   /// Handle specific action
-  Future<void> _handleAction(NotificationActionType action, String? payload) async {
+  Future<void> _handleAction(
+    NotificationActionType action,
+    String? payload,
+  ) async {
     switch (action) {
       case NotificationActionType.prayNow:
       case NotificationActionType.confirmPrayed:
         await _logPrayerFromNotification(payload);
         break;
-        
+
       case NotificationActionType.snooze5:
         await _scheduleSnooze(payload, const Duration(minutes: 5));
         break;
-        
+
       case NotificationActionType.snooze10:
         await _scheduleSnooze(payload, const Duration(minutes: 10));
         break;
-        
+
       case NotificationActionType.snooze15:
         await _scheduleSnooze(payload, const Duration(minutes: 15));
         break;
-        
+
       case NotificationActionType.markMissed:
         await _markPrayerMissed(payload);
         break;
-        
+
       case NotificationActionType.willPrayNow:
         // Just acknowledge, user will pray
         break;
-        
+
       case NotificationActionType.dismiss:
         // Just dismiss
         break;
@@ -449,13 +456,13 @@ class SmartNotificationService extends GetxService {
   // ============================================================
   // HELPER METHODS
   // ============================================================
-  
+
   Future<void> _logPrayerFromNotification(String? payload) async {
     if (payload == null) return;
-    
+
     final parts = payload.split('|');
     if (parts.isEmpty) return;
-    
+
     final prayerName = parts[0];
     // Store pending action to be processed by controller
     await _storageService.setPendingPrayerLog(prayerName, DateTime.now());
@@ -463,13 +470,15 @@ class SmartNotificationService extends GetxService {
 
   Future<void> _scheduleSnooze(String? payload, Duration delay) async {
     if (payload == null) return;
-    
+
     final parts = payload.split('|');
     if (parts.isEmpty) return;
-    
+
     final prayerName = parts[0];
-    final prayerTime = parts.length > 1 ? DateTime.tryParse(parts.last) : DateTime.now();
-    
+    final prayerTime = parts.length > 1
+        ? DateTime.tryParse(parts.last)
+        : DateTime.now();
+
     // Schedule a new reminder
     await Future.delayed(delay);
     await showSmartReminder(
@@ -483,10 +492,10 @@ class SmartNotificationService extends GetxService {
 
   Future<void> _markPrayerMissed(String? payload) async {
     if (payload == null) return;
-    
+
     final parts = payload.split('|');
     if (parts.isEmpty) return;
-    
+
     final prayerName = parts[0];
     // Store pending missed prayer
     await _storageService.setPendingMissedPrayer(prayerName, DateTime.now());
@@ -505,7 +514,7 @@ class SmartNotificationService extends GetxService {
   // ============================================================
   // CLEANUP
   // ============================================================
-  
+
   String _getPrayerChannelId(NotificationSoundMode mode) {
     switch (mode) {
       case NotificationSoundMode.adhan:

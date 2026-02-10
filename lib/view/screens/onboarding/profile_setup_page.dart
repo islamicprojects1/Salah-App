@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
 import 'package:salah/controller/onboarding_controller.dart';
+import 'package:salah/core/constants/enums.dart';
 import 'package:salah/core/theme/app_colors.dart';
 
 /// Profile setup page
@@ -34,7 +35,7 @@ class ProfileSetupPage extends GetView<OnboardingController> {
                       width: 100,
                       height: 100,
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.1),
+                        color: AppColors.primary.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
@@ -90,11 +91,11 @@ class ProfileSetupPage extends GetView<OnboardingController> {
                   fillColor: Colors.white,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(color: AppColors.textSecondary.withOpacity(0.2)),
+                    borderSide: BorderSide(color: AppColors.textSecondary.withValues(alpha: 0.2)),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(color: AppColors.textSecondary.withOpacity(0.2)),
+                    borderSide: BorderSide(color: AppColors.textSecondary.withValues(alpha: 0.2)),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
@@ -148,7 +149,7 @@ class ProfileSetupPage extends GetView<OnboardingController> {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: AppColors.textSecondary.withOpacity(0.2),
+                        color: AppColors.textSecondary.withValues(alpha: 0.2),
                       ),
                     ),
                     child: Row(
@@ -253,13 +254,13 @@ class ProfileSetupPage extends GetView<OnboardingController> {
             color: isSelected ? AppColors.primary : Colors.white,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: isSelected ? AppColors.primary : AppColors.textSecondary.withOpacity(0.2),
+              color: isSelected ? AppColors.primary : AppColors.textSecondary.withValues(alpha: 0.2),
               width: isSelected ? 2 : 1,
             ),
             boxShadow: isSelected
                 ? [
                     BoxShadow(
-                      color: AppColors.primary.withOpacity(0.3),
+                      color: AppColors.primary.withValues(alpha: 0.3),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -340,17 +341,17 @@ class ProfileSetupPage extends GetView<OnboardingController> {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: isValid
-                    ? [AppColors.success, AppColors.success.withOpacity(0.8)]
+                    ? [AppColors.success, AppColors.success.withValues(alpha: 0.8)]
                     : [
-                        AppColors.textSecondary.withOpacity(0.3),
-                        AppColors.textSecondary.withOpacity(0.2),
+                        AppColors.textSecondary.withValues(alpha: 0.3),
+                        AppColors.textSecondary.withValues(alpha: 0.2),
                       ],
               ),
               borderRadius: BorderRadius.circular(16),
               boxShadow: isValid
                   ? [
                       BoxShadow(
-                        color: AppColors.success.withOpacity(0.3),
+                        color: AppColors.success.withValues(alpha: 0.3),
                         blurRadius: 20,
                         offset: const Offset(0, 10),
                       ),

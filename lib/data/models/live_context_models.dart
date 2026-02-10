@@ -1,21 +1,13 @@
+import 'package:salah/core/constants/enums.dart';
 import 'package:salah/core/services/prayer_time_service.dart';
 import 'package:salah/data/models/prayer_log_model.dart';
 import 'package:salah/data/models/prayer_time_model.dart';
-
-/// High-level status of the current prayer for the user.
-enum PrayerStatus {
-  notStarted, // Before adhan
-  pending, // Within time window, not yet logged
-  prayedOnTime,
-  prayedLate,
-  missed,
-}
 
 /// Context about the currently active prayer and the next one.
 class PrayerContextModel {
   final PrayerTimeModel? currentPrayer;
   final PrayerTimeModel? nextPrayer;
-  final PrayerStatus status;
+  final LivePrayerStatus status;
   final Duration? timeUntilNext;
 
   const PrayerContextModel({
@@ -28,7 +20,7 @@ class PrayerContextModel {
   factory PrayerContextModel.empty() => const PrayerContextModel(
         currentPrayer: null,
         nextPrayer: null,
-        status: PrayerStatus.notStarted,
+        status: LivePrayerStatus.notStarted,
         timeUntilNext: null,
       );
 
