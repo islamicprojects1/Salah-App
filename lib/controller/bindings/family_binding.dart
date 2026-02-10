@@ -1,11 +1,13 @@
 import 'package:get/get.dart';
 import 'package:salah/controller/family_controller.dart';
-import 'package:salah/core/services/family_service.dart';
 
+/// Binding for family-related screens.
+///
+/// `FamilyService` is already registered in `DashboardBinding` to keep
+/// a single instance for the whole app, so we only ensure the controller here.
 class FamilyBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut<FamilyService>(() => FamilyService());
-    Get.lazyPut<FamilyController>(() => FamilyController());
+    Get.lazyPut<FamilyController>(() => FamilyController(), fenix: true);
   }
 }

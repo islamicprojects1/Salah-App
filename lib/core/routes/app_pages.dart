@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:salah/core/middleware/onboarding_middleware.dart';
 import 'app_routes.dart';
 import '../../view/screens/splash/splash_screen.dart';
 import '../../view/screens/home/home_screen.dart';
@@ -41,6 +42,7 @@ class AppPages {
       name: AppRoutes.onboarding,
       page: () => const OnboardingScreen(),
       binding: AuthBinding(),
+      middlewares: [OnboardingMiddleware()],
       transition: Transition.fade,
     ),
 
@@ -49,21 +51,21 @@ class AppPages {
       name: AppRoutes.login,
       page: () => const LoginScreen(),
       binding: AuthBinding(),
-      transition: Transition.fadeIn,
+      transition: Transition.fade, // Smooth fade to login
     ),
 
     // Register
     GetPage(
       name: AppRoutes.register,
       page: () => const RegisterScreen(),
-      transition: Transition.rightToLeft,
+      transition: Transition.cupertino, // Standard push
     ),
 
     // Profile Setup
     GetPage(
       name: AppRoutes.profileSetup,
       page: () => const ProfileSetupScreen(),
-      transition: Transition.rightToLeft,
+      transition: Transition.cupertino, // Standard push
     ),
 
     // Dashboard (main screen after login)
@@ -71,7 +73,8 @@ class AppPages {
       name: AppRoutes.dashboard,
       page: () => const DashboardScreen(),
       binding: DashboardBinding(),
-      transition: Transition.fadeIn,
+      middlewares: [OnboardingMiddleware()],
+      transition: Transition.fadeIn, // Smooth entry to main app
     ),
 
     // Home Screen (legacy)
@@ -86,27 +89,27 @@ class AppPages {
       name: AppRoutes.settings,
       page: () => const SettingsScreen(),
       binding: SettingsBinding(),
-      transition: Transition.rightToLeft,
+      transition: Transition.cupertino, // Standard navigation
     ),
 
     // Family Screens
     GetPage(
       name: AppRoutes.family,
-      page: () => const FamilyDashboardScreen(), // Need to create this
+      page: () => const FamilyDashboardScreen(),
       binding: FamilyBinding(),
-      transition: Transition.fadeIn,
+      transition: Transition.cupertino, // Standard navigation
     ),
     GetPage(
       name: AppRoutes.createFamily,
       page: () => const CreateFamilyScreen(),
       binding: FamilyBinding(),
-      transition: Transition.rightToLeft,
+      transition: Transition.cupertino, // Standard navigation
     ),
     GetPage(
       name: AppRoutes.joinFamily,
       page: () => const JoinFamilyScreen(),
       binding: FamilyBinding(),
-      transition: Transition.rightToLeft,
+      transition: Transition.cupertino, // Standard navigation
     ),
 
     // Missed Prayers

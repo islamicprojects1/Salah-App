@@ -13,6 +13,9 @@ import 'package:salah/data/models/prayer_log_model.dart';
 import 'package:salah/view/widgets/app_loading.dart';
 import 'package:salah/view/widgets/connection_status_indicator.dart';
 import 'package:salah/view/widgets/smart_prayer_circle.dart';
+import 'package:salah/view/widgets/daily_review_card.dart';
+import 'package:salah/view/widgets/prayer_heatmap.dart';
+import 'package:salah/view/widgets/drawer.dart';
 import 'package:salah/view/screens/qibla/qibla_screen.dart';
 
 class DashboardScreen extends GetView<DashboardController> {
@@ -23,80 +26,42 @@ class DashboardScreen extends GetView<DashboardController> {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
+        key: controller.scaffoldKey,
+        drawer: const CustomDrawer(),
         backgroundColor: AppColors.background,
-        appBar: _buildAppBar(),
+        appBar: const DashboardAppBar(),
         body: _buildBody(),
       ),
     );
   }
 
-  PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      backgroundColor: AppColors.surface,
-      elevation: 0,
-      centerTitle: true,
-      // Settings Button
-      leading: IconButton(
-        icon: Icon(Icons.settings_outlined, color: AppColors.textPrimary),
-        onPressed: () => Get.toNamed(AppRoutes.settings),
-      ),
-      // City Name in Center
-      title: Obx(
-        () => Column(
-          children: [
-            Text(
-              controller.currentCity.value,
-              style: AppFonts.titleMedium.copyWith(
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            Text(
-              _getDateString(),
-              style: AppFonts.labelSmall.copyWith(
-                color: AppColors.textSecondary,
-                fontSize: 10,
-              ),
-            ),
-          ],
-        ),
-      ),
-
-      // Qibla Action
-      actions: [
-        IconButton(
-          icon: Icon(Icons.explore_outlined, color: AppColors.textPrimary),
-          onPressed: () => Get.to(
-            () => const QiblaScreen(),
-            transition: Transition.downToUp,
-            fullscreenDialog: true,
-          ),
-          tooltip: 'qibla'.tr,
-        ),
-      ],
-
-      // Tabs: Dashboard | Family
-      bottom: TabBar(
-        labelColor: AppColors.primary,
-        unselectedLabelColor: AppColors.textSecondary,
-        indicatorColor: AppColors.primary,
-        indicatorWeight: 3,
-        labelStyle: AppFonts.titleSmall.copyWith(fontWeight: FontWeight.bold),
-        tabs: [
-          Tab(text: 'dashboard'.tr),
-          Tab(text: 'family_tab'.tr),
-        ],
-      ),
-    );
-  }
-
   Widget _buildBody() {
-    return TabBarView(
-      children: [_buildHomeContent(), const FamilyDashboardScreen()],
+    return const TabBarView(
+      children: [
+        DashboardHomeContent(),
+        FamilyDashboardScreen(),
+      ],
     );
   }
+}
 
-  Widget _buildHomeContent() {
+class DashboardHomeContent extends StatefulWidget {
+  const DashboardHomeContent({super.key});
+
+  @override
+  State<DashboardHomeContent> createState() => _DashboardHomeContentState();
+}
+
+class _DashboardHomeContentState extends State<DashboardHomeContent>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    final controller = Get.find<DashboardController>();
+
     return SafeArea(
       child: Obx(() {
         if (controller.isLoading.value) {
@@ -104,12 +69,20 @@ class DashboardScreen extends GetView<DashboardController> {
         }
 
         return SingleChildScrollView(
-          padding: EdgeInsets.only(bottom: 20),
+          padding: const EdgeInsets.only(bottom: 20),
           child: Column(
             children: [
               const SizedBox(height: AppDimensions.paddingLG),
 
-              // Streak Badge (Moved from old header)
+              // Daily Review Card (visible after Isha)
+              const Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppDimensions.paddingLG,
+                ),
+                child: DailyReviewCard(),
+              ),
+
+              // Streak Badge
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppDimensions.paddingLG,
@@ -165,12 +138,12 @@ class DashboardScreen extends GetView<DashboardController> {
 
               const SizedBox(height: AppDimensions.paddingMD),
 
-              // Progress - صلوات اليوم
+              // Progress
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppDimensions.paddingLG,
                 ),
-                child: _buildTodayProgress(),
+                child: _buildTodayProgress(controller),
               ),
 
               const SizedBox(height: AppDimensions.paddingLG),
@@ -180,7 +153,17 @@ class DashboardScreen extends GetView<DashboardController> {
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppDimensions.paddingMD,
                 ),
-                child: _buildQuickPrayerIcons(),
+                child: _buildQuickPrayerIcons(controller),
+              ),
+
+              const SizedBox(height: AppDimensions.paddingXL),
+
+              // Prayer Heatmap (6 months view)
+              const Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppDimensions.paddingMD,
+                ),
+                child: PrayerHeatmap(),
               ),
 
               const SizedBox(height: AppDimensions.paddingXL),
@@ -191,18 +174,13 @@ class DashboardScreen extends GetView<DashboardController> {
     );
   }
 
-  String _getDateString() {
-    final now = DateTime.now();
-    return '${now.day}/${now.month}/${now.year}';
-  }
-
   /// Progress Card
-  Widget _buildTodayProgress() {
+  Widget _buildTodayProgress(DashboardController controller) {
     return Obx(() {
       final completed = controller.todayLogs
           .where((log) => log.prayer != PrayerName.sunrise)
           .length;
-      final total = 5;
+      const total = 5;
       final progress = completed / total;
 
       return Container(
@@ -221,9 +199,7 @@ class DashboardScreen extends GetView<DashboardController> {
                 Text(
                   '$completed/$total',
                   style: AppFonts.titleLarge.copyWith(
-                    color: completed >= total
-                        ? Colors.green
-                        : AppColors.primary,
+                    color: completed >= total ? Colors.green : AppColors.primary,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -248,61 +224,109 @@ class DashboardScreen extends GetView<DashboardController> {
   }
 
   /// Quick Prayer Icons
-  Widget _buildQuickPrayerIcons() {
+  Widget _buildQuickPrayerIcons(DashboardController controller) {
     return Obx(() {
       final prayers = controller.todayPrayers
           .where((p) => p.prayerType != PrayerName.sunrise)
           .toList();
+      final now = DateTime.now();
 
-      return Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppDimensions.paddingMD,
-          vertical: AppDimensions.paddingSM,
-        ),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: prayers.map((prayer) {
-            PrayerLogModel? log;
-            try {
-              log = controller.todayLogs.firstWhere(
-                (l) => l.prayer == (prayer.prayerType ?? PrayerName.fajr),
-              );
-            } catch (_) {
-              log = null;
-            }
-            final isLogged = log != null;
-            final isNext = prayer == controller.nextPrayer.value;
-            final isCurrent = prayer == controller.currentPrayer.value;
-            final quality = log?.quality;
+      // Count past unlogged prayers for the "log all" button
+      int unloggedPastCount = 0;
+      for (final p in prayers) {
+        if (p.dateTime.isAfter(now)) continue;
+        final alreadyLogged = controller.todayLogs.any(
+          (l) => l.prayer == (p.prayerType ?? PrayerName.fajr),
+        );
+        if (!alreadyLogged) unloggedPastCount++;
+      }
 
-            return _buildPrayerIcon(
-              name: prayer.name,
-              time: _formatTime(prayer.dateTime),
-              isLogged: isLogged,
-              quality: quality,
-              isNext: isNext,
-              isCurrent: isCurrent,
-              onTap: isCurrent && !isLogged
-                  ? () => controller.logPrayer(prayer)
-                  : null,
-            );
-          }).toList(),
-        ),
+      return Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppDimensions.paddingMD,
+              vertical: AppDimensions.paddingSM,
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: prayers.map((prayer) {
+                PrayerLogModel? log;
+                try {
+                  log = controller.todayLogs.firstWhere(
+                    (l) => l.prayer == (prayer.prayerType ?? PrayerName.fajr),
+                  );
+                } catch (_) {
+                  log = null;
+                }
+                final isLogged = log != null;
+                final isNext = prayer == controller.nextPrayer.value;
+                final isCurrent = prayer == controller.currentPrayer.value;
+                final isPast = !prayer.dateTime.isAfter(now) && !isCurrent;
+                final quality = log?.quality;
+
+                return _buildPrayerIcon(
+                  controller: controller,
+                  prayer: prayer,
+                  name: prayer.name,
+                  time: _formatTime(prayer.dateTime),
+                  isLogged: isLogged,
+                  quality: quality,
+                  isNext: isNext,
+                  isCurrent: isCurrent,
+                  isPastUnlogged: isPast && !isLogged,
+                  onTap: isLogged
+                      ? null
+                      : (isCurrent
+                          ? () => controller.logPrayer(prayer)
+                          : (isPast
+                              ? () => controller.logPastPrayer(prayer)
+                              : null)),
+                );
+              }).toList(),
+            ),
+          ),
+          // "Log All" button when 2+ past prayers are unlogged
+          if (unloggedPastCount >= 2) ...[
+            const SizedBox(height: AppDimensions.paddingSM),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => controller.logAllUnloggedPrayers(),
+                icon: const Icon(Icons.done_all_rounded, size: 18),
+                label: Text('log_all_prayers'.tr),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: BorderSide(
+                    color: AppColors.primary.withValues(alpha: 0.3),
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+              ),
+            ),
+          ],
+        ],
       );
     });
   }
 
   Widget _buildPrayerIcon({
+    required DashboardController controller,
+    required dynamic prayer,
     required String name,
     required String time,
     required bool isLogged,
     PrayerQuality? quality,
     required bool isNext,
     required bool isCurrent,
+    bool isPastUnlogged = false,
     VoidCallback? onTap,
   }) {
     Color bgColor;
@@ -317,6 +341,10 @@ class DashboardScreen extends GetView<DashboardController> {
       bgColor = Colors.green.withValues(alpha: 0.15);
       iconColor = Colors.green;
       icon = Icons.check_circle;
+    } else if (isPastUnlogged) {
+      bgColor = Colors.orange.withValues(alpha: 0.15);
+      iconColor = Colors.orange;
+      icon = Icons.add_circle_outline;
     } else if (isCurrent) {
       bgColor = AppColors.primary.withValues(alpha: 0.15);
       iconColor = AppColors.primary;
@@ -342,7 +370,9 @@ class DashboardScreen extends GetView<DashboardController> {
             decoration: BoxDecoration(
               color: bgColor,
               shape: BoxShape.circle,
-              border: isCurrent ? Border.all(color: iconColor, width: 2) : null,
+              border: (isCurrent || isPastUnlogged)
+                  ? Border.all(color: iconColor, width: 2)
+                  : null,
             ),
             child: Icon(icon, color: iconColor, size: 24),
           ),
@@ -354,8 +384,12 @@ class DashboardScreen extends GetView<DashboardController> {
                   ? PrayerTimingHelper.getLegacyQualityColor(quality)
                   : isLogged
                       ? Colors.green
-                      : AppColors.textPrimary,
-              fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                      : isPastUnlogged
+                          ? Colors.orange
+                          : AppColors.textPrimary,
+              fontWeight: (isCurrent || isPastUnlogged)
+                  ? FontWeight.bold
+                  : FontWeight.normal,
             ),
           ),
           Text(
@@ -372,5 +406,80 @@ class DashboardScreen extends GetView<DashboardController> {
 
   String _formatTime(DateTime date) {
     return '${date.hour}:${date.minute.toString().padLeft(2, '0')}';
+  }
+
+}
+
+class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
+  const DashboardAppBar({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = Get.find<DashboardController>();
+    return AppBar(
+      backgroundColor: AppColors.surface,
+      elevation: 0,
+      centerTitle: true,
+      // Settings Button
+      leading: IconButton(
+        icon: Icon(Icons.menu, color: AppColors.textPrimary),
+        onPressed: () => controller.scaffoldKey.currentState?.openDrawer(),
+      ),
+      // City Name in Center
+      title: Obx(
+        () => Column(
+          children: [
+            Text(
+              controller.currentCity.value,
+              style: AppFonts.titleMedium.copyWith(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Text(
+              _getDateString(),
+              style: AppFonts.labelSmall.copyWith(
+                color: AppColors.textSecondary,
+                fontSize: 10,
+              ),
+            ),
+          ],
+        ),
+      ),
+
+      // Qibla Action
+      actions: [
+        IconButton(
+          icon: Icon(Icons.explore_outlined, color: AppColors.textPrimary),
+          onPressed: () => Get.to(
+            () => const QiblaScreen(),
+            transition: Transition.downToUp,
+            fullscreenDialog: true,
+          ),
+          tooltip: 'qibla'.tr,
+        ),
+      ],
+
+      // Tabs: Dashboard | Family
+      bottom: TabBar(
+        labelColor: AppColors.primary,
+        unselectedLabelColor: AppColors.textSecondary,
+        indicatorColor: AppColors.primary,
+        indicatorWeight: 3,
+        labelStyle: AppFonts.titleSmall.copyWith(fontWeight: FontWeight.bold),
+        tabs: [
+          Tab(text: 'dashboard'.tr),
+          Tab(text: 'family_tab'.tr),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 48); // AppBar + TabBar
+
+  String _getDateString() {
+    final now = DateTime.now();
+    return '${now.day}/${now.month}/${now.year}';
   }
 }

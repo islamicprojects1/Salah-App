@@ -3,6 +3,7 @@ import 'package:salah/controller/dashboard_controller.dart';
 import 'package:salah/controller/family_controller.dart';
 import 'package:salah/controller/qibla_controller.dart';
 import 'package:salah/controller/settings_controller.dart';
+import 'package:salah/core/services/family_service.dart';
 import 'package:salah/data/repositories/family_repository.dart';
 import 'package:salah/data/repositories/achievement_repository.dart';
 import 'package:salah/core/services/live_context_service.dart';
@@ -15,6 +16,7 @@ class DashboardBinding extends Bindings {
     // PrayerRepository is permanent in main; others lazy
     // PrayerRepository is permanent in main; others lazy
     // UserRepository is permanent in main
+    Get.lazyPut<FamilyService>(() => FamilyService());
     Get.lazyPut<FamilyRepository>(
       () => FamilyRepository(firestore: Get.find()),
     );

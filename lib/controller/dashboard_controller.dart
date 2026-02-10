@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:salah/core/constants/enums.dart';
 import 'package:salah/core/helpers/prayer_names.dart';
 import 'package:get/get.dart';
@@ -22,6 +23,8 @@ import 'package:salah/core/services/family_service.dart';
 /// [UserRepository], [PrayerTimeService], [LocationService], [NotificationService].
 /// Reactive: observables are updated from repository streams/calls; UI uses Obx.
 class DashboardController extends GetxController {
+  final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
+
   final PrayerTimeService _prayerService;
   final LocationService _locationService;
   final AuthService _authService;
@@ -55,6 +58,7 @@ class DashboardController extends GetxController {
   final currentCity = ''.obs;
   final currentStreak = 0.obs;
   final tabIndex = 0.obs;
+  final dailyPrayerCounts = <DateTime, int>{}.obs;
 
   void changeTabIndex(int index) => tabIndex.value = index;
 
@@ -69,14 +73,11 @@ class DashboardController extends GetxController {
     ever(_locationService.cityName, (_) => _syncLocationLabel());
     ever(_locationService.isUsingDefaultLocation, (_) => _syncLocationLabel());
     _initDashboard();
-    ever(
-      _liveContextService.prayerContext,
-      (ctx) {
-        currentPrayer.value = ctx.currentPrayer;
-        nextPrayer.value = ctx.nextPrayer;
-        timeUntilNextPrayer.value = ctx.formattedCountdown;
-      },
-    );
+    ever(_liveContextService.prayerContext, (ctx) {
+      currentPrayer.value = ctx.currentPrayer;
+      nextPrayer.value = ctx.nextPrayer;
+      timeUntilNextPrayer.value = ctx.formattedCountdown;
+    });
   }
 
   void _syncLocationLabel() {
@@ -86,18 +87,32 @@ class DashboardController extends GetxController {
   Future<void> _initDashboard() async {
     isLoading.value = true;
     try {
+      // 1. Critical Data (Blocking)
       await _locationService.init();
       _syncLocationLabel();
       await _loadPrayerTimes();
-      await _notificationService.requestPermissions();
+      
+      // 2. Show UI immediately
+      isLoading.value = false;
+
+      // 3. Background Data (Non-blocking)
       _loadPrayerLogs();
-      await _processPendingPrayerLogFromNotification();
-      await _loadStreak();
+      _loadStreak();
+      _processPendingPrayerLogFromNotification();
       _listenForEncouragements();
       _startTimer();
+      
+      // 4. Heavy/External operations (Deferred)
+      // Load heatmap data
+      _loadHeatmapData();
+      
+      // Request permissions after a delay to let UI settle
+      Future.delayed(const Duration(seconds: 2), () {
+        _notificationService.requestPermissions();
+      });
+      
     } catch (_) {
       AppFeedback.showError('خطأ', 'فشل تحميل لوحة التحكم');
-    } finally {
       isLoading.value = false;
     }
   }
@@ -117,6 +132,37 @@ class DashboardController extends GetxController {
       todayLogs.assignAll(logs);
       _updateCurrentAndNextPrayer();
     });
+  }
+
+  /// Load prayer data for the heatmap (last 6 months).
+  Future<void> _loadHeatmapData() async {
+    final userId = _authService.userId;
+    if (userId == null) return;
+    try {
+      final endDate = DateTime.now();
+      final startDate = endDate.subtract(
+        const Duration(days: 182),
+      ); // ~6 months
+      final logs = await _prayerRepo.getPrayerLogsInRange(
+        userId: userId,
+        startDate: startDate,
+        endDate: endDate,
+      );
+      final Map<DateTime, int> counts = {};
+      for (final log in logs) {
+        if (log.prayer == PrayerName.sunrise) continue;
+        final day = DateTime(
+          log.prayedAt.year,
+          log.prayedAt.month,
+          log.prayedAt.day,
+        );
+        counts[day] = (counts[day] ?? 0) + 1;
+        if ((counts[day] ?? 0) > 5) counts[day] = 5; // Cap at 5
+      }
+      dailyPrayerCounts.assignAll(counts);
+    } catch (_) {
+      // Silently fail — heatmap is non-critical
+    }
   }
 
   /// Process prayer log that was requested from notification action (when app wasn't ready)
@@ -190,8 +236,7 @@ class DashboardController extends GetxController {
       if (userId == null) return;
 
       // Per-type toggles
-      final adhanOn =
-          storage.read<bool>(StorageKeys.fajrNotification) ?? true;
+      final adhanOn = storage.read<bool>(StorageKeys.fajrNotification) ?? true;
       final reminderOn =
           storage.read<bool>(StorageKeys.reminderNotification) ?? true;
 
@@ -210,21 +255,43 @@ class DashboardController extends GetxController {
         );
         if (alreadyLogged) continue;
 
-        final baseId =
-            _notificationIdForPrayer(prayer.prayerType ?? PrayerName.fajr);
+        final baseId = _notificationIdForPrayer(
+          prayer.prayerType ?? PrayerName.fajr,
+        );
 
         if (adhanOn) {
-          await _notificationService.schedulePrayerNotification(
+          final prayerKey = (prayer.prayerType ?? PrayerName.fajr).name;
+          await _notificationService.schedulePrayerNotificationWithActions(
             id: baseId,
             prayerName: prayer.name,
+            prayerKey: prayerKey,
             prayerTime: prayer.dateTime,
           );
         }
         if (reminderOn) {
-          await _notificationService.schedulePrayerReminder(
+          final prayerKey = (prayer.prayerType ?? PrayerName.fajr).name;
+          await _notificationService.schedulePrayerReminderWithActions(
             id: baseId + 100,
             prayerName: prayer.name,
+            prayerKey: prayerKey,
             prayerTime: prayer.dateTime,
+          );
+        }
+      }
+
+      // Schedule the daily review notification (30 min after Isha)
+      final ishaPrayer = todayPrayers
+          .where((p) => p.prayerType == PrayerName.isha)
+          .firstOrNull;
+      if (ishaPrayer != null) {
+        final reviewTime = ishaPrayer.dateTime.add(const Duration(minutes: 30));
+        if (reviewTime.isAfter(now)) {
+          await _notificationService.scheduleNotification(
+            id: 999, // Fixed ID for daily review
+            title: 'daily_review_title'.tr,
+            body: 'daily_review_notification'.tr,
+            scheduledTime: reviewTime,
+            payload: 'daily_review',
           );
         }
       }
@@ -338,8 +405,9 @@ class DashboardController extends GetxController {
       );
       await _prayerRepo.addPrayerLog(userId: userId, log: log);
       _addPulseIfFamily(prayer.name);
-      final baseId =
-          _notificationIdForPrayer(prayer.prayerType ?? PrayerName.fajr);
+      final baseId = _notificationIdForPrayer(
+        prayer.prayerType ?? PrayerName.fajr,
+      );
       await _notificationService.cancelNotification(baseId);
       await _notificationService.cancelNotification(baseId + 100);
       await Get.find<FirestoreService>().addAnalyticsEvent(
@@ -356,6 +424,85 @@ class DashboardController extends GetxController {
       AppFeedback.showSuccess('تم بنجاح', 'تقبل الله طاعاتكم');
     } catch (e) {
       AppFeedback.showError('خطأ', 'فشل تسجيل الصلاة: $e');
+    }
+  }
+
+  /// Log a past prayer (e.g. user forgot to tap notification).
+  /// Uses adhan time as prayedAt to mark it as retroactive.
+  Future<void> logPastPrayer(PrayerTimeModel prayer) async {
+    final userId = _authService.userId;
+    if (userId == null) return;
+    try {
+      final isLogged = PrayerNames.isPrayerLogged(
+        todayLogs,
+        prayer.name,
+        prayer.prayerType,
+      );
+      if (isLogged) {
+        AppFeedback.showSnackbar(
+          'already_logged'.tr,
+          'prayer_already_logged'.tr,
+        );
+        return;
+      }
+      final log = PrayerLogModel.create(
+        oderId: userId,
+        prayer: PrayerNames.fromDisplayName(prayer.name),
+        adhanTime: prayer.dateTime,
+      );
+      await _prayerRepo.addPrayerLog(userId: userId, log: log);
+      _addPulseIfFamily(prayer.name);
+
+      // Cancel any pending notification for this prayer
+      final baseId = _notificationIdForPrayer(
+        prayer.prayerType ?? PrayerName.fajr,
+      );
+      await _notificationService.cancelNotification(baseId);
+      await _notificationService.cancelNotification(baseId + 100);
+
+      if (todayLogs.length + 1 >= 5) {
+        currentStreak.value = await _prayerRepo.updateStreak(userId);
+      }
+      AppFeedback.showSuccess('prayer_logged_success'.tr, 'prayer_accepted'.tr);
+    } catch (e) {
+      AppFeedback.showError('error'.tr, 'prayer_log_failed'.tr);
+    }
+  }
+
+  /// Batch-log all unlogged past prayers in one tap.
+  Future<void> logAllUnloggedPrayers() async {
+    final userId = _authService.userId;
+    if (userId == null) return;
+    final now = DateTime.now();
+    int logged = 0;
+    for (final prayer in todayPrayers) {
+      if (prayer.prayerType == PrayerName.sunrise) continue;
+      if (prayer.dateTime.isAfter(now)) continue; // Skip future prayers
+      final isLogged = PrayerNames.isPrayerLogged(
+        todayLogs,
+        prayer.name,
+        prayer.prayerType,
+      );
+      if (isLogged) continue;
+      try {
+        final log = PrayerLogModel.create(
+          oderId: userId,
+          prayer: PrayerNames.fromDisplayName(prayer.name),
+          adhanTime: prayer.dateTime,
+        );
+        await _prayerRepo.addPrayerLog(userId: userId, log: log);
+        _addPulseIfFamily(prayer.name);
+        logged++;
+      } catch (_) {}
+    }
+    if (logged > 0) {
+      if (todayLogs.length + logged >= 5) {
+        currentStreak.value = await _prayerRepo.updateStreak(userId);
+      }
+      AppFeedback.showSuccess(
+        'prayer_logged_success'.tr,
+        '$logged ${'prayers_logged_count'.tr}',
+      );
     }
   }
 

@@ -38,21 +38,28 @@ void main() async {
   await initServices();
 
   runApp(const SalahApp());
+
+  // Initialize heavy, non-critical services after first frame
+  // to avoid blocking initial render (reduces jank on startup).
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    initLateServices();
+  });
 }
 
 /// Initialize all app services
 /// Optimized to initialize independent services in parallel for faster startup
 Future<void> initServices() async {
-  // 1. Storage & Database services (must be first)
-  await Get.putAsync<StorageService>(() async {
-    final service = StorageService();
-    return await service.init();
-  });
-
-  await Get.putAsync<DatabaseHelper>(() async {
-    final service = DatabaseHelper();
-    return await service.init();
-  });
+  // 1. Storage & Database services (parallel)
+  await Future.wait([
+    Get.putAsync<StorageService>(() async {
+      final service = StorageService();
+      return await service.init();
+    }),
+    Get.putAsync<DatabaseHelper>(() async {
+      final service = DatabaseHelper();
+      return await service.init();
+    }),
+  ]);
 
   // 2. Initialize independent services in parallel
   await Future.wait([
@@ -101,17 +108,17 @@ Future<void> initServices() async {
     permanent: true,
   );
 
-  // 7. Remaining services in parallel
+  // 7. Auth controller (depends on all auth-related services)
+  Get.put(AuthController(), permanent: true);
+}
+
+/// Initialize heavy services that are not required for the very first frame.
+/// Runs right after the first frame is rendered.
+Future<void> initLateServices() async {
   await Future.wait([
     Get.putAsync<PrayerTimeService>(() => PrayerTimeService().init()),
     Get.putAsync<NotificationService>(() => NotificationService().init()),
   ]);
-
-  // 8. Family service (depends on Firestore and Auth)
-  Get.put(FamilyService(), permanent: true);
-
-  // 9. Auth controller (depends on all auth-related services)
-  Get.put(AuthController(), permanent: true);
 }
 
 /// Main app widget

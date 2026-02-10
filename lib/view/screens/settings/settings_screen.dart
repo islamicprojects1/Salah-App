@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:salah/controller/settings_controller.dart';
+import 'package:salah/core/constants/app_dimensions.dart';
 import 'package:salah/core/constants/enums.dart';
 import 'package:salah/core/services/theme_service.dart';
 import 'package:salah/core/services/localization_service.dart';
@@ -17,50 +18,104 @@ class SettingsScreen extends GetView<SettingsController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('settings'.tr)),
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: Text('settings'.tr),
+        elevation: 0,
+        backgroundColor: AppColors.surface,
+        centerTitle: true,
+      ),
       body: Obx(() {
-        // Reactive to theme and language via services
         final themeMode = Get.find<ThemeService>().currentThemeMode.value;
         final language = Get.find<LocalizationService>().currentLanguage.value;
+
         return ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppDimensions.paddingMD,
+            vertical: AppDimensions.paddingLG,
+          ),
           children: [
-            // Language Section
-            _buildSectionTitle(context, 'language'.tr),
-            const SizedBox(height: 8),
-            _buildLanguageSelector(context, language),
-            const SizedBox(height: 24),
+            // --- General Preferences ---
+            _buildHeader('general_preferences'.tr),
+            _buildCard([
+              _buildLanguageTile(context, language),
+              const Divider(indent: 56, height: 1),
+              _buildThemeTile(context, themeMode),
+            ]),
 
-            // Location Section (prayer times depend on it)
-            _buildSectionTitle(context, 'location_section'.tr),
-            const SizedBox(height: 8),
-            _buildLocationCard(context),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppDimensions.paddingLG),
 
-            // Theme Section
-            _buildSectionTitle(context, 'theme'.tr),
-            const SizedBox(height: 8),
-            _buildThemeSelector(context, themeMode),
-            const SizedBox(height: 24),
+            // --- Prayer & Location ---
+            _buildHeader('prayer_location'.tr),
+            _buildCard([
+              _buildLocationTile(context),
+              const Divider(indent: 56, height: 1),
+              _buildNotificationTile(context),
+            ]),
 
-            // Notifications Section
-            _buildSectionTitle(context, 'notifications'.tr),
-            const SizedBox(height: 8),
-            _buildNotificationsCard(context),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppDimensions.paddingLG),
 
-            // About Section
-            _buildSectionTitle(context, 'about'.tr),
-            const SizedBox(height: 8),
-            _buildAboutCard(context),
-            const SizedBox(height: 24),
+            // --- App Information ---
+            _buildHeader('app_info'.tr),
+            _buildCard([
+              _buildTile(
+                context,
+                icon: Icons.info_outline,
+                title: 'about'.tr,
+                onTap: () => controller.showAboutDialog(),
+              ),
+              const Divider(indent: 56, height: 1),
+              _buildTile(
+                context,
+                icon: Icons.star_border_rounded,
+                title: 'rate_app'.tr,
+                onTap: () => controller.openRateApp(),
+              ),
+              const Divider(indent: 56, height: 1),
+              _buildTile(
+                context,
+                icon: Icons.share_outlined,
+                title: 'share_app'.tr,
+                onTap: () => controller.shareApp(),
+              ),
+              const Divider(indent: 56, height: 1),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Center(
+                  child: Text(
+                    '${'version'.tr}: 1.0.0',
+                    style: AppFonts.labelSmall.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+              ),
+            ]),
 
-            // Logout Section
-            _buildLogoutButton(context),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppDimensions.paddingLG),
 
-            // Delete Account Section
-            _buildDeleteAccountButton(context),
+            // --- Account Actions ---
+            _buildHeader('account'.tr),
+            _buildCard([
+              _buildTile(
+                context,
+                icon: Icons.logout_rounded,
+                title: 'logout'.tr,
+                titleColor: AppColors.error,
+                iconColor: AppColors.error,
+                onTap: () => _handleLogout(),
+              ),
+              const Divider(indent: 56, height: 1),
+              _buildTile(
+                context,
+                icon: Icons.delete_forever_rounded,
+                title: 'delete_account'.tr,
+                titleColor: AppColors.error,
+                iconColor: AppColors.error,
+                onTap: () => controller.deleteAccount(),
+              ),
+            ]),
+
             const SizedBox(height: 40),
           ],
         );
@@ -68,503 +123,420 @@ class SettingsScreen extends GetView<SettingsController> {
     );
   }
 
-  Widget _buildSectionTitle(BuildContext context, String title) {
+  Widget _buildHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.only(left: 4),
+      padding: const EdgeInsets.only(
+        left: AppDimensions.paddingSM,
+        bottom: AppDimensions.paddingSM,
+      ),
+      child: Text(
+        title.toUpperCase(),
+        style: AppFonts.labelMedium.copyWith(
+          color: AppColors.textSecondary,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 1.2,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCard(List<Widget> children) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(children: children),
+    );
+  }
+
+  Widget _buildTile(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    String? subtitle,
+    Color? iconColor,
+    Color? titleColor,
+    VoidCallback? onTap,
+    Widget? trailing,
+  }) {
+    return ListTile(
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: (iconColor ?? AppColors.primary).withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(icon, color: iconColor ?? AppColors.primary, size: 22),
+      ),
+      title: Text(
+        title,
+        style: AppFonts.bodyLarge.copyWith(
+          color: titleColor ?? AppColors.textPrimary,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      subtitle: subtitle != null
+          ? Text(
+              subtitle,
+              style: AppFonts.bodySmall.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            )
+          : null,
+      trailing:
+          trailing ??
+          const Icon(
+            Icons.chevron_right_rounded,
+            color: AppColors.secondary,
+            size: 20,
+          ),
+      onTap: onTap,
+    );
+  }
+
+  Widget _buildLanguageTile(BuildContext context, AppLanguage current) {
+    return _buildTile(
+      context,
+      icon: Icons.translate_rounded,
+      title: 'language'.tr,
+      subtitle: current.name,
+      onTap: () => _showLanguagePicker(context),
+    );
+  }
+
+  Widget _buildThemeTile(BuildContext context, AppThemeMode current) {
+    String themeLabel;
+    IconData themeIcon;
+    switch (current) {
+      case AppThemeMode.light:
+        themeLabel = 'theme_light'.tr;
+        themeIcon = Icons.light_mode_rounded;
+        break;
+      case AppThemeMode.dark:
+        themeLabel = 'theme_dark'.tr;
+        themeIcon = Icons.dark_mode_rounded;
+        break;
+      case AppThemeMode.system:
+        themeLabel = 'theme_system'.tr;
+        themeIcon = Icons.settings_brightness_rounded;
+        break;
+    }
+
+    return _buildTile(
+      context,
+      icon: themeIcon,
+      title: 'theme'.tr,
+      subtitle: themeLabel,
+      onTap: () => _showThemePicker(context),
+    );
+  }
+
+  Widget _buildLocationTile(BuildContext context) {
+    return Obx(() {
+      final isLoading = controller.isLocationLoading;
+      final label = controller.locationDisplayLabel;
+      return _buildTile(
+        context,
+        icon: Icons.location_on_rounded,
+        title: 'location_section'.tr,
+        subtitle: label,
+        trailing: isLoading
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : IconButton(
+                icon: const Icon(Icons.refresh_rounded, size: 20),
+                onPressed: () => controller.refreshLocation(),
+              ),
+        onTap: () => controller.refreshLocation(),
+      );
+    });
+  }
+
+  Widget _buildNotificationTile(BuildContext context) {
+    return _buildTile(
+      context,
+      icon: Icons.notifications_active_rounded,
+      title: 'notifications'.tr,
+      subtitle: controller.notificationsEnabled.value
+          ? 'enabled'.tr
+          : 'disabled'.tr,
+      onTap: () => _navigateToNotifications(context),
+    );
+  }
+
+  void _showLanguagePicker(BuildContext context) {
+    Get.bottomSheet(
+      Container(
+        padding: const EdgeInsets.all(AppDimensions.paddingLG),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'select_language'.tr,
+              style: AppFonts.titleLarge.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 20),
+            ...AppLanguage.values.map(
+              (lang) => ListTile(
+                title: Text(lang.name),
+                trailing:
+                    Get.find<LocalizationService>().currentLanguage.value ==
+                        lang
+                    ? const Icon(Icons.check_circle, color: AppColors.primary)
+                    : null,
+                onTap: () {
+                  controller.changeLanguage(lang);
+                  Get.back();
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showThemePicker(BuildContext context) {
+    Get.bottomSheet(
+      Container(
+        padding: const EdgeInsets.all(AppDimensions.paddingLG),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'select_theme'.tr,
+              style: AppFonts.titleLarge.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 20),
+            _buildThemeOption('theme_system'.tr, AppThemeMode.system),
+            _buildThemeOption('theme_light'.tr, AppThemeMode.light),
+            _buildThemeOption('theme_dark'.tr, AppThemeMode.dark),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildThemeOption(String title, AppThemeMode mode) {
+    return ListTile(
+      title: Text(title),
+      trailing: Get.find<ThemeService>().currentThemeMode.value == mode
+          ? const Icon(Icons.check_circle, color: AppColors.primary)
+          : null,
+      onTap: () {
+        controller.changeTheme(mode);
+        Get.back();
+      },
+    );
+  }
+
+  void _navigateToNotifications(BuildContext context) {
+    Get.to(() => _NotificationSettingsView(controller: controller));
+  }
+
+  Future<void> _handleLogout() async {
+    final confirm = await AppDialogs.confirm(
+      title: 'logout'.tr,
+      message: 'logout_confirm_message'.tr,
+      confirmText: 'logout'.tr,
+      cancelText: 'cancel'.tr,
+      isDestructive: true,
+    );
+
+    if (confirm) {
+      AppDialogs.showLoading(message: 'logging_out'.tr);
+      await controller.logout();
+      AppDialogs.hideLoading();
+    }
+  }
+}
+
+class _NotificationSettingsView extends StatelessWidget {
+  final SettingsController controller;
+  const _NotificationSettingsView({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: Text('notifications'.tr),
+        elevation: 0,
+        backgroundColor: AppColors.surface,
+      ),
+      body: Obx(
+        () => ListView(
+          padding: const EdgeInsets.all(AppDimensions.paddingMD),
+          children: [
+            _buildCard([
+              SwitchListTile(
+                title: Text(
+                  'prayer_notifications'.tr,
+                  style: AppFonts.titleMedium,
+                ),
+                subtitle: Text('prayer_notifications_desc'.tr),
+                value: controller.notificationsEnabled.value,
+                onChanged: (v) => controller.setNotificationsEnabled(v),
+                activeColor: AppColors.primary,
+              ),
+            ]),
+
+            if (controller.notificationsEnabled.value) ...[
+              const SizedBox(height: 24),
+              _buildHeader('notification_types'.tr.toUpperCase()),
+              _buildCard([
+                _buildSwitchTile(
+                  title: 'adhan_notification'.tr,
+                  subtitle: 'adhan_notification_desc'.tr,
+                  value: controller.adhanEnabled.value,
+                  onChanged: (v) => controller.setAdhanEnabled(v),
+                ),
+                const Divider(indent: 16),
+                _buildSwitchTile(
+                  title: 'reminder_notification'.tr,
+                  subtitle: 'reminder_notification_desc'.tr,
+                  value: controller.reminderEnabled.value,
+                  onChanged: (v) => controller.setReminderEnabled(v),
+                ),
+                const Divider(indent: 16),
+                _buildSwitchTile(
+                  title: 'family_notification_label'.tr,
+                  subtitle: 'family_notification_desc'.tr,
+                  value: controller.familyNotificationsEnabled.value,
+                  onChanged: (v) => controller.setFamilyNotificationsEnabled(v),
+                ),
+              ]),
+
+              const SizedBox(height: 24),
+              _buildHeader('sound_vibration'.tr.toUpperCase()),
+              _buildCard([_buildSoundModeSelector()]),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 16, bottom: 8),
       child: Text(
         title,
-        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-          color: AppColors.primary,
+        style: AppFonts.labelMedium.copyWith(
+          color: AppColors.textSecondary,
           fontWeight: FontWeight.bold,
         ),
       ),
     );
   }
 
-  Widget _buildLanguageSelector(
-    BuildContext context,
-    AppLanguage currentLanguage,
-  ) {
-    return Card(
-      child: Column(
-        children: AppLanguage.values.map((language) {
-          final isSelected = currentLanguage == language;
-          return ListTile(
-            leading: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? AppColors.primary.withValues(alpha: 0.1)
-                    : Colors.grey.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                Icons.language,
-                color: isSelected ? AppColors.primary : Colors.grey,
+  Widget _buildCard(List<Widget> children) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
+      ),
+      child: Column(children: children),
+    );
+  }
+
+  Widget _buildSwitchTile({
+    required String title,
+    required String subtitle,
+    required bool value,
+    required Function(bool) onChanged,
+  }) {
+    return SwitchListTile(
+      title: Text(title, style: AppFonts.bodyLarge),
+      subtitle: Text(subtitle, style: AppFonts.bodySmall),
+      value: value,
+      onChanged: onChanged,
+      activeColor: AppColors.primary,
+    );
+  }
+
+  Widget _buildSoundModeSelector() {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: NotificationSoundMode.values.map((mode) {
+          final isSelected = controller.notificationSoundMode.value == mode;
+          IconData icon;
+          String label;
+          switch (mode) {
+            case NotificationSoundMode.adhan:
+              icon = Icons.volume_up_rounded;
+              label = 'sound_adhan'.tr;
+              break;
+            case NotificationSoundMode.vibrate:
+              icon = Icons.vibration_rounded;
+              label = 'sound_vibrate'.tr;
+              break;
+            case NotificationSoundMode.silent:
+              icon = Icons.notifications_off_rounded;
+              label = 'sound_silent'.tr;
+              break;
+          }
+
+          return Expanded(
+            child: GestureDetector(
+              onTap: () => controller.setNotificationSoundMode(mode),
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppColors.primary.withValues(alpha: 0.1)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isSelected
+                        ? AppColors.primary
+                        : Colors.grey.withValues(alpha: 0.2),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Icon(
+                      icon,
+                      color: isSelected ? AppColors.primary : Colors.grey,
+                      size: 20,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      label,
+                      style: AppFonts.labelSmall.copyWith(
+                        color: isSelected ? AppColors.primary : Colors.grey,
+                        fontWeight: isSelected
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-            title: Text(language.name),
-            trailing: isSelected
-                ? const Icon(Icons.check_circle, color: AppColors.primary)
-                : null,
-            onTap: () => controller.changeLanguage(language),
           );
         }).toList(),
-      ),
-    );
-  }
-
-  Widget _buildThemeSelector(
-    BuildContext context,
-    AppThemeMode currentThemeMode,
-  ) {
-    return Card(
-      child: Column(
-        children: [
-          _buildThemeOption(
-            context,
-            'theme_system'.tr,
-            Icons.brightness_auto,
-            AppThemeMode.system,
-            currentThemeMode,
-          ),
-          _buildThemeOption(
-            context,
-            'theme_light'.tr,
-            Icons.light_mode,
-            AppThemeMode.light,
-            currentThemeMode,
-          ),
-          _buildThemeOption(
-            context,
-            'theme_dark'.tr,
-            Icons.dark_mode,
-            AppThemeMode.dark,
-            currentThemeMode,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLocationCard(BuildContext context) {
-    return Obx(() {
-      final isLoading = controller.isLocationLoading;
-      final label = controller.locationDisplayLabel;
-      final isDefault = controller.isUsingDefaultLocation;
-      return Card(
-        child: Column(
-          children: [
-            ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  Icons.location_on_outlined,
-                  color: AppColors.primary,
-                ),
-              ),
-              title: Text(label, style: Theme.of(context).textTheme.bodyMedium),
-              subtitle: isDefault
-                  ? Text(
-                      'location_default_hint'.tr,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    )
-                  : null,
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: isLoading
-                      ? null
-                      : () => controller.refreshLocation(),
-                  icon: isLoading
-                      ? SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Icon(Icons.refresh),
-                  label: Text(
-                    isLoading ? 'updating_location'.tr : 'update_location'.tr,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    });
-  }
-
-  Widget _buildThemeOption(
-    BuildContext context,
-    String title,
-    IconData icon,
-    AppThemeMode mode,
-    AppThemeMode currentThemeMode,
-  ) {
-    final isSelected = currentThemeMode == mode;
-    return ListTile(
-      leading: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primary.withValues(alpha: 0.1)
-              : Colors.grey.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Icon(icon, color: isSelected ? AppColors.primary : Colors.grey),
-      ),
-      title: Text(title),
-      trailing: isSelected
-          ? const Icon(Icons.check_circle, color: AppColors.primary)
-          : null,
-      onTap: () => controller.changeTheme(mode),
-    );
-  }
-
-  Widget _buildNotificationsCard(BuildContext context) {
-    return Card(
-      child: Column(
-        children: [
-          // Master toggle
-          Obx(
-            () => SwitchListTile(
-              secondary: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.notifications_outlined,
-                  color: AppColors.primary,
-                ),
-              ),
-              title: Text('prayer_notifications'.tr),
-              value: controller.notificationsEnabled.value,
-              onChanged: (value) => controller.setNotificationsEnabled(value),
-            ),
-          ),
-
-          // Per-type toggles (only visible when master is on)
-          Obx(() {
-            if (!controller.notificationsEnabled.value)
-              return const SizedBox.shrink();
-            return Column(
-              children: [
-                const Divider(height: 1),
-                // Adhan notification
-                SwitchListTile(
-                  secondary: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.teal.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      Icons.mosque_outlined,
-                      color: Colors.teal,
-                      size: 20,
-                    ),
-                  ),
-                  title: Text(
-                    'adhan_notification'.tr,
-                    style: AppFonts.bodyMedium,
-                  ),
-                  subtitle: Text(
-                    'adhan_notification_desc'.tr,
-                    style: AppFonts.labelSmall.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  value: controller.adhanEnabled.value,
-                  onChanged: (v) => controller.setAdhanEnabled(v),
-                ),
-                // Reminder notification
-                SwitchListTile(
-                  secondary: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.amber.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      Icons.alarm_outlined,
-                      color: Colors.amber,
-                      size: 20,
-                    ),
-                  ),
-                  title: Text(
-                    'reminder_notification'.tr,
-                    style: AppFonts.bodyMedium,
-                  ),
-                  subtitle: Text(
-                    'reminder_notification_desc'.tr,
-                    style: AppFonts.labelSmall.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  value: controller.reminderEnabled.value,
-                  onChanged: (v) => controller.setReminderEnabled(v),
-                ),
-                // Family notification
-                SwitchListTile(
-                  secondary: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.purple.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      Icons.family_restroom_outlined,
-                      color: Colors.purple,
-                      size: 20,
-                    ),
-                  ),
-                  title: Text(
-                    'family_notification_label'.tr,
-                    style: AppFonts.bodyMedium,
-                  ),
-                  subtitle: Text(
-                    'family_notification_desc'.tr,
-                    style: AppFonts.labelSmall.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  value: controller.familyNotificationsEnabled.value,
-                  onChanged: (v) => controller.setFamilyNotificationsEnabled(v),
-                ),
-              ],
-            );
-          }),
-
-          // Sound mode selector
-          Obx(
-            () => Column(
-              children: [
-                ListTile(
-                  leading: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      Icons.music_note_outlined,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  title: Text('notification_sound'.tr),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  child: Row(
-                    children: NotificationSoundMode.values.map((mode) {
-                      final isSelected =
-                          controller.notificationSoundMode.value == mode;
-                      String label = '';
-                      IconData icon = Icons.notifications;
-
-                      switch (mode) {
-                        case NotificationSoundMode.adhan:
-                          label = 'sound_adhan'.tr;
-                          icon = Icons.volume_up_rounded;
-                          break;
-                        case NotificationSoundMode.vibrate:
-                          label = 'sound_vibrate'.tr;
-                          icon = Icons.vibration_rounded;
-                          break;
-                        case NotificationSoundMode.silent:
-                          label = 'sound_silent'.tr;
-                          icon = Icons.notifications_off_rounded;
-                          break;
-                      }
-
-                      return Expanded(
-                        child: GestureDetector(
-                          onTap: () =>
-                              controller.setNotificationSoundMode(mode),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            margin: const EdgeInsets.symmetric(horizontal: 4),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? AppColors.primary.withValues(alpha: 0.1)
-                                  : AppColors.surface,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: isSelected
-                                    ? AppColors.primary
-                                    : Colors.grey.withValues(alpha: 0.2),
-                              ),
-                            ),
-                            child: Column(
-                              children: [
-                                Icon(
-                                  icon,
-                                  color: isSelected
-                                      ? AppColors.primary
-                                      : Colors.grey,
-                                  size: 20,
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  label,
-                                  style: AppFonts.labelSmall.copyWith(
-                                    color: isSelected
-                                        ? AppColors.primary
-                                        : Colors.grey,
-                                    fontWeight: isSelected
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAboutCard(BuildContext context) {
-    return Card(
-      child: Column(
-        children: [
-          ListTile(
-            leading: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.grey.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(Icons.info_outline, color: Colors.grey),
-            ),
-            title: Text('about'.tr),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => controller.showAboutDialog(),
-          ),
-          ListTile(
-            leading: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.grey.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(Icons.star_outline, color: Colors.grey),
-            ),
-            title: Text('rate_app'.tr),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => controller.openRateApp(),
-          ),
-          ListTile(
-            leading: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.grey.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(Icons.share_outlined, color: Colors.grey),
-            ),
-            title: Text('share_app'.tr),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => controller.shareApp(),
-          ),
-          const Divider(),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text(
-              '${'version'.tr}: 1.0.0',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLogoutButton(BuildContext context) {
-    return Card(
-      child: ListTile(
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: AppColors.error.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: const Icon(Icons.logout, color: AppColors.error),
-        ),
-        title: Text(
-          'logout'.tr,
-          style: AppFonts.bodyLarge.copyWith(
-            color: AppColors.error,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        onTap: () async {
-          final confirm = await AppDialogs.confirm(
-            title: 'logout'.tr,
-            message: 'logout_confirm_message'.tr,
-            confirmText: 'logout'.tr,
-            cancelText: 'cancel'.tr,
-            isDestructive: true,
-          );
-
-          if (confirm) {
-            AppDialogs.showLoading(message: 'logging_out'.tr);
-            await controller.logout();
-            AppDialogs.hideLoading();
-          }
-        },
-      ),
-    );
-  }
-
-  Widget _buildDeleteAccountButton(BuildContext context) {
-    return Card(
-      color: AppColors.error.withValues(alpha: 0.05),
-      child: ListTile(
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: AppColors.error.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: const Icon(Icons.delete_forever, color: AppColors.error),
-        ),
-        title: Text(
-          'delete_account'.tr,
-          style: AppFonts.bodyLarge.copyWith(
-            color: AppColors.error,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        subtitle: Text(
-          'delete_account_warning'.tr,
-          style: AppFonts.bodySmall.copyWith(color: AppColors.error),
-        ),
-        onTap: () => controller.deleteAccount(),
       ),
     );
   }

@@ -1,5 +1,5 @@
 /// English translations for the app
-/// 
+///
 /// All English strings used throughout the app
 const Map<String, String> enTranslations = {
   // ==================== General ====================
@@ -19,7 +19,7 @@ const Map<String, String> enTranslations = {
   'retry': 'Retry',
   'yes': 'Yes',
   'no': 'No',
-  
+
   // ==================== Navigation ====================
   'home': 'Home',
   'settings': 'Settings',
@@ -28,7 +28,7 @@ const Map<String, String> enTranslations = {
   'quran': 'Quran',
   'athkar': 'Athkar',
   'more': 'More',
-  
+
   // ==================== Prayer Names ====================
   'fajr': 'Fajr',
   'sunrise': 'Sunrise',
@@ -36,7 +36,7 @@ const Map<String, String> enTranslations = {
   'asr': 'Asr',
   'maghrib': 'Maghrib',
   'isha': 'Isha',
-  
+
   // ==================== Prayer Times Screen ====================
   'next_prayer': 'Next Prayer',
   'time_remaining': 'Time Remaining',
@@ -46,7 +46,7 @@ const Map<String, String> enTranslations = {
   'location_permission_denied': 'Location permission denied',
   'location_service_disabled': 'Location service is disabled',
   'open_settings': 'Open Settings',
-  
+
   // ==================== Settings Screen ====================
   'language': 'Language',
   'theme': 'Theme',
@@ -63,33 +63,33 @@ const Map<String, String> enTranslations = {
   'share_app': 'Share App',
   'contact_us': 'Contact Us',
   'version': 'Version',
-  
+
   // ==================== Theme Options ====================
   'theme_system': 'System',
   'theme_light': 'Light',
   'theme_dark': 'Dark',
-  
+
   // ==================== Language Options ====================
   'language_arabic': 'العربية',
   'language_english': 'English',
-  
+
   // ==================== Qibla Screen ====================
   'qibla_direction': 'Qibla Direction',
   'compass_calibration': 'Please calibrate the compass',
   'rotate_device': 'Rotate your device to find Qibla direction',
-  
+
   // ==================== Notifications ====================
   'prayer_time_notification': 'It\'s time for @prayer prayer',
   'prayer_reminder': 'Prayer Reminder',
   'notification_enabled': 'Notifications enabled',
   'notification_disabled': 'Notifications disabled',
-  
+
   // ==================== Errors ====================
   'error_no_internet': 'No internet connection',
   'error_location': 'Error getting location',
   'error_unknown': 'An unexpected error occurred',
   'error_try_again': 'Please try again',
-  
+
   // ==================== Onboarding ====================
   'welcome': 'Welcome',
   'welcome_message': 'Welcome to Salah App',
@@ -101,7 +101,7 @@ const Map<String, String> enTranslations = {
   'onboarding_desc_3': 'Receive notifications for prayer times',
   'get_started': 'Get Started',
   'skip': 'Skip',
-  
+
   // ==================== Days of Week ====================
   'sunday': 'Sunday',
   'monday': 'Monday',
@@ -110,7 +110,7 @@ const Map<String, String> enTranslations = {
   'thursday': 'Thursday',
   'friday': 'Friday',
   'saturday': 'Saturday',
-  
+
   // ==================== Months ====================
   'january': 'January',
   'february': 'February',
@@ -124,7 +124,7 @@ const Map<String, String> enTranslations = {
   'october': 'October',
   'november': 'November',
   'december': 'December',
-  
+
   // ==================== Hijri Months ====================
   'muharram': 'Muharram',
   'safar': 'Safar',
@@ -158,7 +158,8 @@ const Map<String, String> enTranslations = {
   'log_for_him': 'Log for him',
   'select_prayer_to_log': 'Select prayer to log for him',
   'send_encouragement': 'Send Encouragement',
-  'create_or_join_family_desc': 'Create a new family or join an existing one\\nto share prayers and encourage each other',
+  'create_or_join_family_desc':
+      'Create a new family or join an existing one\\nto share prayers and encourage each other',
 
   // ==================== Prayer Actions ====================
   'prayer_accepted': 'May Allah accept your prayer',
@@ -182,7 +183,8 @@ const Map<String, String> enTranslations = {
   'logout': 'Logout',
   'delete_account': 'Delete Account',
   'delete_account_warning': 'This action cannot be undone',
-  'delete_account_confirmation': 'Are you sure you want to delete your account? All your data will be permanently deleted.',
+  'delete_account_confirmation':
+      'Are you sure you want to delete your account? All your data will be permanently deleted.',
   'deleting_account': 'Deleting account...',
   'account_deleted_successfully': 'Account deleted successfully',
   'delete_account_error': 'Error deleting account',
@@ -218,8 +220,10 @@ const Map<String, String> enTranslations = {
   'follow_arrow': 'Follow arrow to Qibla',
   'improve_accuracy': 'Improve Accuracy',
   'calibration': 'Calibration',
-  'calibration_instruction': 'Keep device away from metal (magnetic field), calibrate compass by moving phone in figure-8',
-  'qibla_hint_open_area': 'For best accuracy: use in an open area away from metal',
+  'calibration_instruction':
+      'Keep device away from metal (magnetic field), calibrate compass by moving phone in figure-8',
+  'qibla_hint_open_area':
+      'For best accuracy: use in an open area away from metal',
 
   // ==================== Additional UI ====================
   'add': 'Add',
@@ -330,7 +334,8 @@ const Map<String, String> enTranslations = {
   'location_section': 'Location',
   'updating_location': 'Updating...',
   'update_location': 'Update Location',
-  'location_default_hint': 'Times are based on Makkah. Enable location or tap to update.',
+  'location_default_hint':
+      'Times are based on Makkah. Enable location or tap to update.',
 
   // ==================== Notification Types (Settings) ====================
   'adhan_notification': 'Adhan Alert',
@@ -360,4 +365,29 @@ const Map<String, String> enTranslations = {
   'hours_short': 'h',
   'dashboard_load_error': 'Failed to load dashboard',
   'notification_schedule_error': 'Failed to schedule notifications',
+
+  // ==================== Quick Log & Prayer Feedback ====================
+  'log_all_prayers': 'Log All ✅',
+  'already_logged': 'Notice',
+  'prayer_already_logged': 'This prayer was already logged',
+  'prayer_logged_success': 'Success',
+  'prayer_log_failed': 'Failed to log prayer',
+  'prayers_logged_count': 'prayers logged',
+
+  // ==================== Daily Review ====================
+  'daily_review_title': 'Your Day Summary 🌙',
+  'daily_review_subtitle': 'How was your day with prayer?',
+  'daily_review_notification': 'How was your day? Check your summary 🌙',
+  'all_prayers_complete': 'All prayers done! Masha\'Allah 🌟',
+  'most_prayers_done': 'Most prayers done! Keep going 💪',
+  'some_prayers_missed': 'Don\'t miss them tomorrow insha\'Allah 🤲',
+  'no_prayers_today': 'Start fresh tomorrow 🌅',
+  'on_time': 'On Time',
+  'late_prayer': 'Late',
+  'prayers_label': 'Prayers',
+
+  // ==================== Heatmap Calendar ====================
+  'prayer_heatmap': 'Prayer History 📊',
+  'heatmap_no_data': 'No data yet',
+  'no_prayers_logged': 'No prayers logged',
 };
