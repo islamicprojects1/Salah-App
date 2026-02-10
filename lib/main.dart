@@ -20,6 +20,7 @@ import 'package:salah/data/repositories/prayer_repository.dart';
 import 'package:salah/data/repositories/user_repository.dart';
 import 'package:salah/core/services/prayer_time_service.dart';
 import 'package:salah/core/services/family_service.dart';
+import 'package:salah/core/services/cloudinary_service.dart';
 import 'package:salah/controller/auth_controller.dart';
 
 void main() async {
@@ -73,6 +74,7 @@ Future<void> initServices() async {
     }),
     Get.putAsync<LocationService>(() => LocationService().init()),
     Get.putAsync<ConnectivityService>(() => ConnectivityService().init()),
+    Get.putAsync<CloudinaryService>(() => CloudinaryService().init()),
   ]);
 
   // 3. Firestore

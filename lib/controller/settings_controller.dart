@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:adhan/adhan.dart' as adhan;
 
 import 'package:salah/core/constants/enums.dart';
 import 'package:salah/data/repositories/user_repository.dart';
@@ -40,6 +41,19 @@ class SettingsController extends GetxController {
   AppLanguage get currentLanguage => _localizationService.currentLanguage.value;
   bool get isDarkMode => _themeService.isDarkMode;
   bool get isRTL => _localizationService.isRTL;
+
+  // Prayer Settings
+  final _prayerService = Get.find<PrayerTimeService>();
+  adhan.CalculationMethod get currentCalculationMethod => _prayerService.currentCalculationMethod.value;
+  adhan.Madhab get currentMadhab => _prayerService.currentMadhab.value;
+
+  Future<void> updateCalculationMethod(adhan.CalculationMethod method) async {
+    await _prayerService.setCalculationMethod(method);
+  }
+
+  Future<void> updateMadhab(adhan.Madhab madhab) async {
+    await _prayerService.setMadhab(madhab);
+  }
 
   Future<void> changeTheme(AppThemeMode mode) async {
     await _themeService.changeTheme(mode);

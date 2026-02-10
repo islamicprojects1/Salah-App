@@ -18,6 +18,8 @@ import '../../view/screens/family/join_family_screen.dart';
 import '../../view/screens/family/family_dashboard_screen.dart';
 import '../../view/screens/missed_prayers/missed_prayers_screen.dart';
 import '../../controller/missed_prayers_controller.dart';
+import '../../view/screens/profile/profile_screen.dart';
+import '../../controller/profile_controller.dart';
 
 /// App pages configuration for GetX routing
 ///
@@ -65,6 +67,16 @@ class AppPages {
     GetPage(
       name: AppRoutes.profileSetup,
       page: () => const ProfileSetupScreen(),
+      transition: Transition.cupertino, // Standard push
+    ),
+
+    // Profile Screen
+    GetPage(
+      name: AppRoutes.profile,
+      page: () => const ProfileScreen(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut<ProfileController>(() => ProfileController());
+      }),
       transition: Transition.cupertino, // Standard push
     ),
 

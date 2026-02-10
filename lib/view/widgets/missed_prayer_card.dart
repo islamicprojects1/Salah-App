@@ -2,11 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:salah/core/constants/enums.dart';
-import 'package:salah/core/services/prayer_time_service.dart';
 import 'package:salah/core/helpers/prayer_timing_helper.dart';
 import 'package:salah/core/theme/app_colors.dart';
 import 'package:salah/data/models/prayer_time_model.dart';
-import 'package:salah/controller/missed_prayers_controller.dart';
 
 /// Premium missed prayer card with smooth animations and swipe gestures
 class MissedPrayerCard extends StatefulWidget {
@@ -45,17 +43,17 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
-    
+
     _scaleAnimation = Tween<double>(begin: 0.95, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
     );
-    
+
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
     );
-    
+
     _animationController.forward();
-    
+
     // Auto-expand if prayed
     if (widget.status == PrayerCardStatus.prayed) {
       _isExpanded = true;
@@ -143,9 +141,7 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
           ),
           ElevatedButton(
             onPressed: () => Get.back(result: true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.warning,
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.warning),
             child: Text('skip'.tr, style: const TextStyle(color: Colors.white)),
           ),
         ],
@@ -200,7 +196,7 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
 
   Widget _buildHeader() {
     final prayerType = widget.prayer.prayerType ?? PrayerName.fajr;
-    
+
     return Container(
       padding: const EdgeInsets.all(16),
       child: Row(
@@ -237,7 +233,7 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
             ),
           ),
           const SizedBox(width: 16),
-          
+
           // Prayer Info
           Expanded(
             child: Column(
@@ -292,7 +288,7 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
               ],
             ),
           ),
-          
+
           // Status indicator
           _buildStatusIndicator(),
         ],
@@ -308,11 +304,7 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
           color: AppColors.success.withValues(alpha: 0.1),
           shape: BoxShape.circle,
         ),
-        child: Icon(
-          Icons.check_circle,
-          color: AppColors.success,
-          size: 24,
-        ),
+        child: Icon(Icons.check_circle, color: AppColors.success, size: 24),
       );
     } else if (widget.status == PrayerCardStatus.missed) {
       return Container(
@@ -321,11 +313,7 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
           color: Colors.red.withValues(alpha: 0.1),
           shape: BoxShape.circle,
         ),
-        child: const Icon(
-          Icons.cancel,
-          color: Colors.red,
-          size: 24,
-        ),
+        child: const Icon(Icons.cancel, color: Colors.red, size: 24),
       );
     }
     return const SizedBox.shrink();
@@ -401,11 +389,7 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                icon,
-                color: isSelected ? Colors.white : color,
-                size: 22,
-              ),
+              Icon(icon, color: isSelected ? Colors.white : color, size: 22),
               const SizedBox(width: 8),
               Text(
                 label,
@@ -582,7 +566,9 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
   }
 
   Color _getTimeAgoColor() {
-    final minutesAgo = DateTime.now().difference(widget.prayer.dateTime).inMinutes;
+    final minutesAgo = DateTime.now()
+        .difference(widget.prayer.dateTime)
+        .inMinutes;
     if (minutesAgo < 30) return AppColors.success;
     if (minutesAgo < 120) return AppColors.warning;
     return Colors.red;
@@ -603,7 +589,9 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
   }
 
   String _formatTime(DateTime time) {
-    final hour = time.hour > 12 ? time.hour - 12 : (time.hour == 0 ? 12 : time.hour);
+    final hour = time.hour > 12
+        ? time.hour - 12
+        : (time.hour == 0 ? 12 : time.hour);
     final minute = time.minute.toString().padLeft(2, '0');
     final period = time.hour >= 12 ? 'PM' : 'AM';
     return '$hour:$minute $period';

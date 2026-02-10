@@ -1,5 +1,8 @@
-import 'package:get/get.dart';
 import 'package:adhan/adhan.dart';
+import 'package:get/get_core/src/get_main.dart';
+import 'package:get/get_instance/src/extension_instance.dart';
+import 'package:get/get_rx/src/rx_types/rx_types.dart';
+import 'package:get/get_state_manager/src/rx_flutter/rx_disposable.dart';
 import 'package:salah/core/constants/enums.dart';
 import 'package:salah/core/helpers/prayer_names.dart';
 import 'package:salah/core/services/database_helper.dart';
@@ -25,9 +28,11 @@ class PrayerTimeService extends GetxService {
   final isLoading = false.obs;
   PrayerTimeModel? _tomorrowFajr;
   List<PrayerTimeModel>? _cachedTodayList;
-  
+
   // User preferences
-  final currentCalculationMethod = Rx<CalculationMethod>(CalculationMethod.muslim_world_league);
+  final currentCalculationMethod = Rx<CalculationMethod>(
+    CalculationMethod.muslim_world_league,
+  );
   final currentMadhab = Rx<Madhab>(Madhab.shafi);
 
   // ============================================================
@@ -40,49 +45,66 @@ class PrayerTimeService extends GetxService {
     params.madhab = currentMadhab.value;
     return params;
   }
-  
+
   /// Update calculation method and recalculate
   Future<void> setCalculationMethod(CalculationMethod method) async {
     currentCalculationMethod.value = method;
     await _storageService.write('prayer_calculation_method', method.name);
     await calculatePrayerTimes();
   }
-  
+
   /// Update madhab and recalculate
   Future<void> setMadhab(Madhab madhab) async {
     currentMadhab.value = madhab;
     await _storageService.write('prayer_madhab', madhab.name);
     await calculatePrayerTimes();
   }
-  
+
   /// Load saved preferences
   void _loadPreferences() {
-    final methodName = _storageService.read<String>('prayer_calculation_method');
+    final methodName = _storageService.read<String>(
+      'prayer_calculation_method',
+    );
     if (methodName != null) {
       currentCalculationMethod.value = _parseCalculationMethod(methodName);
     }
-    
+
     final madhabName = _storageService.read<String>('prayer_madhab');
     if (madhabName != null) {
-      currentMadhab.value = madhabName == 'hanafi' ? Madhab.hanafi : Madhab.shafi;
+      currentMadhab.value = madhabName == 'hanafi'
+          ? Madhab.hanafi
+          : Madhab.shafi;
     }
   }
-  
+
   CalculationMethod _parseCalculationMethod(String name) {
     switch (name) {
-      case 'muslim_world_league': return CalculationMethod.muslim_world_league;
-      case 'egyptian': return CalculationMethod.egyptian;
-      case 'karachi': return CalculationMethod.karachi;
-      case 'umm_al_qura': return CalculationMethod.umm_al_qura;
-      case 'dubai': return CalculationMethod.dubai;
-      case 'qatar': return CalculationMethod.qatar;
-      case 'kuwait': return CalculationMethod.kuwait;
-      case 'moon_sighting_committee': return CalculationMethod.moon_sighting_committee;
-      case 'singapore': return CalculationMethod.singapore;
-      case 'turkey': return CalculationMethod.turkey;
-      case 'tehran': return CalculationMethod.tehran;
-      case 'north_america': return CalculationMethod.north_america;
-      default: return CalculationMethod.muslim_world_league;
+      case 'muslim_world_league':
+        return CalculationMethod.muslim_world_league;
+      case 'egyptian':
+        return CalculationMethod.egyptian;
+      case 'karachi':
+        return CalculationMethod.karachi;
+      case 'umm_al_qura':
+        return CalculationMethod.umm_al_qura;
+      case 'dubai':
+        return CalculationMethod.dubai;
+      case 'qatar':
+        return CalculationMethod.qatar;
+      case 'kuwait':
+        return CalculationMethod.kuwait;
+      case 'moon_sighting_committee':
+        return CalculationMethod.moon_sighting_committee;
+      case 'singapore':
+        return CalculationMethod.singapore;
+      case 'turkey':
+        return CalculationMethod.turkey;
+      case 'tehran':
+        return CalculationMethod.tehran;
+      case 'north_america':
+        return CalculationMethod.north_america;
+      default:
+        return CalculationMethod.muslim_world_league;
     }
   }
 
@@ -98,9 +120,9 @@ class PrayerTimeService extends GetxService {
     } else {
       _locationService = Get.put(LocationService());
     }
-    
+
     _storageService = Get.find<StorageService>();
-    
+
     // Load user preferences
     _loadPreferences();
 
@@ -139,7 +161,9 @@ class PrayerTimeService extends GetxService {
           if (fromCache.isNotEmpty) {
             _cachedTodayList = fromCache;
             if (now.isAfter(fromCache.last.dateTime)) {
-              _tomorrowFajr = await _getFirstPrayerForDate(now.add(const Duration(days: 1)));
+              _tomorrowFajr = await _getFirstPrayerForDate(
+                now.add(const Duration(days: 1)),
+              );
             }
             return;
           }
@@ -158,7 +182,9 @@ class PrayerTimeService extends GetxService {
       final qibla = Qibla(coordinates);
       qiblaDirection.value = qibla.direction;
       if (now.isAfter(prayerTimes.value!.isha)) {
-        _tomorrowFajr = await _getFirstPrayerForDate(now.add(const Duration(days: 1)));
+        _tomorrowFajr = await _getFirstPrayerForDate(
+          now.add(const Duration(days: 1)),
+        );
       }
     } catch (_) {
       // Prayer times calculation failed
@@ -182,18 +208,24 @@ class PrayerTimeService extends GetxService {
     ]) {
       final s = c[p.name] as String?;
       if (s == null) continue;
-      list.add(PrayerTimeModel(
-        name: PrayerNames.displayName(p),
-        dateTime: DateTime.parse(s),
-        prayerType: p,
-        isNotificationEnabled: p != PrayerName.sunrise,
-      ));
+      list.add(
+        PrayerTimeModel(
+          name: PrayerNames.displayName(p),
+          dateTime: DateTime.parse(s),
+          prayerType: p,
+          isNotificationEnabled: p != PrayerName.sunrise,
+        ),
+      );
     }
     return list;
   }
 
   Future<void> _saveToCache(
-      DateTime date, PrayerTimes times, double lat, double lng) async {
+    DateTime date,
+    PrayerTimes times,
+    double lat,
+    double lng,
+  ) async {
     if (!Get.isRegistered<DatabaseHelper>()) return;
     final db = Get.find<DatabaseHelper>();
     await db.cachePrayerTimes(
@@ -231,11 +263,7 @@ class PrayerTimeService extends GetxService {
 
     final coordinates = Coordinates(lat, lng);
     final dateComponents = DateComponents.from(date);
-    final times = PrayerTimes(
-      coordinates,
-      dateComponents,
-      _calculationParams,
-    );
+    final times = PrayerTimes(coordinates, dateComponents, _calculationParams);
     if (Get.isRegistered<DatabaseHelper>()) {
       await _saveToCache(date, times, lat, lng);
     }
@@ -244,12 +272,37 @@ class PrayerTimeService extends GetxService {
 
   List<PrayerTimeModel> _timesToModels(PrayerTimes times) {
     return [
-      PrayerTimeModel(name: PrayerNames.displayName(PrayerName.fajr), dateTime: times.fajr, prayerType: PrayerName.fajr),
-      PrayerTimeModel(name: PrayerNames.displayName(PrayerName.sunrise), dateTime: times.sunrise, prayerType: PrayerName.sunrise, isNotificationEnabled: false),
-      PrayerTimeModel(name: PrayerNames.displayName(PrayerName.dhuhr), dateTime: times.dhuhr, prayerType: PrayerName.dhuhr),
-      PrayerTimeModel(name: PrayerNames.displayName(PrayerName.asr), dateTime: times.asr, prayerType: PrayerName.asr),
-      PrayerTimeModel(name: PrayerNames.displayName(PrayerName.maghrib), dateTime: times.maghrib, prayerType: PrayerName.maghrib),
-      PrayerTimeModel(name: PrayerNames.displayName(PrayerName.isha), dateTime: times.isha, prayerType: PrayerName.isha),
+      PrayerTimeModel(
+        name: PrayerNames.displayName(PrayerName.fajr),
+        dateTime: times.fajr,
+        prayerType: PrayerName.fajr,
+      ),
+      PrayerTimeModel(
+        name: PrayerNames.displayName(PrayerName.sunrise),
+        dateTime: times.sunrise,
+        prayerType: PrayerName.sunrise,
+        isNotificationEnabled: false,
+      ),
+      PrayerTimeModel(
+        name: PrayerNames.displayName(PrayerName.dhuhr),
+        dateTime: times.dhuhr,
+        prayerType: PrayerName.dhuhr,
+      ),
+      PrayerTimeModel(
+        name: PrayerNames.displayName(PrayerName.asr),
+        dateTime: times.asr,
+        prayerType: PrayerName.asr,
+      ),
+      PrayerTimeModel(
+        name: PrayerNames.displayName(PrayerName.maghrib),
+        dateTime: times.maghrib,
+        prayerType: PrayerName.maghrib,
+      ),
+      PrayerTimeModel(
+        name: PrayerNames.displayName(PrayerName.isha),
+        dateTime: times.isha,
+        prayerType: PrayerName.isha,
+      ),
     ];
   }
 
@@ -273,12 +326,18 @@ class PrayerTimeService extends GetxService {
     if (times == null) return null;
 
     switch (prayer) {
-      case PrayerName.fajr: return times.fajr;
-      case PrayerName.sunrise: return times.sunrise;
-      case PrayerName.dhuhr: return times.dhuhr;
-      case PrayerName.asr: return times.asr;
-      case PrayerName.maghrib: return times.maghrib;
-      case PrayerName.isha: return times.isha;
+      case PrayerName.fajr:
+        return times.fajr;
+      case PrayerName.sunrise:
+        return times.sunrise;
+      case PrayerName.dhuhr:
+        return times.dhuhr;
+      case PrayerName.asr:
+        return times.asr;
+      case PrayerName.maghrib:
+        return times.maghrib;
+      case PrayerName.isha:
+        return times.isha;
     }
   }
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:adhan/adhan.dart' as adhan;
 import 'package:salah/controller/settings_controller.dart';
 import 'package:salah/core/constants/app_dimensions.dart';
 import 'package:salah/core/constants/enums.dart';
@@ -7,6 +8,7 @@ import 'package:salah/core/services/theme_service.dart';
 import 'package:salah/core/services/localization_service.dart';
 import 'package:salah/core/theme/app_colors.dart';
 import 'package:salah/core/theme/app_fonts.dart';
+import 'package:salah/data/models/user_model.dart';
 import 'package:salah/view/widgets/app_dialogs.dart';
 
 /// Settings screen for app preferences
@@ -25,101 +27,106 @@ class SettingsScreen extends GetView<SettingsController> {
         backgroundColor: AppColors.surface,
         centerTitle: true,
       ),
-      body: Obx(() {
-        final themeMode = Get.find<ThemeService>().currentThemeMode.value;
-        final language = Get.find<LocalizationService>().currentLanguage.value;
+      body: ListView(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppDimensions.paddingMD,
+          vertical: AppDimensions.paddingLG,
+        ),
+        children: [
+          // --- General Preferences ---
+          _buildHeader('general_preferences'.tr),
+          _buildCard([
+            _buildLanguageTile(context),
+            const Divider(indent: 56, height: 1),
+            _buildThemeTile(context),
+          ]),
 
-        return ListView(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppDimensions.paddingMD,
-            vertical: AppDimensions.paddingLG,
-          ),
-          children: [
-            // --- General Preferences ---
-            _buildHeader('general_preferences'.tr),
-            _buildCard([
-              _buildLanguageTile(context, language),
-              const Divider(indent: 56, height: 1),
-              _buildThemeTile(context, themeMode),
-            ]),
+          const SizedBox(height: AppDimensions.paddingLG),
 
-            const SizedBox(height: AppDimensions.paddingLG),
+          // --- Prayer Settings ---
+          _buildHeader('prayer_settings'.tr),
+          _buildCard([
+            _buildCalculationMethodTile(context),
+            const Divider(indent: 56, height: 1),
+            _buildMadhabTile(context),
+          ]),
 
-            // --- Prayer & Location ---
-            _buildHeader('prayer_location'.tr),
-            _buildCard([
-              _buildLocationTile(context),
-              const Divider(indent: 56, height: 1),
-              _buildNotificationTile(context),
-            ]),
+          const SizedBox(height: AppDimensions.paddingLG),
 
-            const SizedBox(height: AppDimensions.paddingLG),
+          // --- Prayer & Location ---
+          _buildHeader('prayer_location'.tr),
+          _buildCard([
+            _buildLocationTile(context),
+            const Divider(indent: 56, height: 1),
+            _buildNotificationTile(context),
+          ]),
 
-            // --- App Information ---
-            _buildHeader('app_info'.tr),
-            _buildCard([
-              _buildTile(
-                context,
-                icon: Icons.info_outline,
-                title: 'about'.tr,
-                onTap: () => controller.showAboutDialog(),
-              ),
-              const Divider(indent: 56, height: 1),
-              _buildTile(
-                context,
-                icon: Icons.star_border_rounded,
-                title: 'rate_app'.tr,
-                onTap: () => controller.openRateApp(),
-              ),
-              const Divider(indent: 56, height: 1),
-              _buildTile(
-                context,
-                icon: Icons.share_outlined,
-                title: 'share_app'.tr,
-                onTap: () => controller.shareApp(),
-              ),
-              const Divider(indent: 56, height: 1),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                child: Center(
-                  child: Text(
-                    '${'version'.tr}: 1.0.0',
-                    style: AppFonts.labelSmall.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
+          const SizedBox(height: AppDimensions.paddingLG),
+
+          // --- App Information ---
+          _buildHeader('app_info'.tr),
+          _buildCard([
+            _buildTile(
+              context,
+              icon: Icons.info_outline,
+              title: 'about'.tr,
+              onTap: () => controller.showAboutDialog(),
+            ),
+            const Divider(indent: 56, height: 1),
+            _buildTile(
+              context,
+              icon: Icons.star_border_rounded,
+              title: 'rate_app'.tr,
+              onTap: () => controller.openRateApp(),
+            ),
+            const Divider(indent: 56, height: 1),
+            _buildTile(
+              context,
+              icon: Icons.share_outlined,
+              title: 'share_app'.tr,
+              onTap: () => controller.shareApp(),
+            ),
+            const Divider(indent: 56, height: 1),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Center(
+                child: Text(
+                  '${'version'.tr}: 1.0.0',
+                  style: AppFonts.labelSmall.copyWith(
+                    color: AppColors.textSecondary,
                   ),
                 ),
               ),
-            ]),
+            ),
+          ]),
 
-            const SizedBox(height: AppDimensions.paddingLG),
+          const SizedBox(height: AppDimensions.paddingLG),
 
-            // --- Account Actions ---
-            _buildHeader('account'.tr),
-            _buildCard([
-              _buildTile(
-                context,
-                icon: Icons.logout_rounded,
-                title: 'logout'.tr,
-                titleColor: AppColors.error,
-                iconColor: AppColors.error,
-                onTap: () => _handleLogout(),
-              ),
-              const Divider(indent: 56, height: 1),
-              _buildTile(
-                context,
-                icon: Icons.delete_forever_rounded,
-                title: 'delete_account'.tr,
-                titleColor: AppColors.error,
-                iconColor: AppColors.error,
-                onTap: () => controller.deleteAccount(),
-              ),
-            ]),
+          // --- Account Actions ---
+          _buildHeader('account'.tr),
+          _buildCard([
+            _buildTile(
+              context,
+              icon: Icons.logout_rounded,
+              title: 'logout'.tr,
+              titleColor: AppColors.error,
+              iconColor: AppColors.error,
+              onTap: () => _handleLogout(),
+            ),
+            const Divider(indent: 56, height: 1),
+            _buildTile(
+              context,
+              icon: Icons.delete_forever_rounded,
+              title: 'delete_account'.tr,
+              titleColor: AppColors.error,
+              iconColor: AppColors.error,
+              onTap: () => controller.deleteAccount(),
+            ),
+          ]),
 
-            const SizedBox(height: 40),
-          ],
-        );
-      }),
+          const SizedBox(height: 40),
+        ],
+      ),
     );
   }
 
@@ -202,41 +209,47 @@ class SettingsScreen extends GetView<SettingsController> {
     );
   }
 
-  Widget _buildLanguageTile(BuildContext context, AppLanguage current) {
-    return _buildTile(
-      context,
-      icon: Icons.translate_rounded,
-      title: 'language'.tr,
-      subtitle: current.name,
-      onTap: () => _showLanguagePicker(context),
-    );
+  Widget _buildLanguageTile(BuildContext context) {
+    return Obx(() {
+      final current = Get.find<LocalizationService>().currentLanguage.value;
+      return _buildTile(
+        context,
+        icon: Icons.translate_rounded,
+        title: 'language'.tr,
+        subtitle: current.name,
+        onTap: () => _showLanguagePicker(context),
+      );
+    });
   }
 
-  Widget _buildThemeTile(BuildContext context, AppThemeMode current) {
-    String themeLabel;
-    IconData themeIcon;
-    switch (current) {
-      case AppThemeMode.light:
-        themeLabel = 'theme_light'.tr;
-        themeIcon = Icons.light_mode_rounded;
-        break;
-      case AppThemeMode.dark:
-        themeLabel = 'theme_dark'.tr;
-        themeIcon = Icons.dark_mode_rounded;
-        break;
-      case AppThemeMode.system:
-        themeLabel = 'theme_system'.tr;
-        themeIcon = Icons.settings_brightness_rounded;
-        break;
-    }
+  Widget _buildThemeTile(BuildContext context) {
+    return Obx(() {
+      final current = Get.find<ThemeService>().currentThemeMode.value;
+      String themeLabel;
+      IconData themeIcon;
+      switch (current) {
+        case AppThemeMode.light:
+          themeLabel = 'theme_light'.tr;
+          themeIcon = Icons.light_mode_rounded;
+          break;
+        case AppThemeMode.dark:
+          themeLabel = 'theme_dark'.tr;
+          themeIcon = Icons.dark_mode_rounded;
+          break;
+        case AppThemeMode.system:
+          themeLabel = 'theme_system'.tr;
+          themeIcon = Icons.settings_brightness_rounded;
+          break;
+      }
 
-    return _buildTile(
-      context,
-      icon: themeIcon,
-      title: 'theme'.tr,
-      subtitle: themeLabel,
-      onTap: () => _showThemePicker(context),
-    );
+      return _buildTile(
+        context,
+        icon: themeIcon,
+        title: 'theme'.tr,
+        subtitle: themeLabel,
+        onTap: () => _showThemePicker(context),
+      );
+    });
   }
 
   Widget _buildLocationTile(BuildContext context) {
@@ -272,6 +285,167 @@ class SettingsScreen extends GetView<SettingsController> {
           ? 'enabled'.tr
           : 'disabled'.tr,
       onTap: () => _navigateToNotifications(context),
+    );
+  }
+
+  Widget _buildCalculationMethodTile(BuildContext context) {
+    return Obx(() {
+      final method = controller.currentCalculationMethod;
+      return _buildTile(
+        context,
+        icon: Icons.access_time_filled_rounded,
+        title: 'calculation_method'.tr,
+        subtitle: _getCalculationMethodName(method),
+        onTap: () => _showCalculationMethodPicker(context),
+      );
+    });
+  }
+
+  Widget _buildMadhabTile(BuildContext context) {
+    return Obx(() {
+      final madhab = controller.currentMadhab;
+      return _buildTile(
+        context,
+        icon: Icons.mosque_rounded,
+        title: 'madhab'.tr,
+        subtitle: _getMadhabName(madhab),
+        onTap: () => _showMadhabPicker(context),
+      );
+    });
+  }
+
+  String _getCalculationMethodName(adhan.CalculationMethod method) {
+    // Basic mapping, can be improved with localization keys
+    switch (method) {
+      case adhan.CalculationMethod.muslim_world_league:
+        return 'Muslim World League';
+      case adhan.CalculationMethod.egyptian:
+        return 'Egyptian General Authority';
+      case adhan.CalculationMethod.karachi:
+        return 'University of Islamic Sciences, Karachi';
+      case adhan.CalculationMethod.umm_al_qura:
+        return 'Umm Al-Qura University, Makkah';
+      case adhan.CalculationMethod.dubai:
+        return 'Dubai';
+      case adhan.CalculationMethod.qatar:
+        return 'Qatar';
+      case adhan.CalculationMethod.kuwait:
+        return 'Kuwait';
+      case adhan.CalculationMethod.moon_sighting_committee:
+        return 'Moon Sighting Committee';
+      case adhan.CalculationMethod.singapore:
+        return 'Singapore';
+      case adhan.CalculationMethod.turkey:
+        return 'Turkey';
+      case adhan.CalculationMethod.tehran:
+        return 'Tehran';
+      case adhan.CalculationMethod.north_america:
+        return 'ISNA (North America)';
+      default:
+        return method.name;
+    }
+  }
+
+  String _getMadhabName(adhan.Madhab madhab) {
+    switch (madhab) {
+      case adhan.Madhab.shafi:
+        return 'Shafi (Standard)';
+      case adhan.Madhab.hanafi:
+        return 'Hanafi';
+    }
+  }
+
+  void _showCalculationMethodPicker(BuildContext context) {
+    Get.bottomSheet(
+      Container(
+        padding: const EdgeInsets.all(AppDimensions.paddingLG),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        constraints: BoxConstraints(maxHeight: Get.height * 0.8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'select_calculation_method'.tr,
+              style: AppFonts.titleLarge.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 20),
+            Flexible(
+              child: ListView(
+                shrinkWrap: true,
+                children:
+                    [
+                          adhan.CalculationMethod.muslim_world_league,
+                          adhan.CalculationMethod.egyptian,
+                          adhan.CalculationMethod.karachi,
+                          adhan.CalculationMethod.umm_al_qura,
+                          adhan.CalculationMethod.dubai,
+                          adhan.CalculationMethod.kuwait,
+                          adhan.CalculationMethod.qatar,
+                          adhan.CalculationMethod.singapore,
+                          adhan.CalculationMethod.turkey,
+                          adhan.CalculationMethod.tehran,
+                          adhan.CalculationMethod.north_america,
+                        ]
+                        .map<Widget>(
+                          (method) => ListTile(
+                            title: Text(_getCalculationMethodName(method)),
+                            trailing:
+                                controller.currentCalculationMethod == method
+                                ? const Icon(
+                                    Icons.check_circle,
+                                    color: AppColors.primary,
+                                  )
+                                : null,
+                            onTap: () {
+                              controller.updateCalculationMethod(method);
+                              Get.back();
+                            },
+                          ),
+                        )
+                        .toList(),
+              ),
+            ),
+          ],
+        ),
+      ),
+      isScrollControlled: true,
+    );
+  }
+
+  void _showMadhabPicker(BuildContext context) {
+    Get.bottomSheet(
+      Container(
+        padding: const EdgeInsets.all(AppDimensions.paddingLG),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'select_madhab'.tr,
+              style: AppFonts.titleLarge.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 20),
+            ...adhan.Madhab.values.map(
+              (m) => ListTile(
+                title: Text(_getMadhabName(m)),
+                trailing: controller.currentMadhab == m
+                    ? const Icon(Icons.check_circle, color: AppColors.primary)
+                    : null,
+                onTap: () {
+                  controller.updateMadhab(m);
+                  Get.back();
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -396,7 +570,7 @@ class _NotificationSettingsView extends StatelessWidget {
                 subtitle: Text('prayer_notifications_desc'.tr),
                 value: controller.notificationsEnabled.value,
                 onChanged: (v) => controller.setNotificationsEnabled(v),
-                activeColor: AppColors.primary,
+                activeThumbColor: AppColors.primary,
               ),
             ]),
 

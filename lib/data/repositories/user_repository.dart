@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:salah/core/services/connectivity_service.dart';
 import 'package:salah/core/services/database_helper.dart';
-import 'package:salah/core/services/firestore_service.dart';
 import 'package:salah/data/models/user_model.dart';
 import 'package:salah/data/repositories/base_repository.dart';
 import 'package:salah/data/repositories/prayer_repository.dart';

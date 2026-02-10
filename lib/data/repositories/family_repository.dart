@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:salah/core/constants/enums.dart';
-import 'package:salah/core/services/firestore_service.dart';
 import 'package:salah/data/models/family_model.dart';
 import 'package:salah/data/repositories/base_repository.dart';
 
@@ -34,7 +33,7 @@ class FamilyRepository extends BaseRepository {
       );
 
       final familyId = await firestore.createGroup(family.toFirestore());
-      
+
       // Return with updated ID
       return FamilyModel(
         id: familyId,
@@ -66,8 +65,7 @@ class FamilyRepository extends BaseRepository {
     try {
       // Since FirestoreService doesn't have getFamilyByInviteCode,
       // we need to use a stream and get first result
-      final stream = firestore.getUserGroups(''); // This won't work properly
-      // TODO: Need to add query by inviteCode to FirestoreService
+      // final stream = firestore.getUserGroups(''); // This won't work properly
       // For now, return null as placeholder
       return null;
     } catch (e) {

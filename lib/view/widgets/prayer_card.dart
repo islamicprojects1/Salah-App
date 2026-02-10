@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:salah/core/constants/enums.dart';
 import '../../core/constants/app_dimensions.dart';
 import '../../core/theme/app_colors.dart';
-import '../../core/services/prayer_time_service.dart';
 import '../../core/helpers/date_time_helper.dart';
 
 /// Prayer card widget showing prayer time and status

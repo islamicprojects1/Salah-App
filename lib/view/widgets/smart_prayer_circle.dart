@@ -7,7 +7,6 @@ import 'package:salah/controller/dashboard_controller.dart';
 import 'package:salah/core/helpers/prayer_names.dart';
 import 'package:salah/core/theme/app_colors.dart';
 import 'package:salah/core/theme/app_fonts.dart';
-import 'package:salah/data/models/prayer_time_model.dart';
 import 'package:intl/intl.dart' as intl;
 
 class SmartPrayerCircle extends StatefulWidget {
@@ -85,8 +84,8 @@ class _SmartPrayerCircleState extends State<SmartPrayerCircle>
                         color: isLogged
                             ? Colors.green.withValues(alpha: 0.3)
                             : isPrayerTime
-                                ? AppColors.primary.withValues(alpha: 0.4)
-                                : Colors.black.withValues(alpha: 0.08),
+                            ? AppColors.primary.withValues(alpha: 0.4)
+                            : Colors.black.withValues(alpha: 0.08),
                         blurRadius: 40,
                         spreadRadius: 2,
                       ),
@@ -117,16 +116,21 @@ class _SmartPrayerCircleState extends State<SmartPrayerCircle>
                 ),
 
                 // 3. Status Info at Cardinal Positions (Top/Bottom)
-                
+
                 // --- TOP (12:00 Position): Time Capsule ---
                 Positioned(
                   top: 55,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.surface.withValues(alpha: 0.8),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
+                      border: Border.all(
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                      ),
                     ),
                     child: Text(
                       intl.DateFormat('h:mm a').format(_currentTime),
@@ -146,7 +150,11 @@ class _SmartPrayerCircleState extends State<SmartPrayerCircle>
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       if (isLogged) ...[
-                        const Icon(Icons.check_circle_rounded, color: Colors.green, size: 24),
+                        const Icon(
+                          Icons.check_circle_rounded,
+                          color: Colors.green,
+                          size: 24,
+                        ),
                         const SizedBox(height: 2),
                         Text(
                           'تقبل الله',
@@ -165,16 +173,20 @@ class _SmartPrayerCircleState extends State<SmartPrayerCircle>
                           tween: Tween(begin: 1.0, end: 1.2),
                           duration: const Duration(seconds: 1),
                           curve: Curves.easeInOut,
-                          builder: (context, value, child) => Transform.scale(
-                            scale: value,
-                            child: child,
+                          builder: (context, value, child) =>
+                              Transform.scale(scale: value, child: child),
+                          child: const Icon(
+                            Icons.touch_app_rounded,
+                            color: AppColors.primary,
+                            size: 24,
                           ),
-                          child: const Icon(Icons.touch_app_rounded, color: AppColors.primary, size: 24),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           'حـان الآن',
-                          style: AppFonts.labelSmall.copyWith(color: AppColors.textSecondary),
+                          style: AppFonts.labelSmall.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                         Text(
                           currentPrayer?.name ?? '',
@@ -187,11 +199,16 @@ class _SmartPrayerCircleState extends State<SmartPrayerCircle>
                         // Next Prayer Info
                         Text(
                           'القادمة: ${nextPrayer?.name ?? ''}',
-                          style: AppFonts.labelSmall.copyWith(color: AppColors.textSecondary),
+                          style: AppFonts.labelSmall.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                         const SizedBox(height: 2),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: AppColors.primary.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
@@ -217,12 +234,14 @@ class _SmartPrayerCircleState extends State<SmartPrayerCircle>
                     height: 300,
                     child: CustomPaint(
                       painter: _PrayerProgressPainter(
-                        color: isLogged 
+                        color: isLogged
                             ? Colors.green.withValues(alpha: 0.3)
-                            : isPrayerTime 
-                                ? AppColors.primary.withValues(alpha: 0.3)
-                                : AppColors.textSecondary.withValues(alpha: 0.05),
-                        progress: isPrayerTime ? 1.0 : 0.75, // Simplified progress for now
+                            : isPrayerTime
+                            ? AppColors.primary.withValues(alpha: 0.3)
+                            : AppColors.textSecondary.withValues(alpha: 0.05),
+                        progress: isPrayerTime
+                            ? 1.0
+                            : 0.75, // Simplified progress for now
                         isActive: true,
                       ),
                     ),

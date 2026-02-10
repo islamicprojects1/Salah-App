@@ -20,7 +20,12 @@ class FamilyController extends GetxController {
   bool get isLoading => _familyService.isLoading.value;
   String get errorMessage => _familyService.errorMessage.value;
   FamilyModel? get currentFamily => _familyService.currentFamily.value;
+  RxList<FamilyModel> get myFamilies => _familyService.myFamilies;
   bool get hasFamily => currentFamily != null;
+
+  void selectFamily(FamilyModel family) {
+    _familyService.selectFamily(family);
+  }
 
   final RxList<FamilyPulseEvent> pulseEvents = <FamilyPulseEvent>[].obs;
   StreamSubscription<List<FamilyPulseEvent>>? _pulseSubscription;
@@ -74,7 +79,7 @@ class FamilyController extends GetxController {
     }
     final success = await _familyService.createFamily(name!);
     if (success) {
-      Get.offNamed(AppRoutes.dashboard);
+      Get.back();
       AppFeedback.showSuccess('تم بنجاح', 'تم إنشاء العائلة بنجاح');
     } else {
       AppFeedback.showError('خطأ', errorMessage);
@@ -91,7 +96,7 @@ class FamilyController extends GetxController {
     }
     final success = await _familyService.joinFamily(code!);
     if (success) {
-      Get.offNamed(AppRoutes.dashboard);
+      Get.back();
       AppFeedback.showSuccess('تم بنجاح', 'تم الانضمام للعائلة بنجاح');
     } else {
       AppFeedback.showError('خطأ', errorMessage);

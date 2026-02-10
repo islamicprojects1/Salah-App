@@ -113,10 +113,30 @@ class _FamilyDashboardScreenState extends State<FamilyDashboardScreen>
               padding: const EdgeInsets.all(AppDimensions.paddingLG),
               child: Column(
                 children: [
-                  Text(
-                    family.name,
-                    style: AppFonts.headlineMedium.copyWith(
-                      color: Colors.white,
+                  GestureDetector(
+                    onTap: () => _showFamilySwitcher(context, controller),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            family.name,
+                            style: AppFonts.headlineMedium.copyWith(
+                              color: Colors.white,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        if (controller.myFamilies.length > 1) ...[
+                          const SizedBox(width: 8),
+                          const Icon(
+                            Icons.keyboard_arrow_down,
+                            color: Colors.white70,
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                   const SizedBox(height: AppDimensions.paddingMD),
@@ -218,7 +238,7 @@ class _FamilyDashboardScreenState extends State<FamilyDashboardScreen>
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: family.members.length,
-            separatorBuilder: (_, __) =>
+            separatorBuilder: (_, _) =>
                 const SizedBox(height: AppDimensions.paddingMD),
             itemBuilder: (context, index) {
               final member = family.members[index];
@@ -400,7 +420,7 @@ class _FamilyDashboardScreenState extends State<FamilyDashboardScreen>
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: events.length > 15 ? 15 : events.length,
-                separatorBuilder: (_, __) =>
+                separatorBuilder: (_, _) =>
                     const SizedBox(height: AppDimensions.paddingXS),
                 itemBuilder: (context, index) {
                   final e = events[index];
@@ -594,7 +614,7 @@ class _FamilyDashboardScreenState extends State<FamilyDashboardScreen>
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
-              value: gender,
+              initialValue: gender,
               items: [
                 DropdownMenuItem(value: 'male', child: Text('male'.tr)),
                 DropdownMenuItem(value: 'female', child: Text('female'.tr)),
@@ -613,6 +633,104 @@ class _FamilyDashboardScreenState extends State<FamilyDashboardScreen>
           ),
         ],
       ),
+    );
+  }
+
+  void _showFamilySwitcher(BuildContext context, FamilyController controller) {
+    Get.bottomSheet(
+      Container(
+        padding: const EdgeInsets.all(AppDimensions.paddingLG),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'switch_family'.tr,
+              style: AppFonts.titleLarge.copyWith(fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppDimensions.paddingLG),
+            Flexible(
+              child: Obx(
+                () => ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: controller.myFamilies.length,
+                  separatorBuilder: (_, __) => const Divider(),
+                  itemBuilder: (context, index) {
+                    final family = controller.myFamilies[index];
+                    final isSelected =
+                        family.id == controller.currentFamily?.id;
+                    return ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: isSelected
+                            ? AppColors.primary
+                            : AppColors.secondary.withValues(alpha: 0.1),
+                        child: Icon(
+                          Icons.group,
+                          color: isSelected
+                              ? Colors.white
+                              : AppColors.secondary,
+                        ),
+                      ),
+                      title: Text(
+                        family.name,
+                        style: TextStyle(
+                          fontWeight: isSelected
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                          color: isSelected
+                              ? AppColors.primary
+                              : AppColors.textPrimary,
+                        ),
+                      ),
+                      trailing: isSelected
+                          ? Icon(Icons.check, color: AppColors.primary)
+                          : null,
+                      onTap: () {
+                        controller.selectFamily(family);
+                        Get.back();
+                      },
+                    );
+                  },
+                ),
+              ),
+            ),
+            const SizedBox(height: AppDimensions.paddingLG),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Get.back();
+                      Get.toNamed(AppRoutes.createFamily);
+                    },
+                    icon: const Icon(Icons.add),
+                    label: Text('create_family'.tr),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Get.back();
+                      Get.toNamed(AppRoutes.joinFamily);
+                    },
+                    icon: const Icon(Icons.login),
+                    label: Text('join_family'.tr),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppDimensions.paddingMD),
+          ],
+        ),
+      ),
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
     );
   }
 }

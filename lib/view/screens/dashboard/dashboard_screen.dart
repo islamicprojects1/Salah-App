@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:salah/core/constants/enums.dart';
-import 'package:salah/core/services/prayer_time_service.dart';
 import 'package:salah/core/theme/app_colors.dart';
 import 'package:salah/core/theme/app_fonts.dart';
 import 'package:salah/core/constants/app_dimensions.dart';
 import 'package:salah/controller/dashboard_controller.dart';
 import 'package:salah/view/screens/family/family_dashboard_screen.dart';
-import 'package:salah/core/routes/app_routes.dart';
 import 'package:salah/core/helpers/prayer_timing_helper.dart';
 import 'package:salah/data/models/prayer_log_model.dart';
 import 'package:salah/view/widgets/app_loading.dart';
@@ -23,26 +21,44 @@ class DashboardScreen extends GetView<DashboardController> {
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        key: controller.scaffoldKey,
-        drawer: const CustomDrawer(),
-        backgroundColor: AppColors.background,
-        appBar: const DashboardAppBar(),
-        body: _buildBody(),
+    // Controller is initialized by DashboardBinding
+    final controller = Get.find<DashboardController>();
+
+    return Scaffold(
+      key: controller.scaffoldKey,
+      drawer: const CustomDrawer(),
+      backgroundColor: AppColors.background,
+      appBar: const DashboardAppBar(),
+      body: Obx(
+        () => IndexedStack(
+          index: controller.currentTabIndex.value,
+          children: const [DashboardHomeContent(), FamilyDashboardScreen()],
+        ),
+      ),
+      bottomNavigationBar: Obx(
+        () => NavigationBar(
+          selectedIndex: controller.currentTabIndex.value,
+          onDestinationSelected: controller.changeTab,
+          backgroundColor: AppColors.surface,
+          indicatorColor: AppColors.primary.withValues(alpha: 0.2),
+          destinations: [
+            NavigationDestination(
+              icon: const Icon(Icons.home_outlined),
+              selectedIcon: Icon(Icons.home, color: AppColors.primary),
+              label: 'home'.tr,
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.people_outline),
+              selectedIcon: Icon(Icons.people, color: AppColors.primary),
+              label: 'family'.tr,
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildBody() {
-    return const TabBarView(
-      children: [
-        DashboardHomeContent(),
-        FamilyDashboardScreen(),
-      ],
-    );
-  }
+
 }
 
 class DashboardHomeContent extends StatefulWidget {
@@ -199,7 +215,9 @@ class _DashboardHomeContentState extends State<DashboardHomeContent>
                 Text(
                   '$completed/$total',
                   style: AppFonts.titleLarge.copyWith(
-                    color: completed >= total ? Colors.green : AppColors.primary,
+                    color: completed >= total
+                        ? Colors.green
+                        : AppColors.primary,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -282,10 +300,10 @@ class _DashboardHomeContentState extends State<DashboardHomeContent>
                   onTap: isLogged
                       ? null
                       : (isCurrent
-                          ? () => controller.logPrayer(prayer)
-                          : (isPast
-                              ? () => controller.logPastPrayer(prayer)
-                              : null)),
+                            ? () => controller.logPrayer(prayer)
+                            : (isPast
+                                  ? () => controller.logPastPrayer(prayer)
+                                  : null)),
                 );
               }).toList(),
             ),
@@ -383,10 +401,10 @@ class _DashboardHomeContentState extends State<DashboardHomeContent>
               color: isLogged && quality != null
                   ? PrayerTimingHelper.getLegacyQualityColor(quality)
                   : isLogged
-                      ? Colors.green
-                      : isPastUnlogged
-                          ? Colors.orange
-                          : AppColors.textPrimary,
+                  ? Colors.green
+                  : isPastUnlogged
+                  ? Colors.orange
+                  : AppColors.textPrimary,
               fontWeight: (isCurrent || isPastUnlogged)
                   ? FontWeight.bold
                   : FontWeight.normal,
@@ -407,7 +425,6 @@ class _DashboardHomeContentState extends State<DashboardHomeContent>
   String _formatTime(DateTime date) {
     return '${date.hour}:${date.minute.toString().padLeft(2, '0')}';
   }
-
 }
 
 class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -426,25 +443,25 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
         onPressed: () => controller.scaffoldKey.currentState?.openDrawer(),
       ),
       // City Name in Center
-      title: Obx(
-        () => Column(
-          children: [
-            Text(
+      title: Column(
+        children: [
+          Obx(
+            () => Text(
               controller.currentCity.value,
               style: AppFonts.titleMedium.copyWith(
                 color: AppColors.textPrimary,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            Text(
-              _getDateString(),
-              style: AppFonts.labelSmall.copyWith(
-                color: AppColors.textSecondary,
-                fontSize: 10,
-              ),
+          ),
+          Text(
+            _getDateString(),
+            style: AppFonts.labelSmall.copyWith(
+              color: AppColors.textSecondary,
+              fontSize: 10,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
 
       // Qibla Action
@@ -459,24 +476,11 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
           tooltip: 'qibla'.tr,
         ),
       ],
-
-      // Tabs: Dashboard | Family
-      bottom: TabBar(
-        labelColor: AppColors.primary,
-        unselectedLabelColor: AppColors.textSecondary,
-        indicatorColor: AppColors.primary,
-        indicatorWeight: 3,
-        labelStyle: AppFonts.titleSmall.copyWith(fontWeight: FontWeight.bold),
-        tabs: [
-          Tab(text: 'dashboard'.tr),
-          Tab(text: 'family_tab'.tr),
-        ],
-      ),
     );
   }
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 48); // AppBar + TabBar
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
   String _getDateString() {
     final now = DateTime.now();

@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:salah/core/constants/enums.dart';
 import 'package:salah/core/helpers/prayer_names.dart';
-import 'package:salah/core/services/prayer_time_service.dart';
 
 /// A single event in the family pulse (who prayed, who encouraged, etc.)
 class FamilyPulseEvent {
@@ -21,7 +20,9 @@ class FamilyPulseEvent {
     required this.timestamp,
   });
 
-  factory FamilyPulseEvent.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
+  factory FamilyPulseEvent.fromFirestore(
+    DocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
     final data = doc.data() ?? {};
     return FamilyPulseEvent(
       id: doc.id,

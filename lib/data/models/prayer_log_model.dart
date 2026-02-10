@@ -1,10 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:salah/core/constants/enums.dart';
-import '../../core/services/prayer_time_service.dart';
 
 /// Prayer log model for tracking prayer completion
 class PrayerLogModel {
   final String id;
+
   /// Owner/user id. Note: field name is "oderId" (legacy typo) in Firestore/DB for compatibility.
   final String oderId;
   final PrayerName prayer;
@@ -34,7 +34,9 @@ class PrayerLogModel {
   int get minutesAfterAdhan => prayedAt.difference(adhanTime).inMinutes;
 
   /// Create from Firestore document
-  factory PrayerLogModel.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
+  factory PrayerLogModel.fromFirestore(
+    DocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
     final data = doc.data()!;
     return PrayerLogModel(
       id: doc.id,
@@ -43,7 +45,7 @@ class PrayerLogModel {
       prayedAt: (data['prayedAt'] as Timestamp).toDate(),
       adhanTime: (data['adhanTime'] as Timestamp).toDate(),
       quality: _parsePrayerQuality(data['quality'] ?? 'onTime'),
-      timingQuality: data['timingQuality'] != null 
+      timingQuality: data['timingQuality'] != null
           ? _parsePrayerTimingQuality(data['timingQuality'])
           : null,
       addedByLeaderId: data['addedByLeaderId'],
@@ -148,7 +150,7 @@ class PrayerLogModel {
     String? note,
   }) {
     final prayedAt = DateTime.now();
-    
+
     // Calculate quality
     final minutesDiff = prayedAt.difference(adhanTime).inMinutes;
     PrayerQuality quality;
@@ -178,10 +180,7 @@ class DailyPrayersSummary {
   final DateTime date;
   final Map<PrayerName, PrayerLogModel?> prayers;
 
-  DailyPrayersSummary({
-    required this.date,
-    required this.prayers,
-  });
+  DailyPrayersSummary({required this.date, required this.prayers});
 
   /// Get completed prayers count
   int get completedCount => prayers.values.where((p) => p != null).length;

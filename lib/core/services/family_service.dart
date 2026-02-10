@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
@@ -19,39 +18,51 @@ class FamilyService extends GetxService {
   late final DatabaseHelper _database;
 
   final Rxn<FamilyModel> currentFamily = Rxn<FamilyModel>();
+  final RxList<FamilyModel> myFamilies = <FamilyModel>[].obs;
   final isLoading = false.obs;
   final errorMessage = ''.obs;
 
-  /// Stream subscription for family updates - prevents memory leaks
-  StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>?
-  _familySubscription;
+  /// Stream subscriptions for family updates
+  final List<StreamSubscription> _familySubscriptions = [];
 
   @override
   void onInit() {
     super.onInit();
     _database = Get.find<DatabaseHelper>();
 
-    // Check if user is already logged in
     if (_authService.currentUser.value != null) {
-      _subscribeToFamily();
+      _subscribeToFamilies();
     }
 
-    // Listen to auth changes to stream family data
     ever(_authService.currentUser, (user) {
       if (user != null) {
-        _subscribeToFamily();
+        _subscribeToFamilies();
       } else {
-        _familySubscription?.cancel();
-        _familySubscription = null;
+        _clearSubscriptions();
         currentFamily.value = null;
+        myFamilies.clear();
       }
     });
   }
 
   @override
   void onClose() {
-    _familySubscription?.cancel();
+    _clearSubscriptions();
     super.onClose();
+  }
+
+  void _clearSubscriptions() {
+    for (var sub in _familySubscriptions) {
+      sub.cancel();
+    }
+    _familySubscriptions.clear();
+  }
+
+  /// Select a specific family to view
+  void selectFamily(FamilyModel family) {
+    currentFamily.value = family;
+    // Persist choice if needed
+    _database.cacheFamilyId(_authService.userId!, family.id);
   }
 
   /// Create a new family
@@ -63,7 +74,6 @@ class FamilyService extends GetxService {
       final user = _authService.currentUser.value;
       if (user == null) throw Exception('يجب تسجيل الدخول أولاً');
 
-      // Generate unique code
       final inviteCode = await _generateUniqueCode();
 
       final member = MemberModel(
@@ -75,7 +85,7 @@ class FamilyService extends GetxService {
       );
 
       final family = FamilyModel(
-        id: '', // Will be set by Firestore
+        id: '',
         name: name,
         inviteCode: inviteCode,
         adminId: user.uid,
@@ -88,12 +98,19 @@ class FamilyService extends GetxService {
           .collection('families')
           .add(family.toFirestore());
 
-      // Update user document with family ID for fast lookup
+      // Add familyId to user's list
       await _firestore.collection('users').doc(user.uid).set({
-        'familyId': ref.id,
+        'familyIds': FieldValue.arrayUnion([ref.id]),
+        'familyId':
+            ref.id, // Keep legacy field for backward compatibility or default
       }, SetOptions(merge: true));
 
-      // Update UI immediately so Family tab shows the new family (no empty state)
+      // Refresh subscriptions will happen automatically via listener if we were listening to user doc, but we are not.
+      // So manual refresh or wait for UI.
+      // Better: The _subscribeToFamilies should probably listen to the USER doc to detect new familyTypes.
+      // For now, let's just force a refresh or add manual.
+
+      // Let's manually add to local list for instant feedback
       final createdFamily = FamilyModel(
         id: ref.id,
         name: name,
@@ -102,8 +119,12 @@ class FamilyService extends GetxService {
         members: [member],
         createdAt: family.createdAt,
       );
-      currentFamily.value = createdFamily;
-      _subscribeToFamily();
+
+      myFamilies.add(createdFamily);
+      selectFamily(createdFamily);
+
+      // Re-trigger subscription to ensure we hook up to the new family stream
+      _subscribeToFamilies();
 
       return true;
     } catch (e) {
@@ -123,7 +144,6 @@ class FamilyService extends GetxService {
       final user = _authService.currentUser.value;
       if (user == null) throw Exception('يجب تسجيل الدخول أولاً');
 
-      // Find family by code
       final query = await _firestore
           .collection('families')
           .where('inviteCode', isEqualTo: code.toUpperCase())
@@ -138,16 +158,14 @@ class FamilyService extends GetxService {
       final doc = query.docs.first;
       final family = FamilyModel.fromFirestore(doc);
 
-      // Check if already a member
       if (family.members.any((m) => m.userId == user.uid)) {
         errorMessage.value = 'أنت عضو في هذه العائلة بالفعل';
         return false;
       }
 
-      // Add member
       final member = MemberModel(
         userId: user.uid,
-        role: MemberRole.child, // Default to child, can be changed by admin
+        role: MemberRole.child,
         joinedAt: DateTime.now(),
         name: user.displayName,
         photoUrl: user.photoURL,
@@ -157,22 +175,15 @@ class FamilyService extends GetxService {
         'members': FieldValue.arrayUnion([member.toMap()]),
       });
 
-      // Update user document with familyId
       await _firestore.collection('users').doc(user.uid).set({
-        'familyId': doc.id,
+        'familyIds': FieldValue.arrayUnion([doc.id]),
+        'familyId': doc.id, // Update default/legacy
       }, SetOptions(merge: true));
 
-      // Update UI immediately so Family tab shows the family (no empty state)
-      final updatedMembers = [...family.members, member];
-      currentFamily.value = FamilyModel(
-        id: family.id,
-        name: family.name,
-        inviteCode: family.inviteCode,
-        adminId: family.adminId,
-        members: updatedMembers,
-        createdAt: family.createdAt,
-      );
-      _subscribeToFamily();
+      _subscribeToFamilies();
+
+      // Select the joined family
+      // currentFamily.value = ... (will be set by subscription or manual)
 
       return true;
     } catch (e) {
@@ -374,91 +385,137 @@ class FamilyService extends GetxService {
 
   /// Call when Family tab is shown so family loads even if auth restored late.
   void refreshFamily() {
-    if (_authService.currentUser.value != null) _subscribeToFamily();
+    if (_authService.currentUser.value != null) _subscribeToFamilies();
   }
 
-  /// Subscribe to family updates with cache-first approach
-  void _subscribeToFamily() async {
+  /// Subscribe to all families the user belongs to
+  void _subscribeToFamilies() async {
     final user = _authService.currentUser.value;
     if (user == null) return;
 
-    // Cancel existing subscription to prevent duplicates
-    _familySubscription?.cancel();
+    // 1. Listen to User Document to get/monitor familyIds
+    // We reuse the list of subscriptions to manage this listener as well
+    // But actually, for simplicity, let's just do a one-off fetch or listen to the user doc.
+    // The previous code didn't listen to the user doc for familyId changes, it only fetched once.
+    // Let's improve it by listening to the user doc for real-time family list updates.
 
-    // 1. Try loading from local cache first (instant display)
-    final cachedFamilyId = await _database.getCachedFamilyId(user.uid);
-    if (cachedFamilyId != null) {
-      final cachedFamily = await _database.getCachedFamily(cachedFamilyId);
-      if (cachedFamily != null) {
-        try {
-          final familyData = jsonDecode(cachedFamily) as Map<String, dynamic>;
-          currentFamily.value = FamilyModel.fromMap(familyData, cachedFamilyId);
-        } catch (_) {
-          // Cache parsing failed, will load from network
-        }
-      }
-    }
+    // We generally expect _subscribeToFamilies to be called ONCE on init/login.
+    // But to support "Being added to a family" while online, we should listen to the user doc.
 
-    // 2. Fetch familyId from Firestore (for live updates)
+    // However, if we listen to user doc here, we might conflict with other listeners.
+    // Let's stick to the pattern: Fetch once, then setup listeners for families.
+    // If we want real-time "Allocated to new family", we need to listen to User doc.
+
+    _clearSubscriptions(); // Clear previous session
+
     try {
-      final userDoc = await _firestore.collection('users').doc(user.uid).get();
-      var familyId = userDoc.data()?['familyId'] as String?;
+      final userStream = _firestore
+          .collection('users')
+          .doc(user.uid)
+          .snapshots();
+      final userSub = userStream.listen((userDoc) async {
+        if (!userDoc.exists) return;
 
-      // Auto-Repair: If familyId is missing but we have a valid cached one, verify and restore it
-      if (familyId == null && cachedFamilyId != null) {
-        try {
-          final familyCheck = await _firestore
-              .collection('families')
-              .doc(cachedFamilyId)
-              .get();
-          if (familyCheck.exists) {
-            final familyData = FamilyModel.fromFirestore(familyCheck);
-            if (familyData.members.any((m) => m.userId == user.uid)) {
-              debugPrint(
-                'FamilyService: Auto-repairing missing familyId for user ${user.uid}',
-              );
-              await _firestore.collection('users').doc(user.uid).set({
-                'familyId': cachedFamilyId,
-              }, SetOptions(merge: true));
-              familyId = cachedFamilyId;
-            }
+        List<String> familyIds = [];
+        final data = userDoc.data();
+
+        // Handle both legacy 'familyId' and new 'familyIds'
+        if (data != null) {
+          if (data['familyIds'] is List) {
+            familyIds = List<String>.from(data['familyIds']);
+          } else if (data['familyId'] is String) {
+            familyIds = [data['familyId']];
+            // Auto-migrate if needed, but maybe later
           }
-        } catch (e) {
-          debugPrint('FamilyService: Auto-repair check failed: $e');
         }
-      }
 
-      if (familyId != null) {
-        // Cache the familyId for next startup
-        await _database.cacheFamilyId(user.uid, familyId);
+        if (familyIds.isEmpty) {
+          myFamilies.clear();
+          currentFamily.value = null;
+          // But wait, what if we have cached families?
+          // For now, trust Firestore.
+          return;
+        }
 
-        // Subscribe to live updates
-        _familySubscription = _firestore
+        // 2. Manage subscriptions for each family
+        // This is a nested listener. Since the outer specific listener (userSub) is long-lived,
+        // we need to manage the inner listeners (familySubs).
+        // A simple way is to cancel all inner listeners and recreate them when the list changes.
+        // Optimization: Check if list actually changed.
+
+        // For this iteration, we will simply fetch the current list of families
+        // using a `whereIn` query if list is small (<10), which is likely.
+        // Streaming `whereIn` is efficient.
+
+        // ERROR: `whereIn` supports max 10 items.
+        // If > 10, we need chunks. Assuming < 10 families for now.
+
+        if (familyIds.length > 10) {
+          familyIds = familyIds.sublist(0, 10); // Limit for now
+        }
+
+        // Cancel previous family group subscription (if any) to avoid duplicates
+        // We need to store this specific subscription separately or manage it carefully.
+        // Let's use a separate variable for the families listener.
+
+        // Actually, the easiest way to sync a list of docs is listening to the collection with whereIn.
+        final familiesStream = _firestore
             .collection('families')
-            .doc(familyId)
-            .snapshots()
-            .listen((doc) async {
-              if (doc.exists) {
-                final family = FamilyModel.fromFirestore(doc);
-                currentFamily.value = family;
-                // Update local cache for offline access
-                await _database.cacheFamily(
-                  familyId!,
-                  jsonEncode(family.toJsonCache()),
-                );
+            .where(FieldPath.documentId, whereIn: familyIds)
+            .snapshots();
+
+        final familiesSub = familiesStream.listen((querySnap) async {
+          final List<FamilyModel> loadedFamilies = [];
+
+          for (var doc in querySnap.docs) {
+            loadedFamilies.add(FamilyModel.fromFirestore(doc));
+          }
+
+          myFamilies.assignAll(loadedFamilies);
+
+          // 3. Update Current Family
+          // If current is null, pick one (e.g. from cache or first).
+          // If current is not in the new list, pick one.
+
+          if (myFamilies.isNotEmpty) {
+            if (currentFamily.value == null) {
+              // Try to load last selected from cache
+              final lastFamilyId = await _database.getCachedFamilyId(user.uid);
+              final found = myFamilies.firstWhereOrNull(
+                (f) => f.id == lastFamilyId,
+              );
+              selectFamily(found ?? myFamilies.first);
+            } else {
+              // Verify current still exists
+              final found = myFamilies.firstWhereOrNull(
+                (f) => f.id == currentFamily.value!.id,
+              );
+              if (found != null) {
+                // Update the object with new data
+                if (currentFamily.value != found) {
+                  currentFamily.value = found;
+                }
               } else {
-                currentFamily.value = null;
-                await _database.clearFamilyCache(user.uid);
+                // Current family removed/left
+                selectFamily(myFamilies.first);
               }
-            });
-      } else {
-        // User has no family
-        currentFamily.value = null;
-        await _database.clearFamilyCache(user.uid);
-      }
+            }
+          } else {
+            currentFamily.value = null;
+          }
+        });
+
+        // Track this subscription
+        // We can't easily add it to _familySubscriptions inside the loop if we clear it every time.
+        // But since userSub is the main driver, we can keep track of the active familiesSub inside this scope?
+        // No, we need to cancel it when user logs out.
+        // So we add it to the global list.
+        _familySubscriptions.add(familiesSub);
+      });
+
+      _familySubscriptions.add(userSub);
     } catch (e) {
-      // Network error - cache was already loaded above (if available)
-      debugPrint('FamilyService: Network error, using cached data: $e');
+      debugPrint('FamilyService: Error subscribing: $e');
     }
   }
 

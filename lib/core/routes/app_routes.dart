@@ -19,6 +19,9 @@ class AppRoutes {
   /// Profile setup screen
   static const String profileSetup = '/profile-setup';
 
+  /// Profile screen
+  static const String profile = '/profile';
+
   /// Dashboard screen - main app screen
   static const String dashboard = '/dashboard';
 

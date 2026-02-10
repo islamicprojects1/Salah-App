@@ -263,14 +263,17 @@ class AuthService extends GetxService {
     }
   }
 
-  /// Update photo URL
-  Future<bool> updatePhotoUrl(String photoUrl) async {
+  /// Update profile (name and photo)
+  Future<bool> updateProfile({String? displayName, String? photoURL}) async {
     try {
-      await currentUser.value?.updatePhotoURL(photoUrl);
+      if (displayName != null) await currentUser.value?.updateDisplayName(displayName);
+      if (photoURL != null) await currentUser.value?.updatePhotoURL(photoURL);
+      
       await currentUser.value?.reload();
       currentUser.value = _auth.currentUser;
       return true;
     } catch (e) {
+      errorMessage.value = e.toString();
       return false;
     }
   }

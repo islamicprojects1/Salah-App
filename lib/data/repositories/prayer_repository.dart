@@ -9,7 +9,6 @@ import 'package:salah/core/feedback/app_feedback.dart';
 import 'package:salah/core/services/auth_service.dart';
 import 'package:salah/core/services/connectivity_service.dart';
 import 'package:salah/core/services/database_helper.dart';
-import 'package:salah/core/services/prayer_time_service.dart';
 import 'package:salah/core/services/sync_service.dart';
 import 'package:salah/data/models/prayer_log_model.dart';
 import 'package:salah/data/repositories/base_repository.dart';
@@ -137,8 +136,9 @@ class PrayerRepository extends BaseRepository {
         _syncService.setSyncProgress((i + 1) / queue.length);
         final item = queue[i];
         if (_shouldSkipItem(item)) continue;
-        final success = await _syncItem(item)
-            .timeout(_syncItemTimeout, onTimeout: () => false);
+        final success = await _syncItem(
+          item,
+        ).timeout(_syncItemTimeout, onTimeout: () => false);
         if (success) {
           synced++;
           await _databaseHelper.removeFromSyncQueue(item.id);

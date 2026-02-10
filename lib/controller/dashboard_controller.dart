@@ -57,10 +57,12 @@ class DashboardController extends GetxController {
   final todayLogs = <PrayerLogModel>[].obs;
   final currentCity = ''.obs;
   final currentStreak = 0.obs;
-  final tabIndex = 0.obs;
+  final currentTabIndex = 0.obs;
   final dailyPrayerCounts = <DateTime, int>{}.obs;
 
-  void changeTabIndex(int index) => tabIndex.value = index;
+  void changeTab(int index) => currentTabIndex.value = index;
+
+  void changeTabIndex(int index) => currentTabIndex.value = index;
 
   Timer? _timer;
   StreamSubscription<List<PrayerLogModel>>? _logsSubscription;
@@ -91,7 +93,7 @@ class DashboardController extends GetxController {
       await _locationService.init();
       _syncLocationLabel();
       await _loadPrayerTimes();
-      
+
       // 2. Show UI immediately
       isLoading.value = false;
 
@@ -101,16 +103,15 @@ class DashboardController extends GetxController {
       _processPendingPrayerLogFromNotification();
       _listenForEncouragements();
       _startTimer();
-      
+
       // 4. Heavy/External operations (Deferred)
       // Load heatmap data
       _loadHeatmapData();
-      
+
       // Request permissions after a delay to let UI settle
       Future.delayed(const Duration(seconds: 2), () {
         _notificationService.requestPermissions();
       });
-      
     } catch (_) {
       AppFeedback.showError('خطأ', 'فشل تحميل لوحة التحكم');
       isLoading.value = false;

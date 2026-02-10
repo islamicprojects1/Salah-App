@@ -13,7 +13,6 @@ import 'package:salah/core/helpers/prayer_names.dart';
 import 'package:salah/data/models/prayer_log_model.dart';
 import 'package:salah/data/repositories/prayer_repository.dart';
 import 'package:salah/core/services/live_context_service.dart';
-import 'package:salah/core/services/prayer_time_service.dart';
 import '../constants/api_constants.dart';
 
 /// Service for managing local notifications

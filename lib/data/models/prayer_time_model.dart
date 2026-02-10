@@ -1,5 +1,4 @@
 import 'package:salah/core/constants/enums.dart';
-import '../../core/services/prayer_time_service.dart';
 
 /// Model representing a prayer time
 class PrayerTimeModel {
