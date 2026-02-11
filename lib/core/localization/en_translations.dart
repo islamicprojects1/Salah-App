@@ -102,6 +102,32 @@ const Map<String, String> enTranslations = {
       'Times are based on Makkah. Enable location or tap to update.',
   'makkah_fallback_label': 'Times based on Makkah (Location not set)',
 
+  // ==================== Premium Settings & Menu ====================
+  'app_appearance': 'App Appearance',
+  'google_calendar_sync': 'Save to Google Calendar',
+  'social_media': 'Social Sites',
+  'report_bug': 'Report a bug',
+  'suggest_feature': 'Suggest a new feature',
+  'contact_us_email': 'Email Us',
+  'about_app_salah': 'About Salah App',
+  'your_salah': 'Your Salah',
+  'sound_settings': 'Sound',
+  'theme_settings': 'Theme',
+  'personalization': 'Personalization',
+  'integration_sync': 'Integration & Sync',
+  'prayer_identity': 'Prayer Identity',
+  'appearance_settings': 'Appearance Settings',
+  'calendar_settings': 'Calendar Settings',
+  'support_feedback': 'Support & Feedback',
+  'calendar_sync_desc': 'Coming Soon: You will be able to sync prayer times with Google Calendar for silent alerts and better day planning.',
+  'could_not_open_link': 'Could not open lead',
+  'could_not_open_email': 'Could not open email app',
+  'notification_types': 'Notification Types',
+  'sound_vibrate': 'Vibrate',
+  'sound_silent': 'Silent',
+  'sound_adhan': 'Adhan',
+  'sound_vibration': 'Sound & Vibration',
+
   // ==================== Theme & Language Options ====================
   'theme_system': 'System',
   'theme_light': 'Light',
@@ -151,6 +177,8 @@ const Map<String, String> enTranslations = {
   'notification_prayer_body': 'Have you prayed? Tap to log',
   'notification_i_prayed': '✅ I Prayed',
   'notification_later': '⏰ Later',
+  'prayer_logged_from_notif': '@prayer logged from notification',
+  'success_done': 'Success',
 
   // ==================== Family Module ====================
   'family': 'Family',

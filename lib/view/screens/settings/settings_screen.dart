@@ -32,38 +32,54 @@ class SettingsScreen extends GetView<SettingsController> {
           vertical: AppDimensions.paddingLG,
         ),
         children: [
-          // --- General Preferences ---
-          _buildHeader('general_preferences'.tr),
+          // --- Prayer Identity ---
+          _buildHeader('prayer_identity'.tr),
           _buildCard([
-            _buildLanguageTile(context),
-            const Divider(indent: 56, height: 1),
-            _buildThemeTile(context),
-          ]),
-
-          const SizedBox(height: AppDimensions.paddingLG),
-
-          // --- Prayer Settings ---
-          _buildHeader('prayer_settings'.tr),
-          _buildCard([
+            _buildLocationTile(context),
+            Divider(indent: 56, height: 1, color: AppColors.divider),
             _buildCalculationMethodTile(context),
-            const Divider(indent: 56, height: 1),
+            Divider(indent: 56, height: 1, color: AppColors.divider),
             _buildMadhabTile(context),
           ]),
 
           const SizedBox(height: AppDimensions.paddingLG),
 
-          // --- Prayer & Location ---
-          _buildHeader('prayer_location'.tr),
+          // --- Personalization ---
+          _buildHeader('personalization'.tr),
           _buildCard([
-            _buildLocationTile(context),
-            const Divider(indent: 56, height: 1),
-            _buildNotificationTile(context),
+            _buildLanguageTile(context),
+            Divider(indent: 56, height: 1, color: AppColors.divider),
+            _buildThemeTile(context),
+            Divider(indent: 56, height: 1, color: AppColors.divider),
+            _buildTile(
+              context,
+              icon: Icons.palette_outlined,
+              title: 'app_appearance'.tr,
+              onTap: () {
+                Get.snackbar('info'.tr, 'coming_soon'.tr);
+              },
+            ),
           ]),
 
           const SizedBox(height: AppDimensions.paddingLG),
 
-          // --- App Information ---
-          _buildHeader('app_info'.tr),
+          // --- Integration & Sync ---
+          _buildHeader('integration_sync'.tr),
+          _buildCard([
+            _buildNotificationTile(context),
+            Divider(indent: 56, height: 1, color: AppColors.divider),
+            _buildTile(
+              context,
+              icon: Icons.calendar_today_rounded,
+              title: 'google_calendar_sync'.tr,
+              onTap: () => controller.syncWithGoogleCalendar(),
+            ),
+          ]),
+
+          const SizedBox(height: AppDimensions.paddingLG),
+
+          // --- Support & Feedback ---
+          _buildHeader('support_feedback'.tr),
           _buildCard([
             _buildTile(
               context,
@@ -71,32 +87,49 @@ class SettingsScreen extends GetView<SettingsController> {
               title: 'about'.tr,
               onTap: () => controller.showAboutDialog(),
             ),
-            const Divider(indent: 56, height: 1),
+            Divider(indent: 56, height: 1, color: AppColors.divider),
+            _buildTile(
+              context,
+              icon: Icons.email_outlined,
+              title: 'contact_us_email'.tr,
+              onTap: () => controller.reportBug(),
+            ),
+            Divider(indent: 56, height: 1, color: AppColors.divider),
+            _buildTile(
+              context,
+              icon: Icons.bug_report_outlined,
+              title: 'report_bug'.tr,
+              onTap: () => controller.reportBug(),
+            ),
+            Divider(indent: 56, height: 1, color: AppColors.divider),
+            _buildTile(
+              context,
+              icon: Icons.lightbulb_outline_rounded,
+              title: 'suggest_feature'.tr,
+              onTap: () => controller.suggestFeature(),
+            ),
+            Divider(indent: 56, height: 1, color: AppColors.divider),
             _buildTile(
               context,
               icon: Icons.star_border_rounded,
               title: 'rate_app'.tr,
               onTap: () => controller.openRateApp(),
             ),
-            const Divider(indent: 56, height: 1),
+            const Divider(indent: 56, height: 1, color: Colors.black12),
             _buildTile(
               context,
               icon: Icons.share_outlined,
               title: 'share_app'.tr,
               onTap: () => controller.shareApp(),
             ),
-            const Divider(indent: 56, height: 1),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              child: Center(
-                child: Text(
-                  '${'version'.tr}: 1.0.0',
-                  style: AppFonts.labelSmall.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ),
-            ),
+          ]),
+
+          const SizedBox(height: AppDimensions.paddingLG),
+
+          // --- Support & Feedback ---
+          _buildHeader('sound_vibration'.tr),
+          _buildCard([
+            _buildSoundModeSelector(),
           ]),
 
           const SizedBox(height: AppDimensions.paddingLG),
@@ -112,7 +145,7 @@ class SettingsScreen extends GetView<SettingsController> {
               iconColor: AppColors.error,
               onTap: () => _handleLogout(),
             ),
-            const Divider(indent: 56, height: 1),
+            const Divider(indent: 56, height: 1, color: Colors.black12),
             _buildTile(
               context,
               icon: Icons.delete_forever_rounded,
@@ -123,6 +156,15 @@ class SettingsScreen extends GetView<SettingsController> {
             ),
           ]),
 
+          const SizedBox(height: 16),
+          Center(
+            child: Text(
+              '${'version'.tr}: 1.0.0',
+              style: AppFonts.labelSmall.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ),
           const SizedBox(height: 40),
         ],
       ),
@@ -216,7 +258,10 @@ class SettingsScreen extends GetView<SettingsController> {
         icon: Icons.translate_rounded,
         title: 'language'.tr,
         subtitle: current.name,
-        onTap: () => _showLanguagePicker(context),
+        onTap: () {
+          Get.back();
+          _showLanguagePicker(context);
+        },
       );
     });
   }
@@ -449,36 +494,27 @@ class SettingsScreen extends GetView<SettingsController> {
   }
 
   void _showLanguagePicker(BuildContext context) {
-    Get.bottomSheet(
-      Container(
-        padding: const EdgeInsets.all(AppDimensions.paddingLG),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: Column(
+    Get.dialog(
+      AlertDialog(
+        title: Text('select_language'.tr),
+        content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'select_language'.tr,
-              style: AppFonts.titleLarge.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 20),
-            ...AppLanguage.values.map(
-              (lang) => ListTile(
-                title: Text(lang.name),
-                trailing:
-                    Get.find<LocalizationService>().currentLanguage.value ==
-                        lang
-                    ? const Icon(Icons.check_circle, color: AppColors.primary)
-                    : null,
-                onTap: () {
-                  controller.changeLanguage(lang);
-                  Get.back();
-                },
-              ),
-            ),
-          ],
+          children: AppLanguage.values
+              .map<Widget>(
+                (lang) => ListTile(
+                  title: Text(lang.name),
+                  trailing:
+                      Get.find<LocalizationService>().currentLanguage.value ==
+                          lang
+                      ? const Icon(Icons.check_circle, color: AppColors.primary)
+                      : null,
+                  onTap: () {
+                    controller.changeLanguage(lang);
+                    Get.back();
+                  },
+                ),
+              )
+              .toList(),
         ),
       ),
     );
@@ -541,6 +577,74 @@ class SettingsScreen extends GetView<SettingsController> {
       AppDialogs.hideLoading();
     }
   }
+
+  Widget _buildSoundModeSelector() {
+    return Obx(
+      () => Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: NotificationSoundMode.values.map((mode) {
+            final isSelected = controller.notificationSoundMode.value == mode;
+            IconData icon;
+            String label;
+            switch (mode) {
+              case NotificationSoundMode.adhan:
+                icon = Icons.volume_up_rounded;
+                label = 'sound_adhan'.tr;
+                break;
+              case NotificationSoundMode.vibrate:
+                icon = Icons.vibration_rounded;
+                label = 'sound_vibrate'.tr;
+                break;
+              case NotificationSoundMode.silent:
+                icon = Icons.notifications_off_rounded;
+                label = 'sound_silent'.tr;
+                break;
+            }
+
+            return Expanded(
+              child: GestureDetector(
+                onTap: () => controller.setNotificationSoundMode(mode),
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppColors.primary.withValues(alpha: 0.1)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isSelected
+                          ? AppColors.primary
+                          : Colors.grey.withValues(alpha: 0.2),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(
+                        icon,
+                        color: isSelected ? AppColors.primary : Colors.grey,
+                        size: 20,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        label,
+                        style: AppFonts.labelSmall.copyWith(
+                          color: isSelected ? AppColors.primary : Colors.grey,
+                          fontWeight:
+                              isSelected ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
 }
 
 class _NotificationSettingsView extends StatelessWidget {
@@ -600,8 +704,29 @@ class _NotificationSettingsView extends StatelessWidget {
               ]),
 
               const SizedBox(height: 24),
-              _buildHeader('sound_vibration'.tr.toUpperCase()),
-              _buildCard([_buildSoundModeSelector()]),
+              _buildHeader('notification_types'.tr.toUpperCase()),
+              _buildCard([
+                _buildSwitchTile(
+                  title: 'adhan_notification'.tr,
+                  subtitle: 'adhan_notification_desc'.tr,
+                  value: controller.adhanEnabled.value,
+                  onChanged: (v) => controller.setAdhanEnabled(v),
+                ),
+                const Divider(indent: 16),
+                _buildSwitchTile(
+                  title: 'reminder_notification'.tr,
+                  subtitle: 'reminder_notification_desc'.tr,
+                  value: controller.reminderEnabled.value,
+                  onChanged: (v) => controller.setReminderEnabled(v),
+                ),
+                const Divider(indent: 16),
+                _buildSwitchTile(
+                  title: 'family_notification_label'.tr,
+                  subtitle: 'family_notification_desc'.tr,
+                  value: controller.familyNotificationsEnabled.value,
+                  onChanged: (v) => controller.setFamilyNotificationsEnabled(v),
+                ),
+              ]),
             ],
           ],
         ),
@@ -644,73 +769,6 @@ class _NotificationSettingsView extends StatelessWidget {
       value: value,
       onChanged: onChanged,
       activeThumbColor: AppColors.primary,
-    );
-  }
-
-  Widget _buildSoundModeSelector() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: NotificationSoundMode.values.map((mode) {
-          final isSelected = controller.notificationSoundMode.value == mode;
-          IconData icon;
-          String label;
-          switch (mode) {
-            case NotificationSoundMode.adhan:
-              icon = Icons.volume_up_rounded;
-              label = 'sound_adhan'.tr;
-              break;
-            case NotificationSoundMode.vibrate:
-              icon = Icons.vibration_rounded;
-              label = 'sound_vibrate'.tr;
-              break;
-            case NotificationSoundMode.silent:
-              icon = Icons.notifications_off_rounded;
-              label = 'sound_silent'.tr;
-              break;
-          }
-
-          return Expanded(
-            child: GestureDetector(
-              onTap: () => controller.setNotificationSoundMode(mode),
-              child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 4),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? AppColors.primary.withValues(alpha: 0.1)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: isSelected
-                        ? AppColors.primary
-                        : Colors.grey.withValues(alpha: 0.2),
-                  ),
-                ),
-                child: Column(
-                  children: [
-                    Icon(
-                      icon,
-                      color: isSelected ? AppColors.primary : Colors.grey,
-                      size: 20,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      label,
-                      style: AppFonts.labelSmall.copyWith(
-                        color: isSelected ? AppColors.primary : Colors.grey,
-                        fontWeight: isSelected
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        }).toList(),
-      ),
     );
   }
 }

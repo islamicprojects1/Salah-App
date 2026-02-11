@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:salah/core/constants/enums.dart';
 import 'package:salah/core/services/auth_service.dart';
 import 'package:salah/core/services/prayer_time_service.dart';
+import 'package:salah/core/services/audio_service.dart';
 import 'package:salah/data/models/live_context_models.dart';
 import 'package:salah/data/models/prayer_log_model.dart';
 import 'package:salah/data/models/prayer_time_model.dart';
@@ -23,6 +24,7 @@ class LiveContextService extends GetxService {
   final PrayerTimeService _prayerTimeService;
   final PrayerRepository _prayerRepository;
   final AuthService _authService;
+  final AudioService _audioService = Get.find<AudioService>();
 
   LiveContextService({
     required PrayerTimeService prayerTimeService,
@@ -42,6 +44,7 @@ class LiveContextService extends GetxService {
   // Internal state
   Timer? _timer;
   StreamSubscription<List<PrayerLogModel>>? _logsSubscription;
+  PrayerName? _lastPlayedPrayer;
 
   Future<LiveContextService> init() async {
     _subscribeToTodayLogs();
@@ -53,6 +56,9 @@ class LiveContextService extends GetxService {
   /// Should be called when a prayer is logged from anywhere
   /// (e.g. DashboardController, notification action).
   Future<void> onPrayerLogged() async {
+    // Stop adhan if it's playing when user logs the prayer
+    await _audioService.stop();
+    
     // We already listen to the repository stream, but forcing a recompute
     // ensures instant UI response even before the next event tick.
     _recomputeContext();
@@ -97,6 +103,16 @@ class LiveContextService extends GetxService {
       if (prayer.prayerType != PrayerName.sunrise) {
         current = prayer;
       }
+    }
+
+    // Trigger Adhan logic
+    if (current != null && 
+        current.prayerType != _lastPlayedPrayer && 
+        now.difference(current.dateTime).inSeconds < 30 &&
+        now.difference(current.dateTime).inSeconds >= 0) {
+      
+      _lastPlayedPrayer = current.prayerType;
+      _audioService.playAdhan();
     }
 
     final status = _computeStatusForCurrent(now, current, next);

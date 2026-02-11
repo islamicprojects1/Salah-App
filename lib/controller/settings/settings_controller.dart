@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:adhan/adhan.dart' as adhan;
 
 import 'package:salah/core/constants/enums.dart';
@@ -189,5 +190,71 @@ class SettingsController extends GetxController {
     if (Get.isRegistered<PrayerTimeService>()) {
       await Get.find<PrayerTimeService>().calculatePrayerTimes();
     }
+  }
+
+  // ==================== Premium & Support Logic ====================
+
+  Future<void> openSocialLink(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      Get.snackbar('error'.tr, 'could_not_open_link'.tr);
+    }
+  }
+
+  Future<void> reportBug() async {
+    final Uri emailLaunchUri = Uri(
+      scheme: 'mailto',
+      path: 'tazkifyai@gmail.com',
+      query: _encodeQueryParameters({
+        'subject': 'Report a Bug - Salah App',
+        'body': 'User ID: ${_authService.userId}\n\nPlease describe the bug below:\n',
+      }),
+    );
+
+    if (await canLaunchUrl(emailLaunchUri)) {
+      await launchUrl(emailLaunchUri);
+    } else {
+      Get.snackbar('error'.tr, 'could_not_open_email'.tr);
+    }
+  }
+
+  Future<void> suggestFeature() async {
+    final Uri emailLaunchUri = Uri(
+      scheme: 'mailto',
+      path: 'tazkifyai@gmail.com',
+      query: _encodeQueryParameters({
+        'subject': 'Feature Suggestion - Salah App',
+        'body': 'I would like to suggest a new feature:\n',
+      }),
+    );
+
+    if (await canLaunchUrl(emailLaunchUri)) {
+      await launchUrl(emailLaunchUri);
+    } else {
+      Get.snackbar('error'.tr, 'could_not_open_email'.tr);
+    }
+  }
+
+  Future<void> syncWithGoogleCalendar() async {
+    // Placeholder for actual Google Calendar API integration
+    // For now, we guide the user or show a "Coming Soon" with benefit explanation
+    Get.dialog(
+      AlertDialog(
+        title: Text('google_calendar_sync'.tr),
+        content: Text('calendar_sync_desc'.tr),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: Text('ok'.tr)),
+        ],
+      ),
+    );
+  }
+
+  String? _encodeQueryParameters(Map<String, String> params) {
+    return params.entries
+        .map((MapEntry<String, String> e) =>
+            '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
+        .join('&');
   }
 }

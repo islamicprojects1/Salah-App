@@ -22,7 +22,7 @@ import 'package:salah/core/services/family_service.dart';
 /// Dashboard controller – UI logic only. All data comes from [PrayerRepository],
 /// [UserRepository], [PrayerTimeService], [LocationService], [NotificationService].
 /// Reactive: observables are updated from repository streams/calls; UI uses Obx.
-class DashboardController extends GetxController {
+class DashboardController extends GetxController with WidgetsBindingObserver {
   final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
 
   final PrayerTimeService _prayerService;
@@ -70,6 +70,7 @@ class DashboardController extends GetxController {
 
   @override
   void onInit() {
+    WidgetsBinding.instance.addObserver(this);
     super.onInit();
     _syncLocationLabel();
     ever(_locationService.cityName, (_) => _syncLocationLabel());
@@ -80,6 +81,14 @@ class DashboardController extends GetxController {
       nextPrayer.value = ctx.nextPrayer;
       timeUntilNextPrayer.value = ctx.formattedCountdown;
     });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _processPendingPrayerLogFromNotification();
+      _loadPrayerLogs();
+    }
   }
 
   void _syncLocationLabel() {
@@ -521,6 +530,7 @@ class DashboardController extends GetxController {
     _timer?.cancel();
     _logsSubscription?.cancel();
     _notificationsSubscription?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
     super.onClose();
   }
 }

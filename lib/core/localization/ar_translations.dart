@@ -102,6 +102,32 @@ const Map<String, String> arTranslations = {
       'المواقيت مؤقتاً حسب مكة. فعّل الموقع أو انقر لتحديث.',
   'makkah_fallback_label': 'المواقيت حسب مكة (لم يُحدد موقعك)',
 
+  // ==================== Premium Settings & Menu ====================
+  'app_appearance': 'شكل التطبيق',
+  'google_calendar_sync': 'حفظ على تقويم جوجل',
+  'social_media': 'المواقع الاجتماعية',
+  'report_bug': 'بلغ عن خطأ',
+  'suggest_feature': 'اقترح ميزة جديدة',
+  'contact_us_email': 'راسلنا عبر البريد الإلكتروني',
+  'about_app_salah': 'حول تطبيق صلاتك',
+  'your_salah': 'صلاتك',
+  'sound_settings': 'الصوت',
+  'theme_settings': 'المظهر',
+  'personalization': 'التخصيص',
+  'integration_sync': 'التكامل والربط',
+  'prayer_identity': 'الهوية الإيمانية',
+  'appearance_settings': 'إعدادات المظهر',
+  'calendar_settings': 'إعدادات التقويم',
+  'support_feedback': 'الدعم والملاحظات',
+  'calendar_sync_desc': 'قريباً: ستتمكن من ربط أوقات الصلاة بتقويم جوجل لتلقي تنبيهات هادئة وتنظيم يومك بشكل أفضل.',
+  'could_not_open_link': 'تعذر فتح الرابط',
+  'could_not_open_email': 'تعذر فتح تطبيق البريد',
+  'notification_types': 'أنواع التنبيهات',
+  'sound_vibrate': 'هزاز',
+  'sound_silent': 'صامت',
+  'sound_adhan': 'أذان',
+  'sound_vibration': 'الصوت والاهتزاز',
+
   // ==================== Theme & Language Options ====================
   'theme_system': 'حسب النظام',
   'theme_light': 'فاتح',
@@ -150,6 +176,8 @@ const Map<String, String> arTranslations = {
   'notification_prayer_body': 'هل صليت؟ اضغط للتسجيل',
   'notification_i_prayed': '✅ صليت',
   'notification_later': '⏰ لاحقاً',
+  'prayer_logged_from_notif': 'تم تسجيل صلاة @prayer من التنبيه',
+  'success_done': 'تم بنجاح',
 
   // ==================== Family Module ====================
   'family': 'العائلة',

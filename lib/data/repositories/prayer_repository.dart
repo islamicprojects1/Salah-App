@@ -275,17 +275,40 @@ class PrayerRepository extends BaseRepository {
     }
   }
 
-  /// Get today's prayer logs stream. Yields local first, then Firestore when online.
+  /// Get today's prayer logs stream. Merges local and remote logs.
   Stream<List<PrayerLogModel>> getTodayPrayerLogs(String userId) async* {
+    // 1. Initial local logs
     final localLogs = await _databaseHelper.getTodayPrayerLogs(userId);
-    yield _mapLocalLogsToModels(localLogs);
+    var logs = _mapLocalLogsToModels(localLogs);
+    yield logs;
 
     if (_isOnline) {
-      yield* firestore.getTodayPrayerLogs(userId).map((snapshot) {
-        return snapshot.docs
+      // 2. Continuous Firestore updates
+      await for (final snapshot in firestore.getTodayPrayerLogs(userId)) {
+        final remoteLogs = snapshot.docs
             .map((doc) => PrayerLogModel.fromFirestore(doc))
             .toList();
-      });
+
+        // Merge local unsynced with remote
+        final unsynced = await _databaseHelper.getTodayPrayerLogs(userId);
+        final unsyncedModels = _mapLocalLogsToModels(unsynced)
+            .where((l) => true) // Just to get a list
+            .toList();
+
+        // Final list: Remote logs + any local log not yet in remote
+        final merged = <String, PrayerLogModel>{};
+        for (final l in remoteLogs) {
+          merged[l.prayer.name] = l;
+        }
+        for (final l in unsyncedModels) {
+          // If not in remote, add it (preserves local optimistic update)
+          if (!merged.containsKey(l.prayer.name)) {
+            merged[l.prayer.name] = l;
+          }
+        }
+
+        yield merged.values.toList();
+      }
     }
   }
 

@@ -21,6 +21,7 @@ import 'package:salah/core/services/database_helper.dart';
 import 'package:salah/core/services/sync_service.dart';
 import 'package:salah/data/repositories/user_repository.dart';
 import 'package:salah/core/services/prayer_time_service.dart';
+import 'package:salah/core/services/audio_service.dart';
 import 'package:salah/core/services/shake_service.dart';
 
 void main() async {
@@ -116,6 +117,7 @@ Future<void> initServices() async {
 
 Future<void> initLateServices() async {
   await Future.wait([
+    Get.putAsync<AudioService>(() => AudioService().init()),
     Get.putAsync<PrayerTimeService>(() => PrayerTimeService().init()),
     Get.putAsync<NotificationService>(() => NotificationService().init()),
     Get.putAsync<ShakeService>(() async => ShakeService()),

@@ -91,7 +91,8 @@ class NotificationService extends GetxService {
           'Prayer (Adhan)',
           description: 'Prayer notifications with Adhan sound',
           importance: Importance.high,
-          sound: RawResourceAndroidNotificationSound('adhan'),
+          sound: RawResourceAndroidNotificationSound('athan'),
+          playSound: true,
         ),
       );
 
