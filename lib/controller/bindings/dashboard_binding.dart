@@ -2,7 +2,7 @@ import 'package:get/get.dart';
 import 'package:salah/controller/dashboard_controller.dart';
 import 'package:salah/controller/family_controller.dart';
 import 'package:salah/controller/qibla_controller.dart';
-import 'package:salah/controller/settings_controller.dart';
+import 'package:salah/controller/settings/settings_controller.dart';
 import 'package:salah/core/services/family_service.dart';
 import 'package:salah/data/repositories/family_repository.dart';
 import 'package:salah/data/repositories/achievement_repository.dart';
@@ -55,4 +55,3 @@ class DashboardBinding extends Bindings {
     Get.lazyPut<SettingsController>(() => SettingsController(), fenix: true);
   }
 }
-

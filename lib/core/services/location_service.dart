@@ -101,6 +101,42 @@ class LocationService extends GetxService {
     }
   }
 
+  /// Manually update location (for manual city selection)
+  Future<void> updateManualLocation({
+    required double latitude,
+    required double longitude,
+    required String city,
+    required String country,
+  }) async {
+    try {
+      isLoading.value = true;
+      errorMessage.value = '';
+      
+      final position = Position(
+        latitude: latitude,
+        longitude: longitude,
+        timestamp: DateTime.now(),
+        accuracy: 0,
+        altitude: 0,
+        heading: 0,
+        speed: 0,
+        speedAccuracy: 0,
+        altitudeAccuracy: 0,
+        headingAccuracy: 0,
+      );
+      
+      currentPosition.value = position;
+      cityName.value = city;
+      countryName.value = country;
+      isUsingDefaultLocation.value = false;
+      
+    } catch (e) {
+      errorMessage.value = e.toString();
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
   /// Default location (Mecca) if GPS fails — used only for prayer times, not as "user's city".
   Position _getDefaultLocation() {
     final defaultPos = Position(

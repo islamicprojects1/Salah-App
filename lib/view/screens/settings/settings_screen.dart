@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:adhan/adhan.dart' as adhan;
-import 'package:salah/controller/settings_controller.dart';
+import 'package:salah/controller/settings/settings_controller.dart';
 import 'package:salah/core/constants/app_dimensions.dart';
 import 'package:salah/core/constants/enums.dart';
 import 'package:salah/core/services/theme_service.dart';

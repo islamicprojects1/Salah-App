@@ -1,5 +1,7 @@
 import 'package:get/get.dart';
+import 'package:salah/controller/bindings/settings/selected_city_binding.dart';
 import 'package:salah/core/middleware/onboarding_middleware.dart';
+import 'package:salah/view/screens/settings/select_city_screen.dart';
 import 'app_routes.dart';
 import '../../view/screens/splash/splash_screen.dart';
 import '../../view/screens/home/home_screen.dart';
@@ -9,7 +11,7 @@ import '../../view/screens/auth/login_screen.dart';
 import '../../view/screens/auth/register_screen.dart';
 import '../../view/screens/auth/profile_setup_screen.dart';
 import '../../view/screens/dashboard/dashboard_screen.dart';
-import '../../controller/bindings/settings_binding.dart';
+import '../../controller/bindings/settings/settings_binding.dart';
 import '../../controller/bindings/auth_binding.dart';
 import '../../controller/bindings/dashboard_binding.dart';
 import '../../controller/bindings/family_binding.dart';
@@ -103,7 +105,13 @@ class AppPages {
       binding: SettingsBinding(),
       transition: Transition.cupertino, // Standard navigation
     ),
-
+    // City Selection Screen
+    GetPage(
+      name: AppRoutes.selectCity,
+      page: () => const SelectCityScreen(),
+      transition: Transition.leftToRight, // Standard navigation
+      binding: SelectedCityBinding(),
+    ),
     // Family Screens
     GetPage(
       name: AppRoutes.family,

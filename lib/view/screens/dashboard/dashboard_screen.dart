@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:salah/core/constants/enums.dart';
+import 'package:salah/core/routes/app_routes.dart';
 import 'package:salah/core/theme/app_colors.dart';
 import 'package:salah/core/theme/app_fonts.dart';
 import 'package:salah/core/constants/app_dimensions.dart';
@@ -8,6 +9,7 @@ import 'package:salah/controller/dashboard_controller.dart';
 import 'package:salah/view/screens/family/family_dashboard_screen.dart';
 import 'package:salah/core/helpers/prayer_timing_helper.dart';
 import 'package:salah/data/models/prayer_log_model.dart';
+import 'package:salah/view/screens/settings/select_city_screen.dart';
 import 'package:salah/view/widgets/app_loading.dart';
 import 'package:salah/view/widgets/connection_status_indicator.dart';
 import 'package:salah/view/widgets/smart_prayer_circle.dart';
@@ -57,8 +59,6 @@ class DashboardScreen extends GetView<DashboardController> {
       ),
     );
   }
-
-
 }
 
 class DashboardHomeContent extends StatefulWidget {
@@ -443,25 +443,28 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
         onPressed: () => controller.scaffoldKey.currentState?.openDrawer(),
       ),
       // City Name in Center
-      title: Column(
-        children: [
-          Obx(
-            () => Text(
-              controller.currentCity.value,
-              style: AppFonts.titleMedium.copyWith(
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.bold,
+      title: InkWell(
+        onTap: () => Get.toNamed(AppRoutes.selectCity),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          spacing: 3,
+          children: [
+            Icon(
+              Icons.edit_location_outlined,
+              size: 18,
+              color: AppColors.textSecondary,
+            ),
+            Obx(
+              () => Text(
+                controller.currentCity.value.split(',').first,
+                style: AppFonts.titleMedium.copyWith(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
-          ),
-          Text(
-            _getDateString(),
-            style: AppFonts.labelSmall.copyWith(
-              color: AppColors.textSecondary,
-              fontSize: 10,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
 
       // Qibla Action

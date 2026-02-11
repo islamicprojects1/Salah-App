@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:salah/controller/settings_controller.dart';
+import 'package:salah/controller/settings/settings_controller.dart';
 import 'package:salah/core/routes/app_routes.dart';
 import 'package:salah/core/services/auth_service.dart';
 import 'package:salah/core/theme/app_colors.dart';
@@ -57,6 +57,18 @@ class CustomDrawer extends StatelessWidget {
               ],
             ),
           ),
+          ListTile(
+            leading: Icon(Icons.location_city, color: AppColors.textPrimary),
+            title: Text(
+              'drawer_location'.tr,
+              style: AppFonts.bodyMedium.copyWith(color: AppColors.textPrimary),
+            ),
+            onTap: () {
+              Get.back(); // Close drawer
+              Get.toNamed(AppRoutes.selectCity);
+            },
+          ),
+          const Divider(),
           ListTile(
             leading: Icon(Icons.person_outline, color: AppColors.textPrimary),
             title: Text(

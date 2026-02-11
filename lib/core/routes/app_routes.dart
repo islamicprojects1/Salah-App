@@ -38,6 +38,7 @@ class AppRoutes {
 
   /// Settings screen - app settings and preferences
   static const String settings = '/settings';
+  static const String selectCity = '/settings/select-city';
 
   /// Prayer times screen - detailed prayer times view
   static const String prayerTimes = '/prayer-times';

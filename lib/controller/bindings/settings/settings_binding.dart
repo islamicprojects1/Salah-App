@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
-import 'package:salah/controller/settings_controller.dart';
+import 'package:salah/controller/settings/selected_city_controller.dart';
+import 'package:salah/controller/settings/settings_controller.dart';
 
 /// Binding for Settings screen
 ///

@@ -23,6 +23,7 @@ const Map<String, String> arTranslations = {
   // ==================== Navigation ====================
   'home': 'الرئيسية',
   'settings': 'الإعدادات',
+
   'prayer_times': 'أوقات الصلاة',
   'qibla': 'القبلة',
   'quran': 'القرآن',
@@ -391,4 +392,6 @@ const Map<String, String> arTranslations = {
   'prayer_heatmap': 'سجل الصلوات 📊',
   'heatmap_no_data': 'لا توجد بيانات بعد',
   'no_prayers_logged': 'لم تسجّل أي صلاة',
+  // ==================== drawer ====================
+  'drawer_location': 'الموقع',
 };

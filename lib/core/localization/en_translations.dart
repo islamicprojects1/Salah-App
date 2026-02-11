@@ -390,4 +390,6 @@ const Map<String, String> enTranslations = {
   'prayer_heatmap': 'Prayer History 📊',
   'heatmap_no_data': 'No data yet',
   'no_prayers_logged': 'No prayers logged',
+  // ==================== Drawer ====================
+  'drawer_location': 'Location',
 };
