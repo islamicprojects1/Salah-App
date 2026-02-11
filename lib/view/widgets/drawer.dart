@@ -26,19 +26,24 @@ class CustomDrawer extends StatelessWidget {
               children: [
                 Obx(() {
                   final photoUrl = authService.userPhotoUrl;
-                  return CircleAvatar(
-                    radius: 30,
-                    backgroundColor: Colors.white24,
-                    backgroundImage: photoUrl != null
-                        ? NetworkImage(photoUrl)
-                        : null,
-                    child: photoUrl == null
-                        ? const Icon(
-                            Icons.person,
-                            color: Colors.white,
-                            size: 35,
-                          )
-                        : null,
+                  return InkWell(
+                    onTap: () {
+                      Get.toNamed(AppRoutes.profile);
+                    },
+                    child: CircleAvatar(
+                      radius: 30,
+                      backgroundColor: Colors.white24,
+                      backgroundImage: photoUrl != null
+                          ? NetworkImage(photoUrl)
+                          : null,
+                      child: photoUrl == null
+                          ? const Icon(
+                              Icons.person,
+                              color: Colors.white,
+                              size: 35,
+                            )
+                          : null,
+                    ),
                   );
                 }),
                 const SizedBox(height: 12),

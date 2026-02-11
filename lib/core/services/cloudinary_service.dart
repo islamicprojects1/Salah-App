@@ -9,7 +9,7 @@ class CloudinaryService extends GetxService {
   // ============================================================
   
   /// Your Cloudinary cloud name
-  static const String _cloudName = 'dbialkqit';
+  static const String _cloudName = 'dbialkq5t';
   
   /// Your Cloudinary upload preset (unsigned)
   static const String _uploadPreset = 'salah_app';
@@ -64,6 +64,7 @@ class CloudinaryService extends GetxService {
       uploadProgress.value = 1.0;
       return response.secureUrl;
     } catch (e) {
+      print("Cloudinary Upload Error: $e");
       errorMessage.value = e.toString();
       return null;
     } finally {

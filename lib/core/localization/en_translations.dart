@@ -188,6 +188,7 @@ const Map<String, String> enTranslations = {
   'deleting_account': 'Deleting account...',
   'account_deleted_successfully': 'Account deleted successfully',
   'delete_account_error': 'Error deleting account',
+  'info_personal': 'Personal Information',
 
   // ==================== Auth ====================
   'login': 'Login',
@@ -392,4 +393,7 @@ const Map<String, String> enTranslations = {
   'no_prayers_logged': 'No prayers logged',
   // ==================== Drawer ====================
   'drawer_location': 'Location',
+  'last_6_months': 'Last 6 Months',
+  'heatmap_less': 'Less',
+  'heatmap_more': 'More',
 };

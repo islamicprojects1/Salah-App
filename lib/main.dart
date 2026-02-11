@@ -21,6 +21,7 @@ import 'package:salah/data/repositories/user_repository.dart';
 import 'package:salah/core/services/prayer_time_service.dart';
 import 'package:salah/core/services/family_service.dart';
 import 'package:salah/core/services/cloudinary_service.dart';
+import 'package:salah/core/services/shake_service.dart';
 import 'package:salah/controller/auth_controller.dart';
 
 void main() async {
@@ -114,12 +115,11 @@ Future<void> initServices() async {
   Get.put(AuthController(), permanent: true);
 }
 
-/// Initialize heavy services that are not required for the very first frame.
-/// Runs right after the first frame is rendered.
 Future<void> initLateServices() async {
   await Future.wait([
     Get.putAsync<PrayerTimeService>(() => PrayerTimeService().init()),
     Get.putAsync<NotificationService>(() => NotificationService().init()),
+    Get.putAsync<ShakeService>(() async => ShakeService()),
   ]);
 }
 

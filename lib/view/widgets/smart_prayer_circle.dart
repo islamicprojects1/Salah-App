@@ -8,6 +8,7 @@ import 'package:salah/core/helpers/prayer_names.dart';
 import 'package:salah/core/theme/app_colors.dart';
 import 'package:salah/core/theme/app_fonts.dart';
 import 'package:intl/intl.dart' as intl;
+import 'package:salah/core/constants/enums.dart';
 
 class SmartPrayerCircle extends StatefulWidget {
   const SmartPrayerCircle({super.key});
@@ -17,8 +18,9 @@ class SmartPrayerCircle extends StatefulWidget {
 }
 
 class _SmartPrayerCircleState extends State<SmartPrayerCircle>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late final Ticker _ticker;
+  late final AnimationController _pulseController;
   DateTime _currentTime = DateTime.now();
   final DashboardController controller = Get.find<DashboardController>();
 
@@ -34,11 +36,17 @@ class _SmartPrayerCircleState extends State<SmartPrayerCircle>
       }
     });
     _ticker.start();
+
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
   }
 
   @override
   void dispose() {
     _ticker.dispose();
+    _pulseController.dispose();
     super.dispose();
   }
 
@@ -71,7 +79,7 @@ class _SmartPrayerCircleState extends State<SmartPrayerCircle>
             child: Stack(
               alignment: Alignment.center,
               children: [
-                // 1. Adaptive Living Background Glow
+                // 1. Adaptive Living Background Glow & Depth
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 800),
                   width: 300,
@@ -80,22 +88,23 @@ class _SmartPrayerCircleState extends State<SmartPrayerCircle>
                     shape: BoxShape.circle,
                     color: AppColors.surface,
                     boxShadow: [
+                      // Main Ambient Glow
                       BoxShadow(
                         color: isLogged
-                            ? Colors.green.withValues(alpha: 0.3)
+                            ? Colors.green.withValues(alpha: 0.15)
                             : isPrayerTime
-                            ? AppColors.primary.withValues(alpha: 0.4)
-                            : Colors.black.withValues(alpha: 0.08),
+                            ? AppColors.primary.withValues(alpha: 0.2)
+                            : Colors.black.withValues(alpha: 0.05),
                         blurRadius: 40,
                         spreadRadius: 2,
                       ),
-                      if (isPrayerTime || isLogged)
-                        BoxShadow(
-                          color: (isLogged ? Colors.green : AppColors.primary)
-                              .withValues(alpha: 0.15),
-                          blurRadius: 20,
-                          spreadRadius: 10,
-                        ),
+                      // Subtle depth shadow
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 10,
+                        spreadRadius: -5,
+                        offset: const Offset(0, 5),
+                      ),
                     ],
                   ),
                 ),
@@ -120,24 +129,30 @@ class _SmartPrayerCircleState extends State<SmartPrayerCircle>
                 // --- TOP (12:00 Position): Time Capsule ---
                 Positioned(
                   top: 55,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.surface.withValues(alpha: 0.8),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: AppColors.primary.withValues(alpha: 0.1),
-                      ),
-                    ),
-                    child: Text(
-                      intl.DateFormat('h:mm a').format(_currentTime),
-                      style: AppFonts.labelSmall.copyWith(
-                        color: AppColors.textPrimary,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: BackdropFilter(
+                      filter: ui.ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface.withValues(alpha: 0.4),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: AppColors.primary.withValues(alpha: 0.1),
+                          ),
+                        ),
+                        child: Text(
+                          intl.DateFormat('h:mm a').format(_currentTime),
+                          style: AppFonts.labelSmall.copyWith(
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -146,104 +161,123 @@ class _SmartPrayerCircleState extends State<SmartPrayerCircle>
                 // --- BOTTOM (6:00 Position): Contextual Info ---
                 Positioned(
                   bottom: 50,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (isLogged) ...[
-                        const Icon(
-                          Icons.check_circle_rounded,
-                          color: Colors.green,
-                          size: 24,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(15),
+                    child: BackdropFilter(
+                      filter: ui.ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'تقبل الله',
-                          style: AppFonts.labelLarge.copyWith(
-                            color: Colors.green,
-                            fontWeight: FontWeight.bold,
+                        decoration: BoxDecoration(
+                          color: AppColors.surface.withValues(alpha: 0.4),
+                          borderRadius: BorderRadius.circular(15),
+                          border: Border.all(
+                            color: AppColors.primary.withValues(alpha: 0.05),
                           ),
                         ),
-                        Text(
-                          'سُجّلت صلاة ${currentPrayer?.name}',
-                          style: AppFonts.labelSmall.copyWith(fontSize: 9),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (isLogged) ...[
+                              const Icon(
+                                Icons.check_circle_rounded,
+                                color: Colors.green,
+                                size: 24,
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'تقبل الله',
+                                style: AppFonts.labelLarge.copyWith(
+                                  color: Colors.green,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                'سُجّلت صلاة ${currentPrayer?.name}',
+                                style: AppFonts.labelSmall.copyWith(fontSize: 9),
+                              ),
+                            ] else if (isPrayerTime) ...[
+                              // Pulsing Call to Action
+                              TweenAnimationBuilder<double>(
+                                tween: Tween(begin: 1.0, end: 1.2),
+                                duration: const Duration(seconds: 1),
+                                curve: Curves.easeInOut,
+                                builder: (context, value, child) =>
+                                    Transform.scale(scale: value, child: child),
+                                child: const Icon(
+                                  Icons.touch_app_rounded,
+                                  color: AppColors.primary,
+                                  size: 24,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'حـان الآن',
+                                style: AppFonts.labelSmall.copyWith(
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                              Text(
+                                currentPrayer?.name ?? '',
+                                style: AppFonts.titleSmall.copyWith(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ] else ...[
+                              // Next Prayer Info
+                              Text(
+                                'القادمة: ${nextPrayer?.name ?? ''}',
+                                style: AppFonts.labelSmall.copyWith(
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  controller.timeUntilNextPrayer.value,
+                                  style: AppFonts.labelMedium.copyWith(
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: 'monospace',
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
-                      ] else if (isPrayerTime) ...[
-                        // Pulsing Call to Action
-                        TweenAnimationBuilder<double>(
-                          tween: Tween(begin: 1.0, end: 1.2),
-                          duration: const Duration(seconds: 1),
-                          curve: Curves.easeInOut,
-                          builder: (context, value, child) =>
-                              Transform.scale(scale: value, child: child),
-                          child: const Icon(
-                            Icons.touch_app_rounded,
-                            color: AppColors.primary,
-                            size: 24,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'حـان الآن',
-                          style: AppFonts.labelSmall.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                        Text(
-                          currentPrayer?.name ?? '',
-                          style: AppFonts.titleSmall.copyWith(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ] else ...[
-                        // Next Prayer Info
-                        Text(
-                          'القادمة: ${nextPrayer?.name ?? ''}',
-                          style: AppFonts.labelSmall.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            controller.timeUntilNextPrayer.value,
-                            style: AppFonts.labelMedium.copyWith(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'monospace',
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
+                      ),
+                    ),
                   ),
                 ),
 
-                // 4. Progress Ring (Subtle)
+                // 4. Progress Arcs
                 IgnorePointer(
                   child: SizedBox(
                     width: 300,
                     height: 300,
-                    child: CustomPaint(
-                      painter: _PrayerProgressPainter(
-                        color: isLogged
-                            ? Colors.green.withValues(alpha: 0.3)
-                            : isPrayerTime
-                            ? AppColors.primary.withValues(alpha: 0.3)
-                            : AppColors.textSecondary.withValues(alpha: 0.05),
-                        progress: isPrayerTime
-                            ? 1.0
-                            : 0.75, // Simplified progress for now
-                        isActive: true,
-                      ),
+                    child: AnimatedBuilder(
+                      animation: _pulseController,
+                      builder: (context, child) {
+                        return CustomPaint(
+                          painter: _PrayerProgressPainter(
+                            currentTime: _currentTime,
+                            sunriseTime: controller.todayPrayers.firstWhereOrNull((p) => p.prayerType == PrayerName.sunrise)?.dateTime,
+                            nextPrayerTime: nextPrayer?.dateTime,
+                            pulseValue: _pulseController.value,
+                          ),
+                        );
+                      }
                     ),
                   ),
                 ),
@@ -413,45 +447,133 @@ class _RealClockPainter extends CustomPainter {
 }
 
 class _PrayerProgressPainter extends CustomPainter {
-  final Color color;
-  final double progress;
-  final bool isActive;
+  final DateTime currentTime;
+  final DateTime? sunriseTime;
+  final DateTime? nextPrayerTime;
+  final double pulseValue;
 
   _PrayerProgressPainter({
-    required this.color,
-    required this.progress,
-    required this.isActive,
+    required this.currentTime,
+    this.sunriseTime,
+    this.nextPrayerTime,
+    required this.pulseValue,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2;
+    final radius = size.width / 2 - 12; // Slightly inside the edge
 
-    final paint = Paint()
-      ..color = color
+    final backgroundPaint = Paint()
+      ..color = AppColors.textSecondary.withValues(alpha: 0.05)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = isActive ? 5 : 2
-      ..strokeCap = StrokeCap.round;
+      ..strokeWidth = 14;
 
-    if (isActive) {
-      canvas.drawCircle(center, radius, paint);
-    } else {
-      // Draw simplified progress or static ring
-      canvas.drawArc(
-        Rect.fromCircle(center: center, radius: radius),
-        -math.pi / 2,
-        2 * math.pi * progress, // Progress
-        false,
-        paint,
-      );
+    // Draw background ring
+    canvas.drawCircle(center, radius, backgroundPaint);
+
+    final rect = Rect.fromCircle(center: center, radius: radius);
+
+    // 1. Elapsed Arc (Sunrise to Current) - SOFT YELLOW GRADIENT
+    if (sunriseTime != null) {
+      final startAngle = _getTimeAngle(sunriseTime!);
+      final endAngle = _getTimeAngle(currentTime);
+      
+      double sweepAngle = endAngle - startAngle;
+      if (sweepAngle < 0) sweepAngle += 2 * math.pi;
+
+      final elapsedPaint = Paint()
+        ..shader = ui.Gradient.sweep(
+          center,
+          [
+            AppColors.secondaryLight.withValues(alpha: 0.1),
+            AppColors.secondaryLight.withValues(alpha: 0.5),
+          ],
+          [0.0, 1.0],
+          TileMode.clamp,
+          startAngle,
+          startAngle + sweepAngle,
+        )
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 14
+        ..strokeCap = StrokeCap.round;
+
+      canvas.drawArc(rect, startAngle, sweepAngle, false, elapsedPaint);
     }
+
+    // 2. Remaining Arc (Current to Next Prayer) - VIBRANT GLOW GRADIENT
+    if (nextPrayerTime != null) {
+      final startAngle = _getTimeAngle(currentTime);
+      final endAngle = _getTimeAngle(nextPrayerTime!);
+      
+      double sweepAngle = endAngle - startAngle;
+      if (sweepAngle < 0) sweepAngle += 2 * math.pi;
+
+      // Outer Glow shadow
+      final glowPaint = Paint()
+        ..color = AppColors.secondary.withValues(alpha: 0.15)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 20
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+      canvas.drawArc(rect, startAngle, sweepAngle, false, glowPaint);
+
+      final remainingPaint = Paint()
+        ..shader = ui.Gradient.sweep(
+          center,
+          [
+            AppColors.secondary.withValues(alpha: 0.8),
+            AppColors.secondaryLight,
+          ],
+          [0.0, 1.0],
+          TileMode.clamp,
+          startAngle,
+          startAngle + sweepAngle,
+        )
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 14
+        ..strokeCap = StrokeCap.round;
+
+      canvas.drawArc(rect, startAngle, sweepAngle, false, remainingPaint);
+
+      // 3. PULSING "NOW" MARKER
+      final markerAngle = startAngle;
+      final markerCenter = Offset(
+        center.dx + radius * math.cos(markerAngle),
+        center.dy + radius * math.sin(markerAngle),
+      );
+
+      // Neon Pulse
+      final pulseRadius = 8.0 + (pulseValue * 12.0);
+      final pulsePaint = Paint()
+        ..color = AppColors.secondary.withValues(alpha: 0.3 * (1.0 - pulseValue))
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(markerCenter, pulseRadius, pulsePaint);
+
+      // Core Dot
+      final corePaint = Paint()
+        ..color = Colors.white
+        ..style = PaintingStyle.fill
+        ..shadowLayer(4, 0, 0, AppColors.secondary);
+      canvas.drawCircle(markerCenter, 5, corePaint);
+    }
+  }
+
+  double _getTimeAngle(DateTime time) {
+    double hour = time.hour % 12 + time.minute / 60.0 + time.second / 3600.0;
+    return (hour * 30 - 90) * (math.pi / 180);
   }
 
   @override
   bool shouldRepaint(covariant _PrayerProgressPainter oldDelegate) {
-    return oldDelegate.color != color ||
-        oldDelegate.progress != progress ||
-        oldDelegate.isActive != isActive;
+    return oldDelegate.currentTime != currentTime ||
+        oldDelegate.sunriseTime != sunriseTime ||
+        oldDelegate.nextPrayerTime != nextPrayerTime ||
+        oldDelegate.pulseValue != pulseValue;
+  }
+}
+
+extension PaintExtension on Paint {
+  void shadowLayer(double blur, double x, double y, Color color) {
+    this.maskFilter = MaskFilter.blur(BlurStyle.normal, blur);
   }
 }

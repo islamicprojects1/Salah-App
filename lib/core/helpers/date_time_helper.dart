@@ -46,9 +46,9 @@ class DateTimeHelper {
   // TIME FORMATTERS
   // ============================================================
   
-  /// Format time as "HH:mm" (24-hour)
+  /// Format time as readable 12-hour format (Standardized)
   static String formatTime24(DateTime time) {
-    return DateFormat('HH:mm').format(time);
+    return formatTime12(time);
   }
 
   /// Format time as "h:mm a" (12-hour with AM/PM)
@@ -64,9 +64,9 @@ class DateTimeHelper {
     return DateFormat('h:mm a').format(time);
   }
 
-  /// Format time based on user preference (default to 12-hour)
+  /// Format time based on user preference (Always 12-hour)
   static String formatTime(DateTime time, {bool use24Hour = false}) {
-    return use24Hour ? formatTime24(time) : formatTime12(time);
+    return formatTime12(time);
   }
 
   // ============================================================

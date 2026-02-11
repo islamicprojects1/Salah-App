@@ -44,25 +44,27 @@ class ProfileController extends GetxController {
   }
 
   Future<void> updateProfile() async {
-    if (nameController.text.isEmpty) {
-      Get.snackbar('error'.tr, 'name_required'.tr);
+    if (nameController.text.trim().isEmpty) {
+      Get.snackbar('خطأ', 'يرجى إدخال الاسم');
       return;
     }
 
     try {
       isLoading.value = true;
       
-      final displayName = nameController.text;
+      final displayName = nameController.text.trim();
       final photoURL = userImage.value;
       final userId = _authService.userId;
 
       if (userId == null) throw Exception('User not logged in');
 
       // 1. Update Firebase Auth (for Drawer/Display)
-      await _authService.updateProfile(
+      final success = await _authService.updateProfile(
         displayName: displayName,
         photoURL: photoURL,
       );
+
+      if (!success) throw Exception('Failed to update auth profile');
 
       // 2. Update Firestore (for Family/Groups)
       await _userRepository.updateUserProfile(
@@ -70,12 +72,13 @@ class ProfileController extends GetxController {
         updates: {
           'name': displayName,
           'photoUrl': photoURL,
+          'lastUpdated': DateTime.now().toIso8601String(),
         },
       );
 
-      Get.snackbar('success'.tr, 'profile_updated'.tr);
+      Get.snackbar('نجاح', 'تم تحديث الملف الشخصي بنجاح');
     } catch (e) {
-      Get.snackbar('error'.tr, 'update_failed'.tr);
+      Get.snackbar('خطأ', 'فشل تحديث الملف الشخصي: $e');
     } finally {
       isLoading.value = false;
     }
@@ -85,12 +88,14 @@ class ProfileController extends GetxController {
     final ImagePicker picker = ImagePicker();
     final XFile? image = await picker.pickImage(
       source: ImageSource.gallery,
-      imageQuality: 70, // Compress for faster upload
+      imageQuality: 60, // Better compression for performance
+      maxWidth: 800,
     );
 
     if (image != null) {
       try {
         isLoading.value = true;
+        uploadProgress.value = 0.01; // Start progress
         
         final userId = _authService.userId;
         if (userId == null) return;
@@ -103,12 +108,15 @@ class ProfileController extends GetxController {
 
         if (url != null) {
           userImage.value = url;
-          Get.snackbar('success'.tr, 'image_uploaded_temp'.tr);
+          // Proactively update user profile with new image
+          await updateProfile();
+          Get.snackbar('نجاح', 'تم رفع وتحديث الصورة بنجاح');
         } else {
-          Get.snackbar('error'.tr, 'upload_failed'.tr);
+          final error = _cloudinaryService.errorMessage.value;
+          Get.snackbar('خطأ الرفع', error.isNotEmpty ? error : 'فشل رفع الصورة، يرجى المحاولة لاحقاً');
         }
       } catch (e) {
-        Get.snackbar('error'.tr, 'upload_failed'.tr);
+        Get.snackbar('خطأ تقني', 'حدث خطأ غير متوقع: $e');
       } finally {
         isLoading.value = false;
         uploadProgress.value = 0.0;

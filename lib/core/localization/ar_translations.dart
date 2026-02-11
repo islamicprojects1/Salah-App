@@ -189,6 +189,7 @@ const Map<String, String> arTranslations = {
   'deleting_account': 'جاري حذف الحساب...',
   'account_deleted_successfully': 'تم حذف الحساب بنجاح',
   'delete_account_error': 'حدث خطأ أثناء حذف الحساب',
+  'info_personal': 'المعلومات الشخصية',
 
   // ==================== Auth ====================
   'login': 'تسجيل الدخول',
@@ -394,4 +395,7 @@ const Map<String, String> arTranslations = {
   'no_prayers_logged': 'لم تسجّل أي صلاة',
   // ==================== drawer ====================
   'drawer_location': 'الموقع',
+  'last_6_months': 'آخر 6 أشهر',
+  'heatmap_less': 'أقل',
+  'heatmap_more': 'أكثر',
 };

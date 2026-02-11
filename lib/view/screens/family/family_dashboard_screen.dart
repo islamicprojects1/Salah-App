@@ -546,7 +546,7 @@ class _FamilyDashboardScreenState extends State<FamilyDashboardScreen>
     if (diff.inMinutes < 1) return 'now_label'.tr;
     if (diff.inMinutes < 60) return '${diff.inMinutes} ${'minutes_short'.tr}';
     if (diff.inHours < 24) return '${diff.inHours} ${'hours_short'.tr}';
-    return DateTimeHelper.formatTime24(time);
+    return DateTimeHelper.formatTime12(time);
   }
 
   void _showLogForMemberDialog(
@@ -573,7 +573,7 @@ class _FamilyDashboardScreenState extends State<FamilyDashboardScreen>
                       PrayerNames.displayName(p.prayerType ?? PrayerName.fajr),
                     ),
                     subtitle: Text(
-                      '${p.dateTime.hour.toString().padLeft(2, '0')}:${p.dateTime.minute.toString().padLeft(2, '0')}',
+                      DateTimeHelper.formatTime12(p.dateTime),
                     ),
                     onTap: () {
                       Get.back();

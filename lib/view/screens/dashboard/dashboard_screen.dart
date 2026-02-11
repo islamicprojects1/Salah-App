@@ -1,3 +1,4 @@
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:salah/core/constants/enums.dart';
@@ -17,6 +18,7 @@ import 'package:salah/view/widgets/daily_review_card.dart';
 import 'package:salah/view/widgets/prayer_heatmap.dart';
 import 'package:salah/view/widgets/drawer.dart';
 import 'package:salah/view/screens/qibla/qibla_screen.dart';
+import 'package:salah/core/helpers/date_time_helper.dart';
 
 class DashboardScreen extends GetView<DashboardController> {
   const DashboardScreen({super.key});
@@ -261,71 +263,105 @@ class _DashboardHomeContentState extends State<DashboardHomeContent>
 
       return Column(
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppDimensions.paddingMD,
-              vertical: AppDimensions.paddingSM,
-            ),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: prayers.map((prayer) {
-                PrayerLogModel? log;
-                try {
-                  log = controller.todayLogs.firstWhere(
-                    (l) => l.prayer == (prayer.prayerType ?? PrayerName.fajr),
-                  );
-                } catch (_) {
-                  log = null;
-                }
-                final isLogged = log != null;
-                final isNext = prayer == controller.nextPrayer.value;
-                final isCurrent = prayer == controller.currentPrayer.value;
-                final isPast = !prayer.dateTime.isAfter(now) && !isCurrent;
-                final quality = log?.quality;
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
+            child: BackdropFilter(
+              filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppDimensions.paddingMD,
+                  vertical: AppDimensions.paddingMD,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.surface.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
+                  border: Border.all(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: prayers.map((prayer) {
+                    final prayerType = prayer.prayerType ?? PrayerName.fajr;
+                    PrayerLogModel? log;
+                    try {
+                      log = controller.todayLogs.firstWhere(
+                        (l) => l.prayer == prayerType,
+                      );
+                    } catch (_) {
+                      log = null;
+                    }
+                    final isLogged = log != null;
+                    final isNext = prayer == controller.nextPrayer.value;
+                    final isCurrent = prayer == controller.currentPrayer.value;
+                    final isPast = !prayer.dateTime.isAfter(now) && !isCurrent;
+                    final quality = log?.quality;
 
-                return _buildPrayerIcon(
-                  controller: controller,
-                  prayer: prayer,
-                  name: prayer.name,
-                  time: _formatTime(prayer.dateTime),
-                  isLogged: isLogged,
-                  quality: quality,
-                  isNext: isNext,
-                  isCurrent: isCurrent,
-                  isPastUnlogged: isPast && !isLogged,
-                  onTap: isLogged
-                      ? null
-                      : (isCurrent
-                            ? () => controller.logPrayer(prayer)
-                            : (isPast
-                                  ? () => controller.logPastPrayer(prayer)
-                                  : null)),
-                );
-              }).toList(),
+                    return _buildPrayerIcon(
+                      controller: controller,
+                      prayerType: prayerType,
+                      prayer: prayer,
+                      name: prayer.name,
+                      time: _formatTime(prayer.dateTime),
+                      isLogged: isLogged,
+                      quality: quality,
+                      isNext: isNext,
+                      isCurrent: isCurrent,
+                      isPastUnlogged: isPast && !isLogged,
+                      onTap: isLogged
+                          ? null
+                          : (isCurrent
+                                ? () => controller.logPrayer(prayer)
+                                : (isPast
+                                      ? () => controller.logPastPrayer(prayer)
+                                      : null)),
+                    );
+                  }).toList(),
+                ),
+              ),
             ),
           ),
           // "Log All" button when 2+ past prayers are unlogged
           if (unloggedPastCount >= 2) ...[
-            const SizedBox(height: AppDimensions.paddingSM),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () => controller.logAllUnloggedPrayers(),
-                icon: const Icon(Icons.done_all_rounded, size: 18),
-                label: Text('log_all_prayers'.tr),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.primary,
-                  side: BorderSide(
-                    color: AppColors.primary.withValues(alpha: 0.3),
+            const SizedBox(height: AppDimensions.paddingMD),
+            InkWell(
+              onTap: () => controller.logAllUnloggedPrayers(),
+              borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.primary,
+                      AppColors.primaryLight,
+                    ],
+                    begin: Alignment.centerRight,
+                    end: Alignment.centerLeft,
                   ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
-                  ),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.2),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.done_all_rounded, color: Colors.white, size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                      'log_all_prayers'.tr,
+                      style: AppFonts.bodyLarge.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -337,6 +373,7 @@ class _DashboardHomeContentState extends State<DashboardHomeContent>
 
   Widget _buildPrayerIcon({
     required DashboardController controller,
+    required PrayerName prayerType,
     required dynamic prayer,
     required String name,
     required String time,
@@ -349,32 +386,26 @@ class _DashboardHomeContentState extends State<DashboardHomeContent>
   }) {
     Color bgColor;
     Color iconColor;
-    IconData icon;
+    IconData iconData = PrayerTimingHelper.getPrayerIcon(prayerType);
 
     if (isLogged && quality != null) {
       iconColor = PrayerTimingHelper.getLegacyQualityColor(quality);
-      bgColor = iconColor.withValues(alpha: 0.15);
-      icon = Icons.check_circle;
+      bgColor = iconColor.withValues(alpha: 0.2);
     } else if (isLogged) {
-      bgColor = Colors.green.withValues(alpha: 0.15);
+      bgColor = Colors.green.withValues(alpha: 0.2);
       iconColor = Colors.green;
-      icon = Icons.check_circle;
     } else if (isPastUnlogged) {
       bgColor = Colors.orange.withValues(alpha: 0.15);
       iconColor = Colors.orange;
-      icon = Icons.add_circle_outline;
     } else if (isCurrent) {
-      bgColor = AppColors.primary.withValues(alpha: 0.15);
+      bgColor = AppColors.primary.withValues(alpha: 0.25);
       iconColor = AppColors.primary;
-      icon = Icons.access_time_filled;
     } else if (isNext) {
-      bgColor = Colors.orange.withValues(alpha: 0.15);
-      iconColor = Colors.orange;
-      icon = Icons.schedule;
+      bgColor = AppColors.secondary.withValues(alpha: 0.2);
+      iconColor = AppColors.secondary;
     } else {
-      bgColor = Colors.grey.withValues(alpha: 0.1);
-      iconColor = Colors.grey;
-      icon = Icons.access_time;
+      bgColor = AppColors.textSecondary.withValues(alpha: 0.08);
+      iconColor = AppColors.textSecondary.withValues(alpha: 0.5);
     }
 
     return GestureDetector(
@@ -382,39 +413,70 @@ class _DashboardHomeContentState extends State<DashboardHomeContent>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          // Icon with Bloom/Glow if current/next
           Container(
-            width: 50,
-            height: 50,
+            width: 54,
+            height: 54,
             decoration: BoxDecoration(
               color: bgColor,
               shape: BoxShape.circle,
-              border: (isCurrent || isPastUnlogged)
-                  ? Border.all(color: iconColor, width: 2)
+              boxShadow: (isCurrent || isNext)
+                  ? [
+                      BoxShadow(
+                        color: iconColor.withValues(alpha: 0.3),
+                        blurRadius: 12,
+                        spreadRadius: 2,
+                      )
+                    ]
                   : null,
+              border: isCurrent
+                  ? Border.all(color: iconColor, width: 2.5)
+                  : isNext
+                      ? Border.all(
+                          color: iconColor.withValues(alpha: 0.5),
+                          width: 1.5,
+                          style: BorderStyle.solid,
+                        )
+                      : null,
             ),
-            child: Icon(icon, color: iconColor, size: 24),
+            child: Center(
+              child: isLogged
+                  ? Icon(
+                      Icons.check_circle_rounded,
+                      color: iconColor,
+                      size: 28,
+                    )
+                  : Icon(
+                      iconData,
+                      color: iconColor,
+                      size: 24,
+                    ),
+            ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           Text(
             name,
             style: AppFonts.labelSmall.copyWith(
               color: isLogged && quality != null
                   ? PrayerTimingHelper.getLegacyQualityColor(quality)
                   : isLogged
-                  ? Colors.green
-                  : isPastUnlogged
-                  ? Colors.orange
-                  : AppColors.textPrimary,
+                      ? Colors.green
+                      : isPastUnlogged
+                          ? Colors.orange
+                          : AppColors.textPrimary,
               fontWeight: (isCurrent || isPastUnlogged)
                   ? FontWeight.bold
                   : FontWeight.normal,
+              fontSize: 11,
             ),
           ),
+          const SizedBox(height: 2),
           Text(
             time,
             style: AppFonts.labelSmall.copyWith(
               color: AppColors.textSecondary,
-              fontSize: 10,
+              fontSize: 9,
+              letterSpacing: 0.2,
             ),
           ),
         ],
@@ -423,7 +485,7 @@ class _DashboardHomeContentState extends State<DashboardHomeContent>
   }
 
   String _formatTime(DateTime date) {
-    return '${date.hour}:${date.minute.toString().padLeft(2, '0')}';
+    return DateTimeHelper.formatTime12(date);
   }
 }
 

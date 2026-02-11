@@ -134,4 +134,22 @@ class PrayerTimingHelper {
     return quality == PrayerTimingQuality.late ||
            quality == PrayerTimingQuality.veryLate;
   }
+
+  /// Get unique icon for each prayer type
+  static IconData getPrayerIcon(PrayerName prayer) {
+    switch (prayer) {
+      case PrayerName.fajr:
+        return Icons.wb_twilight_rounded;
+      case PrayerName.sunrise:
+        return Icons.wb_sunny_outlined;
+      case PrayerName.dhuhr:
+        return Icons.wb_sunny_rounded;
+      case PrayerName.asr:
+        return Icons.wb_cloudy_rounded;
+      case PrayerName.maghrib:
+        return Icons.nightlight_round;
+      case PrayerName.isha:
+        return Icons.dark_mode_rounded;
+    }
+  }
 }

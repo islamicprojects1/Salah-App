@@ -22,6 +22,7 @@ import '../../view/screens/missed_prayers/missed_prayers_screen.dart';
 import '../../controller/missed_prayers_controller.dart';
 import '../../view/screens/profile/profile_screen.dart';
 import '../../controller/profile_controller.dart';
+import '../../view/screens/qibla/qibla_screen.dart';
 
 /// App pages configuration for GetX routing
 ///
@@ -132,7 +133,6 @@ class AppPages {
       transition: Transition.cupertino, // Standard navigation
     ),
 
-    // Missed Prayers
     GetPage(
       name: AppRoutes.missedPrayers,
       page: () => const MissedPrayersScreen(),
@@ -140,6 +140,13 @@ class AppPages {
         Get.lazyPut<MissedPrayersController>(() => MissedPrayersController());
       }),
       transition: Transition.downToUp,
+    ),
+    
+    // Qibla
+    GetPage(
+      name: AppRoutes.qibla,
+      page: () => const QiblaScreen(),
+      transition: Transition.cupertino,
     ),
   ];
 }
