@@ -18,8 +18,8 @@ class AppFeedback {
       message ?? '',
       snackPosition: SnackPosition.BOTTOM,
       backgroundColor: AppColors.error.withValues(alpha: 0.95),
-      colorText: Colors.white,
-      icon: Icon(Icons.error_outline, color: Colors.white, size: 28),
+      colorText: AppColors.white,
+      icon: Icon(Icons.error_outline, color: AppColors.white, size: 28),
       margin: const EdgeInsets.all(16),
       duration: const Duration(seconds: 4),
     );
@@ -32,30 +32,35 @@ class AppFeedback {
       message ?? '',
       snackPosition: SnackPosition.BOTTOM,
       backgroundColor: AppColors.primary.withValues(alpha: 0.95),
-      colorText: Colors.white,
-      icon: Icon(Icons.check_circle_outline, color: Colors.white, size: 28),
+      colorText: AppColors.white,
+      icon: Icon(Icons.check_circle_outline, color: AppColors.white, size: 28),
       margin: const EdgeInsets.all(16),
       duration: const Duration(seconds: 3),
     );
   }
 
   /// Show a neutral snackbar (info/warning).
-  static void showSnackbar(String title, [String? message, bool isWarning = false]) {
+  static void showSnackbar(
+    String title, [
+    String? message,
+    bool isWarning = false,
+  ]) {
     Get.snackbar(
       title,
       message ?? '',
       snackPosition: SnackPosition.BOTTOM,
       backgroundColor: isWarning
-          ? Colors.orange.shade700.withValues(alpha: 0.95)
+          ? AppColors.orange.withValues(alpha: 0.95)
           : AppColors.textSecondary.withValues(alpha: 0.95),
-      colorText: Colors.white,
+      colorText: AppColors.white,
       margin: const EdgeInsets.all(16),
       duration: const Duration(seconds: 3),
     );
   }
 
   /// Show a loading dialog. Call [hideLoading] to close.
-  static void showLoading([String message = 'جاري التحميل...']) {
+  static void showLoading([String? message]) {
+    final msg = message ?? 'loading'.tr;
     Get.dialog(
       PopScope(
         canPop: false,
@@ -68,7 +73,7 @@ class AppFeedback {
                 children: [
                   const CircularProgressIndicator(),
                   const SizedBox(height: 16),
-                  Text(message),
+                  Text(msg),
                 ],
               ),
             ),
@@ -88,8 +93,8 @@ class AppFeedback {
   static Future<bool> confirm({
     required String title,
     required String message,
-    String confirmText = 'تأكيد',
-    String cancelText = 'إلغاء',
+    String? confirmText,
+    String? cancelText,
     bool isDestructive = false,
   }) async {
     final result = await Get.dialog<bool>(
@@ -99,14 +104,17 @@ class AppFeedback {
         actions: [
           TextButton(
             onPressed: () => Get.back(result: false),
-            child: Text(cancelText),
+            child: Text(cancelText ?? 'cancel'.tr),
           ),
           TextButton(
             onPressed: () => Get.back(result: true),
             child: Text(
-              confirmText,
+              confirmText ?? 'confirm'.tr,
               style: isDestructive
-                  ? TextStyle(color: AppColors.error, fontWeight: FontWeight.bold)
+                  ? TextStyle(
+                      color: AppColors.error,
+                      fontWeight: FontWeight.bold,
+                    )
                   : null,
             ),
           ),

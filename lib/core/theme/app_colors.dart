@@ -54,6 +54,9 @@ class AppColors {
   static const Color warning = Color(0xFFFFC107);
   static const Color error = Color(0xFFE53935); // Fixed error color
   static const Color info = Color(0xFF2196F3);
+  static const Color orange = Colors.orange;
+  static const Color green = Colors.green;
+  static const Color amber = Colors.amber;
 
   // ==================== Prayer Time Colors ====================
 
@@ -63,6 +66,25 @@ class AppColors {
   static const Color maghrib = Color(0xFFE65100);
   static const Color isha = Color(0xFF4A148C);
   static const Color sunrise = Color(0xFFFF8F00);
+
+  // ==================== Absolute Colors ====================
+
+  static const Color white = Colors.white;
+  static const Color black = Colors.black;
+  static const Color transparent = Colors.transparent;
+
+  // ==================== Grey Shades ====================
+
+  static const Color grey50 = Color(0xFFFAFAFA);
+  static const Color grey100 = Color(0xFFF5F5F5);
+  static const Color grey200 = Color(0xFFEEEEEE);
+  static const Color grey300 = Color(0xFFE0E0E0);
+  static const Color grey400 = Color(0xFFBDBDBD);
+  static const Color grey500 = Color(0xFF9E9E9E);
+  static const Color grey600 = Color(0xFF757575);
+  static const Color grey700 = Color(0xFF616161);
+  static const Color grey800 = Color(0xFF424242);
+  static const Color grey900 = Color(0xFF212121);
 
   // ==================== Gradient Colors ====================
 
@@ -109,4 +131,30 @@ class AppColors {
 
   // static const Color qiblaPointer = secondary,;
   static const Color locationMarker = primary;
+
+  // ==================== Onboarding Feature Colors ====================
+
+  static const Color feature1 = Color(0xFF6366F1);
+  static const Color feature2 = Color(0xFF10B981);
+  static const Color feature3 = Color(0xFFF59E0B);
+
+  // ==================== Onboarding Page Gradients ====================
+
+  static const Color onboarding1Start = Color(0xFFFF9A3E);
+  static const Color onboarding1End = Color(0xFFFFD54F);
+  static const Color onboarding2Start = Color(0xFF4CAF50);
+  static const Color onboarding2End = Color(0xFF81C784);
+  static const Color onboarding3Start = Color(0xFF1B5E20);
+  static const Color onboarding3End = Color(0xFF4CAF50);
+
+  // ==================== Branded Colors ====================
+
+  static const Color googleRed = Color(0xFFD32F2F);
+  static const Color black87 = Color(0xDD000000);
+  static const Color black26 = Color(0x42000000);
+  static const Color white70 = Color(0xB2FFFFFF);
+  static const Color white24 = Color(0x3DFFFFFF);
+  static const Color white10 = Color(0x1AFFFFFF);
+  static const Color pink = Color(0xFFEC4899);
+  static const Color purple = Color(0xFF8B5CF6);
 }

@@ -40,7 +40,7 @@ class PermissionsPage extends GetView<OnboardingController> {
 
           // Title
           Text(
-            isArabic ? pageData.title : pageData.titleEn,
+            pageData.titleKey.tr,
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
@@ -51,7 +51,7 @@ class PermissionsPage extends GetView<OnboardingController> {
           const SizedBox(height: 8),
 
           Text(
-            isArabic ? pageData.subtitle : pageData.subtitleEn,
+            pageData.subtitleKey.tr,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 16,
@@ -69,10 +69,8 @@ class PermissionsPage extends GetView<OnboardingController> {
               children: [
                 _buildPermissionCard(
                   icon: Icons.location_on_rounded,
-                  title: isArabic ? 'الموقع' : 'Location',
-                  subtitle: isArabic
-                      ? 'لمعرفة أوقات الصلاة واتجاه القبلة'
-                      : 'For prayer times and Qibla direction',
+                  title: 'location_permission'.tr,
+                  subtitle: 'location_permission_desc'.tr,
                   isGranted: controller.locationPermissionGranted,
                   onTap: () {
                     HapticFeedback.mediumImpact();
@@ -84,10 +82,8 @@ class PermissionsPage extends GetView<OnboardingController> {
 
                 _buildPermissionCard(
                   icon: Icons.notifications_rounded,
-                  title: isArabic ? 'الإشعارات' : 'Notifications',
-                  subtitle: isArabic
-                      ? 'للتذكير بأوقات الصلاة'
-                      : 'For prayer time reminders',
+                  title: 'notification_permission'.tr,
+                  subtitle: 'notification_permission_desc'.tr,
                   isGranted: controller.notificationPermissionGranted,
                   onTap: () {
                     HapticFeedback.mediumImpact();
@@ -120,7 +116,7 @@ class PermissionsPage extends GetView<OnboardingController> {
               controller.nextStep();
             },
             child: Text(
-              isArabic ? 'تخطي الآن' : 'Skip for now',
+              'skip_btn'.tr,
               style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
             ),
           ),
@@ -142,7 +138,7 @@ class PermissionsPage extends GetView<OnboardingController> {
       final granted = isGranted.value;
 
       return Material(
-        color: Colors.transparent,
+        color: AppColors.transparent,
         child: InkWell(
           onTap: granted ? null : onTap,
           borderRadius: BorderRadius.circular(16),
@@ -152,7 +148,7 @@ class PermissionsPage extends GetView<OnboardingController> {
             decoration: BoxDecoration(
               color: granted
                   ? AppColors.success.withValues(alpha: 0.1)
-                  : Colors.white,
+                  : AppColors.white,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: granted
@@ -162,7 +158,7 @@ class PermissionsPage extends GetView<OnboardingController> {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
+                  color: AppColors.black.withValues(alpha: 0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -235,9 +231,9 @@ class PermissionsPage extends GetView<OnboardingController> {
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            Get.locale?.languageCode == 'ar' ? 'منح' : 'Grant',
+                            'grant'.tr,
                             style: const TextStyle(
-                              color: Colors.white,
+                              color: AppColors.white,
                               fontWeight: FontWeight.bold,
                               fontSize: 13,
                             ),
@@ -294,12 +290,10 @@ class PermissionsPage extends GetView<OnboardingController> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (allGranted)
-                  const Icon(Icons.check_circle, color: Colors.white, size: 20),
+                  const Icon(Icons.check_circle, color: AppColors.white, size: 20),
                 if (allGranted) const SizedBox(width: 8),
                 Text(
-                  allGranted
-                      ? (isArabic ? 'متابعة' : 'Continue')
-                      : (isArabic ? 'التالي' : 'Next'),
+                  allGranted ? 'continue_btn'.tr : 'next'.tr,
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,

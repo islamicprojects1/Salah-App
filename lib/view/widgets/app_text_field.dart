@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get_utils/src/extensions/internacionalization.dart';
 import '../../core/constants/app_dimensions.dart';
 
 /// Custom text field with validation support
@@ -124,7 +125,7 @@ class EmailTextField extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppTextField(
       controller: controller,
-      label: label ?? 'البريد الإلكتروني',
+      label: label ?? 'email_label'.tr,
       hint: 'example@email.com',
       keyboardType: TextInputType.emailAddress,
       prefixIcon: Icons.email_outlined,
@@ -134,11 +135,11 @@ class EmailTextField extends StatelessWidget {
           validator ??
           (value) {
             if (value == null || value.isEmpty) {
-              return 'الرجاء إدخال البريد الإلكتروني';
+              return 'enter_email'.tr;
             }
             final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
             if (!emailRegex.hasMatch(value)) {
-              return 'الرجاء إدخال بريد إلكتروني صحيح';
+              return 'invalid_email'.tr;
             }
             return null;
           },
@@ -167,7 +168,7 @@ class PasswordTextField extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppTextField(
       controller: controller,
-      label: label ?? 'كلمة المرور',
+      label: label ?? 'password_label'.tr,
       obscureText: true,
       prefixIcon: Icons.lock_outlined,
       textInputAction: textInputAction ?? TextInputAction.done,
@@ -176,10 +177,10 @@ class PasswordTextField extends StatelessWidget {
           validator ??
           (value) {
             if (value == null || value.isEmpty) {
-              return 'الرجاء إدخال كلمة المرور';
+              return 'enter_password'.tr;
             }
             if (value.length < 6) {
-              return 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
+              return 'password_min_length'.tr;
             }
             return null;
           },

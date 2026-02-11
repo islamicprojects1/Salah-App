@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../../core/constants/app_dimensions.dart';
 import '../../core/theme/app_colors.dart';
 
@@ -80,10 +81,12 @@ class AppDialog extends StatelessWidget {
     required BuildContext context,
     required String title,
     String? message,
-    String confirmText = 'تأكيد',
-    String cancelText = 'إلغاء',
+    String? confirmText,
+    String? cancelText,
     Color? confirmColor,
   }) {
+    final btnConfirmText = confirmText ?? 'confirm'.tr;
+    final btnCancelText = cancelText ?? 'cancel_btn'.tr;
     return show<bool>(
       context: context,
       title: title,
@@ -92,14 +95,14 @@ class AppDialog extends StatelessWidget {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context, false),
-          child: Text(cancelText),
+          child: Text(btnCancelText),
         ),
         ElevatedButton(
           onPressed: () => Navigator.pop(context, true),
           style: confirmColor != null
               ? ElevatedButton.styleFrom(backgroundColor: confirmColor)
               : null,
-          child: Text(confirmText),
+          child: Text(btnConfirmText),
         ),
       ],
     );
@@ -110,8 +113,9 @@ class AppDialog extends StatelessWidget {
     required BuildContext context,
     required String title,
     String? message,
-    String buttonText = 'حسناً',
+    String? buttonText,
   }) {
+    final btnText = buttonText ?? 'ok_btn'.tr;
     return show(
       context: context,
       title: title,
@@ -128,7 +132,7 @@ class AppDialog extends StatelessWidget {
       actions: [
         ElevatedButton(
           onPressed: () => Navigator.pop(context),
-          child: Text(buttonText),
+          child: Text(btnText),
         ),
       ],
     );
@@ -139,8 +143,9 @@ class AppDialog extends StatelessWidget {
     required BuildContext context,
     required String title,
     String? message,
-    String buttonText = 'حسناً',
+    String? buttonText,
   }) {
+    final btnText = buttonText ?? 'ok_btn'.tr;
     return show(
       context: context,
       title: title,
@@ -157,7 +162,7 @@ class AppDialog extends StatelessWidget {
       actions: [
         ElevatedButton(
           onPressed: () => Navigator.pop(context),
-          child: Text(buttonText),
+          child: Text(btnText),
         ),
       ],
     );
@@ -166,8 +171,9 @@ class AppDialog extends StatelessWidget {
   /// Loading dialog (non-dismissible)
   static Future<void> loading({
     required BuildContext context,
-    String message = 'جاري التحميل...',
+    String? message,
   }) {
+    final msg = message ?? 'loading_msg'.tr;
     return show(
       context: context,
       barrierDismissible: false,
@@ -176,7 +182,7 @@ class AppDialog extends StatelessWidget {
         children: [
           const CircularProgressIndicator(),
           const SizedBox(height: AppDimensions.paddingMD),
-          Text(message),
+          Text(msg),
         ],
       ),
     );

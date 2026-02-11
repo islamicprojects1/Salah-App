@@ -189,8 +189,8 @@ class AppDialogs {
       message,
       snackPosition: position,
       backgroundColor: backgroundColor,
-      colorText: Colors.white,
-      icon: Icon(icon, color: Colors.white),
+      colorText: AppColors.white,
+      icon: Icon(icon, color: AppColors.white),
       margin: const EdgeInsets.all(AppDimensions.paddingMD),
       borderRadius: AppDimensions.radiusMD,
       duration: duration,
@@ -356,7 +356,7 @@ class _AppDialogWidget extends StatelessWidget {
                     onPressed: onConfirm ?? () => Get.back(),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: isDestructive ? AppColors.error : AppColors.primary,
-                      foregroundColor: Colors.white,
+                      foregroundColor: AppColors.white,
                       padding: const EdgeInsets.symmetric(
                         vertical: AppDimensions.paddingMD,
                       ),
@@ -466,7 +466,7 @@ class _SuccessDialogWidgetState extends State<_SuccessDialogWidget> {
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.success,
-                    foregroundColor: Colors.white,
+                    foregroundColor: AppColors.white,
                     padding: const EdgeInsets.symmetric(
                       vertical: AppDimensions.paddingMD,
                     ),

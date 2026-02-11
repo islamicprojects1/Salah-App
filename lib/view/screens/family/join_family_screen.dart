@@ -16,7 +16,7 @@ class JoinFamilyScreen extends GetView<FamilyController> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(
-          'الانضمام لعائلة',
+          'join_family_title'.tr,
           style: AppFonts.titleLarge.copyWith(color: AppColors.textPrimary),
         ),
         centerTitle: true,
@@ -53,7 +53,7 @@ class JoinFamilyScreen extends GetView<FamilyController> {
             const SizedBox(height: AppDimensions.paddingXL),
 
             Text(
-              'أدخل كود الدعوة',
+              'enter_invite_code'.tr,
               style: AppFonts.headlineMedium.copyWith(
                 fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary,
@@ -64,7 +64,7 @@ class JoinFamilyScreen extends GetView<FamilyController> {
             const SizedBox(height: AppDimensions.paddingMD),
 
             Text(
-              'اطلب الكود من مدير العائلة (الأب/الأم) للانضمام',
+              'invite_code_desc'.tr,
               style: AppFonts.bodyMedium.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -76,8 +76,8 @@ class JoinFamilyScreen extends GetView<FamilyController> {
             // Code Field
             AppTextField(
               controller: controller.inviteCodeController,
-              label: 'كود الدعوة',
-              hint: 'أدخل الكود المكون من 6 خانات',
+              label: 'invite_code_label'.tr,
+              hint: 'invite_code_hint'.tr,
               prefixIcon: Icons.vpn_key_outlined,
               maxLength: 6,
               keyboardType: TextInputType.text,
@@ -87,7 +87,7 @@ class JoinFamilyScreen extends GetView<FamilyController> {
 
             // Action Button
             Obx(() => AppButton(
-              text: 'انضمام للعائلة',
+              text: 'join_family_btn'.tr,
               onPressed: () => controller.joinFamily(),
               isLoading: controller.isLoading,
               width: double.infinity,

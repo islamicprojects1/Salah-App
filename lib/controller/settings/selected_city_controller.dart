@@ -54,8 +54,8 @@ class SelectedCityController extends GetxController {
       } else if (!isAutomatic) {
         // Only show error if manual click
         Get.snackbar(
-          "خطأ",
-          "تعذر تحديد الموقع. تأكد من تفعيل GPS",
+          "error".tr,
+          "location_error_gps".tr,
           snackPosition: SnackPosition.BOTTOM,
         );
       }
@@ -127,12 +127,12 @@ class SelectedCityController extends GetxController {
 
       Get.back();
       Get.snackbar(
-        "نجح",
-        "تم اختيار الموقع: $cityName",
+        "success".tr,
+        "location_select_success".trParams({'city': cityName}),
         snackPosition: SnackPosition.BOTTOM,
       );
     } catch (e) {
-      Get.snackbar("خطأ", "حدث خطأ أثناء اختيار الموقع");
+      Get.snackbar("error".tr, "location_select_error".tr);
     }
   }
 

@@ -74,15 +74,15 @@ class FamilyController extends GetxController {
       familyNameController.text,
     );
     if (err != null) {
-      AppFeedback.showSnackbar('تنبيه', err);
+      AppFeedback.showSnackbar('alert'.tr, err);
       return;
     }
     final success = await _familyService.createFamily(name!);
     if (success) {
       Get.back();
-      AppFeedback.showSuccess('تم بنجاح', 'تم إنشاء العائلة بنجاح');
+      AppFeedback.showSuccess('success_done'.tr, 'family_created_success'.tr);
     } else {
-      AppFeedback.showError('خطأ', errorMessage);
+      AppFeedback.showError('error'.tr, errorMessage);
     }
   }
 
@@ -91,15 +91,15 @@ class FamilyController extends GetxController {
       inviteCodeController.text,
     );
     if (err != null) {
-      AppFeedback.showSnackbar('تنبيه', err);
+      AppFeedback.showSnackbar('alert'.tr, err);
       return;
     }
     final success = await _familyService.joinFamily(code!);
     if (success) {
       Get.back();
-      AppFeedback.showSuccess('تم بنجاح', 'تم الانضمام للعائلة بنجاح');
+      AppFeedback.showSuccess('success_done'.tr, 'family_joined_success'.tr);
     } else {
-      AppFeedback.showError('خطأ', errorMessage);
+      AppFeedback.showError('error'.tr, errorMessage);
     }
   }
 
@@ -121,9 +121,9 @@ class FamilyController extends GetxController {
     );
     if (success) {
       Get.back();
-      AppFeedback.showSuccess('تم بنجاح', 'تم إضافة الطفل بنجاح');
+      AppFeedback.showSuccess('success_done'.tr, 'child_added_success'.tr);
     } else {
-      AppFeedback.showError('خطأ', errorMessage);
+      AppFeedback.showError('error'.tr, errorMessage);
     }
   }
 
@@ -168,7 +168,7 @@ class FamilyController extends GetxController {
       prayerTime: adhanTime,
     );
     if (success) {
-      AppFeedback.showSuccess('تم', 'تم تسجيل الصلاة عنه');
+      AppFeedback.showSuccess('done'.tr, 'prayer_logged_for_member_success'.tr);
       loadMembersData();
     } else {
       AppFeedback.showError('خطأ', errorMessage);
@@ -178,7 +178,7 @@ class FamilyController extends GetxController {
   Future<void> pokeMember(String userId, String name) async {
     final success = await _familyService.sendEncouragement(
       userId,
-      'شجعك ${_authService.currentUser.value?.displayName ?? 'عضو'} على الصلاة! ✨',
+      'encouragement_notif_body'.trParams({'member': _authService.currentUser.value?.displayName ?? 'member'.tr}),
     );
     if (success) {
       final myId = _authService.currentUser.value?.uid;
@@ -189,7 +189,7 @@ class FamilyController extends GetxController {
           data: {'toUserId': userId},
         );
       }
-      AppFeedback.showSuccess('تم', 'تم إرسال تشجيع لـ $name');
+      AppFeedback.showSuccess('done'.tr, 'encouragement_sent_success'.trParams({'name': name}));
     } else {
       AppFeedback.showError('خطأ', errorMessage);
     }

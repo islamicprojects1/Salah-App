@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get_utils/src/extensions/internacionalization.dart';
 import '../../core/constants/app_dimensions.dart';
 import '../../core/constants/enums.dart';
 import '../../core/theme/app_colors.dart';
@@ -40,9 +41,9 @@ class MemberCard extends StatelessWidget {
             children: [
               // Avatar
               _buildAvatar(context),
-              
+
               const SizedBox(width: AppDimensions.paddingMD),
-              
+
               // Name and prayers
               Expanded(
                 child: Column(
@@ -61,7 +62,7 @@ class MemberCard extends StatelessWidget {
                   ],
                 ),
               ),
-              
+
               // Interaction buttons
               if (showInteractionButtons) _buildInteractionButtons(context),
             ],
@@ -74,7 +75,9 @@ class MemberCard extends StatelessWidget {
   Widget _buildAvatar(BuildContext context) {
     return CircleAvatar(
       radius: 24,
-      backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+      backgroundColor: Theme.of(
+        context,
+      ).colorScheme.primary.withValues(alpha: 0.1),
       backgroundImage: photoUrl != null ? NetworkImage(photoUrl!) : null,
       child: photoUrl == null
           ? Text(
@@ -90,37 +93,34 @@ class MemberCard extends StatelessWidget {
   }
 
   Widget _buildPrayerIndicators(BuildContext context) {
-    final prayers = ['ف', 'ظ', 'ع', 'م', 'ش']; // Fajr, Dhuhr, Asr, Maghrib, Isha
-    
+    final prayers = [
+      'fajr_short'.tr,
+      'dhuhr_short'.tr,
+      'asr_short'.tr,
+      'maghrib_short'.tr,
+      'isha_short'.tr,
+    ]; // Fajr, Dhuhr, Asr, Maghrib, Isha
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: List.generate(5, (index) {
-        final status = index < todayPrayers.length 
-            ? todayPrayers[index] 
+        final status = index < todayPrayers.length
+            ? todayPrayers[index]
             : PrayerCardStatus.notYet;
-        
+
         return Padding(
-          padding: EdgeInsets.only(
-            left: index > 0 ? 6 : 0,
-          ),
+          padding: EdgeInsets.only(left: index > 0 ? 6 : 0),
           child: Container(
             width: 24,
             height: 24,
             decoration: BoxDecoration(
               color: _getStatusColor(status).withValues(alpha: 0.15),
               shape: BoxShape.circle,
-              border: Border.all(
-                color: _getStatusColor(status),
-                width: 1.5,
-              ),
+              border: Border.all(color: _getStatusColor(status), width: 1.5),
             ),
             child: Center(
               child: status == PrayerCardStatus.prayed
-                  ? Icon(
-                      Icons.check,
-                      size: 14,
-                      color: _getStatusColor(status),
-                    )
+                  ? Icon(Icons.check, size: 14, color: _getStatusColor(status))
                   : Text(
                       prayers[index],
                       style: TextStyle(
@@ -145,16 +145,16 @@ class MemberCard extends StatelessWidget {
           onPressed: onEncourage,
           icon: const Icon(Icons.thumb_up_outlined),
           color: AppColors.success,
-          tooltip: 'بارك الله فيك',
+          tooltip: 'baraka_allahu_feek'.tr,
           iconSize: 20,
         ),
-        
+
         // Remind button
         IconButton(
           onPressed: onRemind,
           icon: const Icon(Icons.notifications_outlined),
           color: AppColors.warning,
-          tooltip: 'تذكير',
+          tooltip: 'remind'.tr,
           iconSize: 20,
         ),
       ],
@@ -179,12 +179,7 @@ class MemberChip extends StatelessWidget {
   final String? photoUrl;
   final VoidCallback? onTap;
 
-  const MemberChip({
-    super.key,
-    required this.name,
-    this.photoUrl,
-    this.onTap,
-  });
+  const MemberChip({super.key, required this.name, this.photoUrl, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -206,22 +201,18 @@ class MemberChip extends StatelessWidget {
             CircleAvatar(
               radius: 12,
               backgroundColor: Theme.of(context).colorScheme.primary,
-              backgroundImage: photoUrl != null ? NetworkImage(photoUrl!) : null,
+              backgroundImage: photoUrl != null
+                  ? NetworkImage(photoUrl!)
+                  : null,
               child: photoUrl == null
                   ? Text(
                       name.isNotEmpty ? name[0] : '?',
-                      style: const TextStyle(
-                        fontSize: 10,
-                        color: Colors.white,
-                      ),
+                      style: const TextStyle(fontSize: 10, color: Colors.white),
                     )
                   : null,
             ),
             const SizedBox(width: 6),
-            Text(
-              name,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
+            Text(name, style: Theme.of(context).textTheme.bodySmall),
           ],
         ),
       ),

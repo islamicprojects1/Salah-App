@@ -72,7 +72,7 @@ class FamilyService extends GetxService {
       errorMessage.value = '';
 
       final user = _authService.currentUser.value;
-      if (user == null) throw Exception('يجب تسجيل الدخول أولاً');
+      if (user == null) throw Exception('error_must_login'.tr);
 
       final inviteCode = await _generateUniqueCode();
 
@@ -128,7 +128,7 @@ class FamilyService extends GetxService {
 
       return true;
     } catch (e) {
-      errorMessage.value = 'حدث خطأ أثناء إنشاء العائلة: $e';
+      errorMessage.value = 'error_create_family'.trParams({'error': e.toString()});
       return false;
     } finally {
       isLoading.value = false;
@@ -142,7 +142,7 @@ class FamilyService extends GetxService {
       errorMessage.value = '';
 
       final user = _authService.currentUser.value;
-      if (user == null) throw Exception('يجب تسجيل الدخول أولاً');
+      if (user == null) throw Exception('error_must_login'.tr);
 
       final query = await _firestore
           .collection('families')
@@ -151,7 +151,7 @@ class FamilyService extends GetxService {
           .get();
 
       if (query.docs.isEmpty) {
-        errorMessage.value = 'كود العائلة غير صحيح';
+        errorMessage.value = 'error_invalid_code'.tr;
         return false;
       }
 
@@ -159,7 +159,7 @@ class FamilyService extends GetxService {
       final family = FamilyModel.fromFirestore(doc);
 
       if (family.members.any((m) => m.userId == user.uid)) {
-        errorMessage.value = 'أنت عضو في هذه العائلة بالفعل';
+        errorMessage.value = 'error_already_member'.tr;
         return false;
       }
 
@@ -187,7 +187,7 @@ class FamilyService extends GetxService {
 
       return true;
     } catch (e) {
-      errorMessage.value = 'حدث خطأ أثناء الانضمام: $e';
+      errorMessage.value = 'error_join_family'.trParams({'error': e.toString()});
       return false;
     } finally {
       isLoading.value = false;
@@ -205,7 +205,7 @@ class FamilyService extends GetxService {
       errorMessage.value = '';
 
       final family = currentFamily.value;
-      if (family == null) throw Exception('يجب أن تكون في عائلة أولاً');
+      if (family == null) throw Exception('error_must_be_in_family'.tr);
 
       // Generate a mock ID
       final shadowId = 'shadow_${DateTime.now().millisecondsSinceEpoch}';
@@ -234,7 +234,7 @@ class FamilyService extends GetxService {
 
       return true;
     } catch (e) {
-      errorMessage.value = 'فشل إضافة الطفل: $e';
+      errorMessage.value = 'error_add_member'.trParams({'error': e.toString()});
       return false;
     } finally {
       isLoading.value = false;
@@ -256,7 +256,7 @@ class FamilyService extends GetxService {
 
       final me = family.getMember(user.uid);
       if (me?.role != MemberRole.parent) {
-        errorMessage.value = 'الوالدين فقط يمكنهم التسجيل للأبناء';
+        errorMessage.value = 'error_parents_only'.tr;
         return false;
       }
 
@@ -279,13 +279,13 @@ class FamilyService extends GetxService {
         familyId: family.id,
         type: 'prayer_logged',
         userId: memberId,
-        userName: member?.name ?? 'عضو',
+        userName: member?.name ?? 'member'.tr,
         prayerName: prayerName,
       );
 
       return true;
     } catch (e) {
-      errorMessage.value = 'فشل تسجيل الصلاة: $e';
+      errorMessage.value = 'error_log_prayer'.trParams({'error': e.toString()});
       return false;
     }
   }
@@ -353,7 +353,7 @@ class FamilyService extends GetxService {
           familyId: family.id,
           type: 'encouragement',
           userId: user.uid,
-          userName: user.displayName ?? 'عضو',
+          userName: user.displayName ?? 'member'.tr,
         );
       }
 

@@ -21,7 +21,7 @@ class WelcomePage extends GetView<OnboardingController> {
           end: Alignment.bottomRight,
           colors: [
             AppColors.primary.withValues(alpha: 0.05),
-            Colors.white,
+            AppColors.white,
             AppColors.secondary.withValues(alpha: 0.03),
           ],
         ),
@@ -41,7 +41,7 @@ class WelcomePage extends GetView<OnboardingController> {
                   gradient: RadialGradient(
                     colors: [
                       AppColors.primary.withValues(alpha: 0.1),
-                      Colors.transparent,
+                      AppColors.transparent,
                     ],
                   ),
                   shape: BoxShape.circle,
@@ -67,9 +67,7 @@ class WelcomePage extends GetView<OnboardingController> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 40),
               child: Text(
-                Get.locale?.languageCode == 'ar' 
-                    ? pageData.subtitle 
-                    : pageData.subtitleEn,
+                pageData.subtitleKey.tr,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 18,
@@ -122,7 +120,7 @@ class WelcomePage extends GetView<OnboardingController> {
       child: const Icon(
         Icons.mosque_outlined,
         size: 120,
-        color: Colors.white,
+        color: AppColors.white,
       ),
     );
   }
@@ -136,13 +134,11 @@ class WelcomePage extends GetView<OnboardingController> {
         ],
       ).createShader(bounds),
       child: Text(
-        Get.locale?.languageCode == 'ar' 
-            ? pageData.title 
-            : pageData.titleEn,
+        pageData.titleKey.tr,
         style: const TextStyle(
           fontSize: 36,
           fontWeight: FontWeight.bold,
-          color: Colors.white,
+          color: AppColors.white,
           letterSpacing: -0.5,
         ),
       ),
@@ -154,7 +150,7 @@ class WelcomePage extends GetView<OnboardingController> {
     required VoidCallback onTap,
   }) {
     return Material(
-      color: Colors.transparent,
+      color: AppColors.transparent,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
@@ -188,14 +184,14 @@ class WelcomePage extends GetView<OnboardingController> {
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: AppColors.white,
                     letterSpacing: 0.5,
                   ),
                 ),
                 const SizedBox(width: 8),
                 const Icon(
                   Icons.arrow_forward_rounded,
-                  color: Colors.white,
+                  color: AppColors.white,
                   size: 20,
                 ),
               ],
@@ -235,7 +231,7 @@ class WelcomePage extends GetView<OnboardingController> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : Colors.transparent,
+          color: isSelected ? AppColors.primary : AppColors.transparent,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected ? AppColors.primary : AppColors.textSecondary.withValues(alpha: 0.3),
@@ -244,7 +240,7 @@ class WelcomePage extends GetView<OnboardingController> {
         child: Text(
           label,
           style: TextStyle(
-            color: isSelected ? Colors.white : AppColors.textSecondary,
+            color: isSelected ? AppColors.white : AppColors.textSecondary,
             fontWeight: FontWeight.w600,
           ),
         ),

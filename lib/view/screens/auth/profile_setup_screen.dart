@@ -18,10 +18,10 @@ class ProfileSetupScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppColors.transparent,
         elevation: 0,
         title: Text(
-          'إعداد الملف الشخصي',
+          'profile_setup_title'.tr,
           style: AppFonts.titleLarge.copyWith(
             color: AppColors.textPrimary,
           ),
@@ -58,7 +58,7 @@ class ProfileSetupScreen extends StatelessWidget {
                         child: const Icon(
                           Icons.camera_alt,
                           size: AppDimensions.radiusProfileCameraBadge,
-                          color: Colors.white,
+                          color: AppColors.white,
                         ),
                       ),
                     ),
@@ -71,7 +71,7 @@ class ProfileSetupScreen extends StatelessWidget {
               // Name field
               AppTextField(
                 controller: controller.nameController,
-                label: 'الاسم',
+                label: 'name_label'.tr,
                 prefixIcon: Icons.person_outline,
               ),
 
@@ -80,7 +80,7 @@ class ProfileSetupScreen extends StatelessWidget {
               // Birth date field
               AppTextField(
                 controller: controller.birthDateController,
-                label: 'تاريخ الميلاد',
+                label: 'birthdate_label'.tr,
                 prefixIcon: Icons.calendar_today_outlined,
                 readOnly: true,
                 onTap: () async {
@@ -100,7 +100,7 @@ class ProfileSetupScreen extends StatelessWidget {
 
               // Gender selection
               Text(
-                'الجنس',
+                'gender_label'.tr,
                 style: AppFonts.bodyMedium.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -111,7 +111,7 @@ class ProfileSetupScreen extends StatelessWidget {
                 children: [
                   Expanded(
                     child: _GenderOption(
-                      label: 'ذكر',
+                      label: 'male'.tr,
                       icon: Icons.male,
                       isSelected: controller.selectedGender.value == 'male',
                       onTap: () => controller.setGender('male'),
@@ -120,7 +120,7 @@ class ProfileSetupScreen extends StatelessWidget {
                   const SizedBox(width: AppDimensions.paddingMD),
                   Expanded(
                     child: _GenderOption(
-                      label: 'أنثى',
+                      label: 'female'.tr,
                       icon: Icons.female,
                       isSelected: controller.selectedGender.value == 'female',
                       onTap: () => controller.setGender('female'),
@@ -150,7 +150,7 @@ class ProfileSetupScreen extends StatelessWidget {
 
               // Continue button
               Obx(() => AppButton(
-                text: 'متابعة',
+                text: 'continue_btn'.tr,
                 onPressed: () async {
                   final success = await controller.updateProfile();
                   if (success) {
@@ -167,7 +167,7 @@ class ProfileSetupScreen extends StatelessWidget {
               TextButton(
                 onPressed: () => Get.offAllNamed('/dashboard'),
                 child: Text(
-                  'تخطي الآن',
+                  'skip_btn'.tr,
                   style: AppFonts.bodyMedium.copyWith(
                     color: AppColors.textSecondary,
                   ),

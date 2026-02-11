@@ -13,7 +13,6 @@ class FeaturesPage extends GetView<OnboardingController> {
   @override
   Widget build(BuildContext context) {
     final pageData = controller.getPageData(OnboardingStep.features);
-    final isArabic = Get.locale?.languageCode == 'ar';
 
     return SafeArea(
       child: Column(
@@ -40,7 +39,7 @@ class FeaturesPage extends GetView<OnboardingController> {
 
           // Title
           Text(
-            isArabic ? pageData.title : pageData.titleEn,
+            pageData.titleKey.tr,
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
@@ -51,7 +50,7 @@ class FeaturesPage extends GetView<OnboardingController> {
           const SizedBox(height: 8),
 
           Text(
-            isArabic ? pageData.subtitle : pageData.subtitleEn,
+            pageData.subtitleKey.tr,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 16,
@@ -69,27 +68,23 @@ class FeaturesPage extends GetView<OnboardingController> {
               children: [
                 _buildFeatureRow(
                   icon: Icons.touch_app_rounded,
-                  title: isArabic ? 'سجّل بضغطة واحدة' : 'One-tap logging',
-                  subtitle: isArabic ? 'سريع وسهل' : 'Fast and easy',
-                  color: const Color(0xFF6366F1),
+                  title: 'feature_one_tap_title'.tr,
+                  subtitle: 'feature_one_tap_desc'.tr,
+                  color: AppColors.feature1,
                 ),
                 const SizedBox(height: 12),
                 _buildFeatureRow(
                   icon: Icons.analytics_rounded,
-                  title: isArabic ? 'إحصائيات مفصلة' : 'Detailed statistics',
-                  subtitle: isArabic ? 'تابع تقدمك' : 'Track your progress',
-                  color: const Color(0xFF10B981),
+                  title: 'feature_stats_title'.tr,
+                  subtitle: 'feature_stats_desc'.tr,
+                  color: AppColors.feature2,
                 ),
                 const SizedBox(height: 12),
                 _buildFeatureRow(
                   icon: Icons.celebration_rounded,
-                  title: isArabic
-                      ? 'إنجازات وتحديات'
-                      : 'Achievements & challenges',
-                  subtitle: isArabic
-                      ? 'حافز للاستمرار'
-                      : 'Motivation to continue',
-                  color: const Color(0xFFF59E0B),
+                  title: 'feature_achievements_title'.tr,
+                  subtitle: 'feature_motivation_desc'.tr,
+                  color: AppColors.feature3,
                 ),
               ],
             ),
@@ -131,7 +126,7 @@ class FeaturesPage extends GetView<OnboardingController> {
               color: color,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: Colors.white, size: 24),
+            child: Icon(icon, color: AppColors.white, size: 24),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -186,7 +181,7 @@ class FeaturesPage extends GetView<OnboardingController> {
         const Spacer(),
         // Next button
         Material(
-          color: Colors.transparent,
+          color: AppColors.transparent,
           child: InkWell(
             onTap: () {
               HapticFeedback.mediumImpact();
@@ -218,7 +213,7 @@ class FeaturesPage extends GetView<OnboardingController> {
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: AppColors.white,
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -244,7 +239,6 @@ class FamilyPage extends GetView<OnboardingController> {
   @override
   Widget build(BuildContext context) {
     final pageData = controller.getPageData(OnboardingStep.family);
-    final isArabic = Get.locale?.languageCode == 'ar';
 
     return SafeArea(
       child: Column(
@@ -276,7 +270,7 @@ class FamilyPage extends GetView<OnboardingController> {
               Text(pageData.emoji, style: const TextStyle(fontSize: 32)),
               const SizedBox(width: 12),
               Text(
-                isArabic ? pageData.title : pageData.titleEn,
+                pageData.titleKey.tr,
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
@@ -291,7 +285,7 @@ class FamilyPage extends GetView<OnboardingController> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 40),
             child: Text(
-              isArabic ? pageData.subtitle : pageData.subtitleEn,
+              pageData.subtitleKey.tr,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 16,
@@ -324,30 +318,22 @@ class FamilyPage extends GetView<OnboardingController> {
                 children: [
                   _buildFamilyFeature(
                     emoji: '👀',
-                    text: isArabic
-                        ? 'تابع صلاة أفراد عائلتك'
-                        : 'Track family prayers',
+                    text: 'feature_family_track'.tr,
                   ),
                   const SizedBox(height: 12),
                   _buildFamilyFeature(
                     emoji: '💚',
-                    text: isArabic
-                        ? 'أرسل تشجيعاً لمن تحب'
-                        : 'Send encouragements',
+                    text: 'feature_family_encourage'.tr,
                   ),
                   const SizedBox(height: 12),
                   _buildFamilyFeature(
                     emoji: '🔔',
-                    text: isArabic
-                        ? 'تذكيرات لطيفة ومحفزة'
-                        : 'Gentle reminders',
+                    text: 'feature_family_reminders'.tr,
                   ),
                   const SizedBox(height: 12),
                   _buildFamilyFeature(
                     emoji: '🔒',
-                    text: isArabic
-                        ? 'الخصوصية محفوظة دائماً'
-                        : 'Privacy always protected',
+                    text: 'feature_family_privacy'.tr,
                   ),
                 ],
               ),
@@ -409,7 +395,7 @@ class FamilyPage extends GetView<OnboardingController> {
         ),
         const Spacer(),
         Material(
-          color: Colors.transparent,
+          color: AppColors.transparent,
           child: InkWell(
             onTap: () {
               HapticFeedback.mediumImpact();
@@ -441,7 +427,7 @@ class FamilyPage extends GetView<OnboardingController> {
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: AppColors.white,
                     ),
                   ),
                   const SizedBox(width: 8),

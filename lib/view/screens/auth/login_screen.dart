@@ -70,7 +70,7 @@ class LoginScreen extends StatelessWidget {
                         child: const Icon(
                           Icons.mosque,
                           size: AppDimensions.iconLogo,
-                          color: Colors.white,
+                          color: AppColors.white,
                         ),
                       );
                     },
@@ -82,7 +82,7 @@ class LoginScreen extends StatelessWidget {
 
               // Title
               Text(
-                'مرحباً بك في قُرب',
+                'welcome_title'.tr,
                 style: AppFonts.headlineLarge.copyWith(
                   color: AppColors.textPrimary,
                   fontWeight: FontWeight.bold,
@@ -93,7 +93,7 @@ class LoginScreen extends StatelessWidget {
               const SizedBox(height: AppDimensions.paddingSM),
 
               Text(
-                'تتبّع صلاتك وتقرّب إلى الله',
+                'welcome_subtitle'.tr,
                 style: AppFonts.bodyLarge.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -169,7 +169,7 @@ class LoginScreen extends StatelessWidget {
                       horizontal: AppDimensions.paddingLG,
                     ),
                     child: Text(
-                      'أو',
+                      'or'.tr,
                       style: AppFonts.bodyMedium.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -196,7 +196,7 @@ class LoginScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    'ليس لديك حساب؟',
+                    'no_account'.tr,
                     style: AppFonts.bodyMedium.copyWith(
                       color: AppColors.textSecondary,
                     ),
@@ -204,7 +204,7 @@ class LoginScreen extends StatelessWidget {
                   TextButton(
                     onPressed: () => Get.toNamed(AppRoutes.register),
                     child: Text(
-                      'إنشاء حساب',
+                      'create_account'.tr,
                       style: AppFonts.bodyMedium.copyWith(
                         color: AppColors.primary,
                         fontWeight: FontWeight.bold,
@@ -241,10 +241,10 @@ class _GoogleSignInButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.black87,
+          backgroundColor: AppColors.white,
+          foregroundColor: AppColors.black87,
           elevation: 2,
-          shadowColor: Colors.black26,
+          shadowColor: AppColors.black26,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
             side: BorderSide(
@@ -274,7 +274,7 @@ class _GoogleSignInButton extends StatelessWidget {
                     width: 24,
                     height: 24,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: AppColors.white,
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Center(
@@ -283,17 +283,17 @@ class _GoogleSignInButton extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: Colors.red.shade600,
+                          color: AppColors.googleRed,
                         ),
                       ),
                     ),
                   ),
                   const SizedBox(width: AppDimensions.paddingMD),
                   Text(
-                    'المتابعة مع Google',
+                    'continue_with_google'.tr,
                     style: AppFonts.bodyLarge.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+                      color: AppColors.black87,
                     ),
                   ),
                 ],
@@ -371,7 +371,7 @@ class _EmailSignInSectionState extends State<_EmailSignInSection>
               ),
               const SizedBox(width: AppDimensions.paddingSM),
               Text(
-                'المتابعة بالبريد الإلكتروني',
+                'continue_with_email'.tr,
                 style: AppFonts.bodyMedium.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -426,7 +426,7 @@ class _EmailSignInSectionState extends State<_EmailSignInSection>
                   // Login button
                   Obx(
                     () => AppButton(
-                      text: 'تسجيل الدخول',
+                      text: 'login'.tr,
                       onPressed: () async {
                         final success = await widget.controller.loginWithEmail();
                         if (success) {

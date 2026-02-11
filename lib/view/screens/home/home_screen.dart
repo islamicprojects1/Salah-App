@@ -64,7 +64,7 @@ class HomeScreen extends StatelessWidget {
               children: [
                 const Icon(
                   Icons.wb_sunny_outlined,
-                  color: Colors.white,
+                  color: AppColors.white,
                   size: 28,
                 ),
                 const SizedBox(width: 12),
@@ -74,7 +74,7 @@ class HomeScreen extends StatelessWidget {
                     Text(
                       'welcome'.tr,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.9),
+                        color: AppColors.white.withValues(alpha: 0.9),
                       ),
                     ),
                     Text(
@@ -91,12 +91,12 @@ class HomeScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
+                    color: AppColors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(
                     Icons.location_on_outlined,
-                    color: Colors.white,
+                    color: AppColors.white,
                   ),
                 ),
               ],
@@ -180,7 +180,7 @@ class HomeScreen extends StatelessWidget {
         'name': 'sunrise',
         'time': '06:45 AM',
         'icon': Icons.wb_twilight,
-        'color': Colors.orange,
+        'color': AppColors.orange,
       },
       {
         'name': 'dhuhr',

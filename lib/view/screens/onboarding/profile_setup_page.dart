@@ -54,7 +54,7 @@ class ProfileSetupPage extends GetView<OnboardingController> {
             // Title
             Center(
               child: Text(
-                isArabic ? pageData.title : pageData.titleEn,
+                pageData.titleKey.tr,
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
@@ -67,7 +67,7 @@ class ProfileSetupPage extends GetView<OnboardingController> {
             
             Center(
               child: Text(
-                isArabic ? pageData.subtitle : pageData.subtitleEn,
+                pageData.subtitleKey.tr,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 16,
@@ -80,15 +80,15 @@ class ProfileSetupPage extends GetView<OnboardingController> {
             
             // Name Input
             _buildInputSection(
-              label: isArabic ? 'الاسم' : 'Name',
+              label: 'name_label'.tr,
               child: TextField(
                 controller: controller.nameController,
                 textAlign: isArabic ? TextAlign.right : TextAlign.left,
                 decoration: InputDecoration(
-                  hintText: isArabic ? 'أدخل اسمك' : 'Enter your name',
+                  hintText: 'name_label'.tr,
                   prefixIcon: Icon(Icons.person_outline, color: AppColors.primary),
                   filled: true,
-                  fillColor: Colors.white,
+                  fillColor: AppColors.white,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide(color: AppColors.textSecondary.withValues(alpha: 0.2)),
@@ -109,13 +109,13 @@ class ProfileSetupPage extends GetView<OnboardingController> {
             
             // Gender Selection
             _buildInputSection(
-              label: isArabic ? 'النوع' : 'Gender',
+              label: 'gender_label'.tr,
               child: Obx(() => Row(
                 children: [
                   Expanded(
                     child: _buildGenderOption(
                       icon: Icons.male,
-                      label: isArabic ? 'ذكر' : 'Male',
+                      label: 'male'.tr,
                       value: 'male',
                       isSelected: controller.selectedGender.value == 'male',
                     ),
@@ -124,7 +124,7 @@ class ProfileSetupPage extends GetView<OnboardingController> {
                   Expanded(
                     child: _buildGenderOption(
                       icon: Icons.female,
-                      label: isArabic ? 'أنثى' : 'Female',
+                      label: 'female'.tr,
                       value: 'female',
                       isSelected: controller.selectedGender.value == 'female',
                     ),
@@ -137,16 +137,16 @@ class ProfileSetupPage extends GetView<OnboardingController> {
             
             // Birth Date (Optional)
             _buildInputSection(
-              label: isArabic ? 'تاريخ الميلاد (اختياري)' : 'Birth Date (Optional)',
+              label: 'birthdate_label'.tr,
               child: Obx(() => Material(
-                color: Colors.transparent,
+                color: AppColors.transparent,
                 child: InkWell(
                   onTap: () => _showDatePicker(context),
                   borderRadius: BorderRadius.circular(14),
                   child: Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: AppColors.white,
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
                         color: AppColors.textSecondary.withValues(alpha: 0.2),
@@ -162,7 +162,7 @@ class ProfileSetupPage extends GetView<OnboardingController> {
                         Text(
                           controller.selectedBirthDate.value != null
                               ? _formatDate(controller.selectedBirthDate.value!)
-                              : (isArabic ? 'اختر تاريخ الميلاد' : 'Select birth date'),
+                              : 'birthdate_label'.tr,
                           style: TextStyle(
                             color: controller.selectedBirthDate.value != null
                                 ? AppColors.textPrimary
@@ -197,7 +197,7 @@ class ProfileSetupPage extends GetView<OnboardingController> {
                   controller.completeOnboarding();
                 },
                 child: Text(
-                  isArabic ? 'تخطي وإكمال لاحقاً' : 'Skip and complete later',
+                  'skip_btn'.tr,
                   style: TextStyle(
                     color: AppColors.textSecondary,
                   ),
@@ -251,7 +251,7 @@ class ProfileSetupPage extends GetView<OnboardingController> {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 16),
           decoration: BoxDecoration(
-            color: isSelected ? AppColors.primary : Colors.white,
+            color: isSelected ? AppColors.primary : AppColors.white,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: isSelected ? AppColors.primary : AppColors.textSecondary.withValues(alpha: 0.2),
@@ -272,13 +272,13 @@ class ProfileSetupPage extends GetView<OnboardingController> {
             children: [
               Icon(
                 icon,
-                color: isSelected ? Colors.white : AppColors.textSecondary,
+                color: isSelected ? AppColors.white : AppColors.textSecondary,
               ),
               const SizedBox(width: 8),
               Text(
                 label,
                 style: TextStyle(
-                  color: isSelected ? Colors.white : AppColors.textPrimary,
+                  color: isSelected ? AppColors.white : AppColors.textPrimary,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -302,7 +302,7 @@ class ProfileSetupPage extends GetView<OnboardingController> {
             colorScheme: ColorScheme.light(
               primary: AppColors.primary,
               onPrimary: Colors.white,
-              surface: Colors.white,
+              surface: AppColors.white,
               onSurface: AppColors.textPrimary,
             ),
           ),
@@ -364,16 +364,16 @@ class ProfileSetupPage extends GetView<OnboardingController> {
                 children: [
                   Icon(
                     isValid ? Icons.check_circle : Icons.person_outline,
-                    color: Colors.white,
+                      color: AppColors.white,
                     size: 20,
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    isArabic ? 'إكمال الإعداد' : 'Complete Setup',
+                    'complete_btn'.tr,
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: AppColors.white,
                     ),
                   ),
                 ],

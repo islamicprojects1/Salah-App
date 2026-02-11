@@ -24,7 +24,7 @@ class SelectCityScreen extends GetView<SelectedCityController> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             AppTextField(
-              hint: "ابحث عن مدينة (مثلاً: مكة، القاهرة)",
+              hint: "search_city_hint".tr,
               prefixIcon: Icons.search,
               onChanged: controller.searchCity,
             ),
@@ -82,8 +82,8 @@ class SelectCityScreen extends GetView<SelectedCityController> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 20),
-          const Center(
-            child: Text("أو", style: TextStyle(color: Colors.grey)),
+          Center(
+            child: Text("or".tr, style: const TextStyle(color: Colors.grey)),
           ),
           const SizedBox(height: 20),
 
@@ -121,8 +121,8 @@ class SelectCityScreen extends GetView<SelectedCityController> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          "استخدم موقع الجهاز",
+                        Text(
+                          "use_device_location".tr,
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
@@ -132,8 +132,8 @@ class SelectCityScreen extends GetView<SelectedCityController> {
                         Obx(
                           () => Text(
                             controller.currentLocationLoading.value
-                                ? "جاري تحديد الموقع..."
-                                : "تحديد تلقائي دقيق للموقع",
+                                ? "detecting_location".tr
+                                : "auto_location_desc".tr,
                             style: TextStyle(
                               color: Colors.grey[600],
                               fontSize: 13,
@@ -171,7 +171,9 @@ class SelectCityScreen extends GetView<SelectedCityController> {
                     ),
                     const SizedBox(width: 5),
                     Text(
-                      "تم تحديد موقعك: ${controller.detectedCityName.value}",
+                      "location_detected".trParams({
+                        'city': controller.detectedCityName.value,
+                      }),
                       style: const TextStyle(
                         color: Colors.green,
                         fontSize: 13,
@@ -198,10 +200,10 @@ class SelectCityScreen extends GetView<SelectedCityController> {
               children: [
                 const Icon(Icons.info_outline, color: Colors.amber),
                 const SizedBox(width: 10),
-                const Expanded(
+                Expanded(
                   child: Text(
-                    "دقة الموقع مهمة جداً لحساب أوقات الصلاة واتجاه القبلة بدقة.",
-                    style: TextStyle(fontSize: 13),
+                    "location_importance_info".tr,
+                    style: const TextStyle(fontSize: 13),
                   ),
                 ),
               ],

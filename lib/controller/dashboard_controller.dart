@@ -113,7 +113,7 @@ class DashboardController extends GetxController {
         _notificationService.requestPermissions();
       });
     } catch (_) {
-      AppFeedback.showError('خطأ', 'فشل تحميل لوحة التحكم');
+      AppFeedback.showError('error'.tr, 'dashboard_load_error'.tr);
       isLoading.value = false;
     }
   }
@@ -196,7 +196,7 @@ class DashboardController extends GetxController {
       }
       await storage.remove(StorageKeys.pendingPrayerLog);
       _liveContextService.onPrayerLogged();
-      AppFeedback.showSuccess('تم', 'تم تسجيل صلاة $displayName من الإشعار');
+      AppFeedback.showSuccess('done'.tr, 'prayer_logged_from_notif'.trParams({'prayer': displayName}));
     } catch (_) {}
   }
 
@@ -213,7 +213,7 @@ class DashboardController extends GetxController {
         familyId: family.id,
         type: 'prayer_logged',
         userId: user.uid,
-        userName: user.displayName ?? 'أنا',
+        userName: user.displayName ?? 'me'.tr,
         prayerName: prayerDisplayName,
       );
     } catch (_) {}
@@ -396,7 +396,7 @@ class DashboardController extends GetxController {
         prayer.prayerType,
       );
       if (isLogged) {
-        AppFeedback.showSnackbar('تنبيه', 'لقد قمت بتسجيل هذه الصلاة مسبقاً');
+        AppFeedback.showSnackbar('alert'.tr, 'already_logged_snackbar'.tr);
         return;
       }
       final log = PrayerLogModel.create(
@@ -422,9 +422,9 @@ class DashboardController extends GetxController {
       if (todayLogs.length + 1 >= 5) {
         currentStreak.value = await _prayerRepo.updateStreak(userId);
       }
-      AppFeedback.showSuccess('تم بنجاح', 'تقبل الله طاعاتكم');
+      AppFeedback.showSuccess('success_done'.tr, 'prayer_accepted'.tr);
     } catch (e) {
-      AppFeedback.showError('خطأ', 'فشل تسجيل الصلاة: $e');
+      AppFeedback.showError('error'.tr, 'error_log_prayer'.trParams({'error': e.toString()}));
     }
   }
 

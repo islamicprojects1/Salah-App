@@ -18,7 +18,7 @@ class RegisterScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppColors.transparent,
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: AppColors.textPrimary),
@@ -33,7 +33,7 @@ class RegisterScreen extends StatelessWidget {
             children: [
               // Title
               Text(
-                'إنشاء حساب',
+                'create_account'.tr,
                 style: AppFonts.headlineLarge.copyWith(
                   color: AppColors.textPrimary,
                   fontWeight: FontWeight.bold,
@@ -44,7 +44,7 @@ class RegisterScreen extends StatelessWidget {
               const SizedBox(height: AppDimensions.paddingSM),
 
               Text(
-                'أنشئ حسابك للبدء',
+                'register_subtitle'.tr,
                 style: AppFonts.bodyMedium.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -56,7 +56,7 @@ class RegisterScreen extends StatelessWidget {
               // Name field
               AppTextField(
                 controller: controller.nameController,
-                label: 'الاسم',
+                label: 'name_label'.tr,
                 prefixIcon: Icons.person_outline,
                 textInputAction: TextInputAction.next,
               ),
@@ -66,7 +66,7 @@ class RegisterScreen extends StatelessWidget {
               // Email field
               EmailTextField(
                 controller: controller.emailController,
-                label: 'البريد الإلكتروني',
+                label: 'email_label'.tr,
               ),
 
               const SizedBox(height: AppDimensions.paddingMD),
@@ -74,7 +74,7 @@ class RegisterScreen extends StatelessWidget {
               // Password field
               PasswordTextField(
                 controller: controller.passwordController,
-                label: 'كلمة المرور',
+                label: 'password_label'.tr,
               ),
 
               const SizedBox(height: AppDimensions.paddingXL),
@@ -101,7 +101,7 @@ class RegisterScreen extends StatelessWidget {
               // Register button
               Obx(
                 () => AppButton(
-                  text: 'إنشاء حساب',
+                  text: 'create_account'.tr,
                   onPressed: () async {
                     final success = await controller.registerWithEmail();
                     if (success) {
@@ -120,7 +120,7 @@ class RegisterScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    'لديك حساب؟',
+                    'already_have_account'.tr,
                     style: AppFonts.bodyMedium.copyWith(
                       color: AppColors.textSecondary,
                     ),
@@ -128,7 +128,7 @@ class RegisterScreen extends StatelessWidget {
                   TextButton(
                     onPressed: () => Get.back(),
                     child: Text(
-                      'تسجيل الدخول',
+                      'login'.tr,
                       style: AppFonts.bodyMedium.copyWith(
                         color: AppColors.primary,
                         fontWeight: FontWeight.bold,

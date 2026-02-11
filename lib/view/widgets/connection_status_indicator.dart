@@ -25,7 +25,7 @@ class ConnectionStatusIndicator extends StatelessWidget {
         duration: const Duration(milliseconds: 300),
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: Material(
-          color: Colors.transparent,
+          color: AppColors.transparent,
           child: InkWell(
             onTap: () => _showSyncDetails(context, syncService),
             borderRadius: BorderRadius.circular(12),
@@ -79,20 +79,19 @@ class ConnectionStatusIndicator extends StatelessWidget {
   }
 
   Widget _buildText(bool isOnline, bool isSyncing, int pendingCount) {
-    final isArabic = Get.locale?.languageCode == 'ar';
     String text;
     Color color;
     if (isSyncing) {
-      text = isArabic ? 'جاري المزامنة...' : 'Syncing...';
+      text = 'syncing'.tr;
       color = AppColors.primary;
     } else if (!isOnline) {
-      text = isArabic ? 'غير متصل' : 'Offline';
+      text = 'offline'.tr;
       color = AppColors.warning;
     } else if (pendingCount > 0) {
-      text = isArabic ? '$pendingCount عناصر معلقة' : '$pendingCount pending';
+      text = 'pending_items'.trParams({'count': '$pendingCount'});
       color = AppColors.info;
     } else {
-      text = isArabic ? 'متزامن' : 'Synced';
+      text = 'synced'.tr;
       color = AppColors.success;
     }
     return Text(
@@ -141,7 +140,6 @@ class ConnectionStatusIndicator extends StatelessWidget {
   }
 
   void _showSyncDetails(BuildContext context, SyncService service) {
-    final isArabic = Get.locale?.languageCode == 'ar';
     final isOnline = service.isOnlineObs.value;
     final pendingCount = service.state.pendingCount.value;
     final isSyncing = service.state.isSyncing.value;
@@ -181,9 +179,7 @@ class ConnectionStatusIndicator extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              isOnline
-                  ? (isArabic ? 'متصل بالإنترنت' : 'Online')
-                  : (isArabic ? 'غير متصل' : 'Offline'),
+              isOnline ? 'online'.tr : 'offline'.tr,
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -193,18 +189,14 @@ class ConnectionStatusIndicator extends StatelessWidget {
             const SizedBox(height: 8),
             if (pendingCount > 0) ...[
               Text(
-                isArabic
-                    ? '$pendingCount عناصر في انتظار المزامنة'
-                    : '$pendingCount items waiting to sync',
+                'pending_sync_desc'.trParams({'count': '$pendingCount'}),
                 style: TextStyle(color: AppColors.textSecondary),
               ),
               const SizedBox(height: 16),
             ],
             if (lastSync != null) ...[
               Text(
-                isArabic
-                    ? 'آخر مزامنة: ${_formatTime(lastSync)}'
-                    : 'Last synced: ${_formatTime(lastSync)}',
+                'last_sync'.trParams({'time': _formatTime(lastSync)}),
                 style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
               ),
               const SizedBox(height: 16),
@@ -218,10 +210,10 @@ class ConnectionStatusIndicator extends StatelessWidget {
                     Get.find<PrayerRepository>().syncAllPending();
                   },
                   icon: const Icon(Icons.sync_rounded),
-                  label: Text(isArabic ? 'مزامنة الآن' : 'Sync Now'),
+                  label: Text('sync_now'.tr),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
+                    foregroundColor: AppColors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -238,14 +230,13 @@ class ConnectionStatusIndicator extends StatelessWidget {
 
   String _formatTime(DateTime time) {
     final diff = DateTime.now().difference(time);
-    final isArabic = Get.locale?.languageCode == 'ar';
-    if (diff.inMinutes < 1) return isArabic ? 'الآن' : 'Just now';
+    if (diff.inMinutes < 1) return 'just_now'.tr;
     if (diff.inMinutes < 60) {
-      return isArabic ? 'منذ ${diff.inMinutes} دقيقة' : '${diff.inMinutes}m ago';
+      return 'minutes_ago'.trParams({'count': '${diff.inMinutes}'});
     }
     if (diff.inHours < 24) {
-      return isArabic ? 'منذ ${diff.inHours} ساعة' : '${diff.inHours}h ago';
+      return 'hours_ago'.trParams({'count': '${diff.inHours}'});
     }
-    return isArabic ? 'منذ ${diff.inDays} يوم' : '${diff.inDays}d ago';
+    return 'days_ago'.trParams({'count': '${diff.inDays}'});
   }
 }

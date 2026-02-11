@@ -1,5 +1,4 @@
 import 'package:salah/core/constants/enums.dart';
-import 'package:salah/core/services/prayer_time_service.dart';
 import 'package:salah/data/models/prayer_log_model.dart';
 import 'package:salah/data/models/prayer_time_model.dart';
 

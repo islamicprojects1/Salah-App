@@ -102,18 +102,18 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
       alignment: Alignment.centerRight,
       padding: const EdgeInsets.only(right: 24),
       decoration: BoxDecoration(
-        color: Colors.red.shade400,
+        color: AppColors.error.withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.skip_next, color: Colors.white, size: 28),
+          const Icon(Icons.skip_next, color: AppColors.white, size: 28),
           const SizedBox(height: 4),
           Text(
             'skip'.tr,
             style: const TextStyle(
-              color: Colors.white,
+              color: AppColors.white,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -142,7 +142,7 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
           ElevatedButton(
             onPressed: () => Get.back(result: true),
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.warning),
-            child: Text('skip'.tr, style: const TextStyle(color: Colors.white)),
+            child: Text('skip'.tr, style: const TextStyle(color: AppColors.white)),
           ),
         ],
       ),
@@ -157,7 +157,7 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.white,
+            AppColors.white,
             _getCardGradientColor().withValues(alpha: 0.05),
           ],
         ),
@@ -227,7 +227,7 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
               ),
               child: Icon(
                 _getPrayerIcon(prayerType),
-                color: Colors.white,
+                color: AppColors.white,
                 size: 28,
               ),
             ),
@@ -310,10 +310,10 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
       return Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: Colors.red.withValues(alpha: 0.1),
+          color: AppColors.error.withValues(alpha: 0.1),
           shape: BoxShape.circle,
         ),
-        child: const Icon(Icons.cancel, color: Colors.red, size: 24),
+        child: Icon(Icons.cancel, color: AppColors.error, size: 24),
       );
     }
     return const SizedBox.shrink();
@@ -342,7 +342,7 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
               label: 'i_missed'.tr,
               icon: Icons.cancel_outlined,
               isSelected: widget.status == PrayerCardStatus.missed,
-              color: Colors.red,
+              color: AppColors.error,
               onTap: () {
                 HapticFeedback.lightImpact();
                 widget.onStatusChanged(PrayerCardStatus.missed);
@@ -362,7 +362,7 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
     required VoidCallback onTap,
   }) {
     return Material(
-      color: Colors.transparent,
+      color: AppColors.transparent,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(14),
@@ -389,12 +389,12 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: isSelected ? Colors.white : color, size: 22),
+              Icon(icon, color: isSelected ? AppColors.white : color, size: 22),
               const SizedBox(width: 8),
               Text(
                 label,
                 style: TextStyle(
-                  color: isSelected ? Colors.white : color,
+                  color: isSelected ? AppColors.white : color,
                   fontWeight: FontWeight.bold,
                   fontSize: 15,
                 ),
@@ -471,7 +471,7 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
         : PrayerTimingHelper.getQualityColor(quality);
 
     return Material(
-      color: Colors.transparent,
+      color: AppColors.transparent,
       child: InkWell(
         onTap: () {
           HapticFeedback.selectionClick();
@@ -497,7 +497,7 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
               Text(
                 label,
                 style: TextStyle(
-                  color: isSelected ? Colors.white : color,
+                  color: isSelected ? AppColors.white : color,
                   fontWeight: FontWeight.w600,
                   fontSize: 13,
                 ),
@@ -515,34 +515,34 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
 
   Color _getCardGradientColor() {
     if (widget.status == PrayerCardStatus.prayed) return AppColors.success;
-    if (widget.status == PrayerCardStatus.missed) return Colors.red;
+    if (widget.status == PrayerCardStatus.missed) return AppColors.error;
     return AppColors.primary;
   }
 
   Color _getCardShadowColor() {
     if (widget.status == PrayerCardStatus.prayed) return AppColors.success;
-    if (widget.status == PrayerCardStatus.missed) return Colors.red;
+    if (widget.status == PrayerCardStatus.missed) return AppColors.error;
     return AppColors.primary;
   }
 
   Color _getCardBorderColor() {
     if (widget.status == PrayerCardStatus.prayed) return AppColors.success;
-    if (widget.status == PrayerCardStatus.missed) return Colors.red;
-    return Colors.grey;
+    if (widget.status == PrayerCardStatus.missed) return AppColors.error;
+    return AppColors.grey400;
   }
 
   Color _getPrayerColor(PrayerName prayer) {
     switch (prayer) {
       case PrayerName.fajr:
-        return const Color(0xFF6366F1); // Indigo
+        return AppColors.feature1; // Indigo
       case PrayerName.dhuhr:
-        return const Color(0xFFF59E0B); // Amber
+        return AppColors.feature3; // Amber
       case PrayerName.asr:
-        return const Color(0xFFF97316); // Orange
+        return AppColors.orange; // Orange
       case PrayerName.maghrib:
-        return const Color(0xFFEC4899); // Pink
+        return AppColors.pink; // Pink
       case PrayerName.isha:
-        return const Color(0xFF8B5CF6); // Purple
+        return AppColors.purple; // Purple
       default:
         return AppColors.primary;
     }
@@ -571,7 +571,7 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
         .inMinutes;
     if (minutesAgo < 30) return AppColors.success;
     if (minutesAgo < 120) return AppColors.warning;
-    return Colors.red;
+    return AppColors.error;
   }
 
   String _getTimeAgo() {

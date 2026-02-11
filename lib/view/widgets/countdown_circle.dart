@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get_utils/src/extensions/internacionalization.dart';
 import 'dart:math' as math;
 import '../../core/constants/app_dimensions.dart';
 import '../../core/theme/app_colors.dart';
@@ -45,12 +46,13 @@ class CountdownCircle extends StatelessWidget {
             size: Size(size, size),
             painter: _CirclePainter(
               progress: 1.0,
-              color: backgroundColor ?? 
+              color:
+                  backgroundColor ??
                   Theme.of(context).colorScheme.surfaceContainerHighest,
               strokeWidth: 12,
             ),
           ),
-          
+
           // Progress circle
           CustomPaint(
             size: Size(size, size),
@@ -60,7 +62,7 @@ class CountdownCircle extends StatelessWidget {
               strokeWidth: 12,
             ),
           ),
-          
+
           // Content
           Column(
             mainAxisSize: MainAxisSize.min,
@@ -73,9 +75,9 @@ class CountdownCircle extends StatelessWidget {
                   color: Theme.of(context).colorScheme.primary,
                 ),
               ),
-              
+
               const SizedBox(height: AppDimensions.paddingSM),
-              
+
               // Time remaining
               Text(
                 showSeconds
@@ -86,14 +88,16 @@ class CountdownCircle extends StatelessWidget {
                   fontFeatures: const [FontFeature.tabularFigures()],
                 ),
               ),
-              
+
               const SizedBox(height: 4),
-              
+
               // Label
               Text(
-                'متبقي',
+                'remaining'.tr,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
               ),
             ],
@@ -142,8 +146,8 @@ class _CirclePainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _CirclePainter oldDelegate) {
     return oldDelegate.progress != progress ||
-           oldDelegate.color != color ||
-           oldDelegate.strokeWidth != strokeWidth;
+        oldDelegate.color != color ||
+        oldDelegate.strokeWidth != strokeWidth;
   }
 }
 
@@ -165,7 +169,8 @@ class AnimatedCountdownCircle extends StatefulWidget {
   });
 
   @override
-  State<AnimatedCountdownCircle> createState() => _AnimatedCountdownCircleState();
+  State<AnimatedCountdownCircle> createState() =>
+      _AnimatedCountdownCircleState();
 }
 
 class _AnimatedCountdownCircleState extends State<AnimatedCountdownCircle> {
@@ -183,7 +188,7 @@ class _AnimatedCountdownCircleState extends State<AnimatedCountdownCircle> {
     final now = DateTime.now();
     _remainingTime = widget.targetTime.difference(now);
     _totalTime = _remainingTime; // Initial total time for progress calculation
-    
+
     if (_remainingTime.isNegative) {
       _remainingTime = Duration.zero;
     }
@@ -192,10 +197,10 @@ class _AnimatedCountdownCircleState extends State<AnimatedCountdownCircle> {
   void _startTimer() {
     Future.delayed(const Duration(seconds: 1), () {
       if (!mounted) return;
-      
+
       final now = DateTime.now();
       final remaining = widget.targetTime.difference(now);
-      
+
       if (remaining.isNegative) {
         setState(() {
           _remainingTime = Duration.zero;

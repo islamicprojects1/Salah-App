@@ -1,3 +1,4 @@
+import 'package:get/get_utils/src/extensions/internacionalization.dart';
 import 'package:salah/core/constants/enums.dart';
 import 'package:salah/data/models/prayer_log_model.dart';
 
@@ -6,7 +7,6 @@ import 'package:salah/data/models/prayer_log_model.dart';
 class PrayerNames {
   PrayerNames._();
 
-  /// Arabic display names (default locale for the app).
   static const Map<PrayerName, String> _arNames = {
     PrayerName.fajr: 'الفجر',
     PrayerName.sunrise: 'الشروق',
@@ -16,16 +16,17 @@ class PrayerNames {
     PrayerName.isha: 'العشاء',
   };
 
-  /// Display name for a prayer (Arabic).
+  /// Display name for a prayer (Localized).
   static String displayName(PrayerName prayer) {
-    return _arNames[prayer] ?? prayer.name;
+    return prayer.name.tr;
   }
 
   /// Parse display name (Arabic or enum name) to [PrayerName].
   static PrayerName fromDisplayName(String name) {
     final trimmed = name.trim().toLowerCase();
     for (final e in _arNames.entries) {
-      if (e.value == name.trim() || e.value.toLowerCase() == trimmed) return e.key;
+      if (e.value == name.trim() || e.value.toLowerCase() == trimmed)
+        return e.key;
     }
     for (final p in PrayerName.values) {
       if (p.name == trimmed) return p;
@@ -37,13 +38,20 @@ class PrayerNames {
   /// Single source of truth – replaces duplicate `_prayerKeyToName` methods.
   static PrayerName fromKey(String key) {
     switch (key.toLowerCase()) {
-      case 'fajr': return PrayerName.fajr;
-      case 'sunrise': return PrayerName.sunrise;
-      case 'dhuhr': return PrayerName.dhuhr;
-      case 'asr': return PrayerName.asr;
-      case 'maghrib': return PrayerName.maghrib;
-      case 'isha': return PrayerName.isha;
-      default: return PrayerName.fajr;
+      case 'fajr':
+        return PrayerName.fajr;
+      case 'sunrise':
+        return PrayerName.sunrise;
+      case 'dhuhr':
+        return PrayerName.dhuhr;
+      case 'asr':
+        return PrayerName.asr;
+      case 'maghrib':
+        return PrayerName.maghrib;
+      case 'isha':
+        return PrayerName.isha;
+      default:
+        return PrayerName.fajr;
     }
   }
 

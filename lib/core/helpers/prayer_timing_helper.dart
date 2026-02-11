@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:salah/core/constants/enums.dart';
 import 'package:salah/core/services/prayer_time_service.dart';
+import 'package:salah/core/theme/app_colors.dart';
 
 /// Helper class for prayer timing quality related UI functions
 class PrayerTimingHelper {
@@ -9,19 +10,19 @@ class PrayerTimingHelper {
   static Color getQualityColor(PrayerTimingQuality quality) {
     switch (quality) {
       case PrayerTimingQuality.veryEarly:
-        return const Color(0xFF1B5E20); // Dark Green
+        return AppColors.primary; // Dark Green
       case PrayerTimingQuality.early:
-        return const Color(0xFF4CAF50); // Light Green
+        return AppColors.success; // Light Green
       case PrayerTimingQuality.onTime:
-        return const Color(0xFFFFC107); // Yellow/Amber
+        return AppColors.warning; // Yellow/Amber
       case PrayerTimingQuality.late:
-        return const Color(0xFFFF9800); // Orange
+        return AppColors.orange; // Orange
       case PrayerTimingQuality.veryLate:
-        return const Color(0xFFE57373); // Light Red
+        return AppColors.error.withValues(alpha: 0.6); // Light Red
       case PrayerTimingQuality.missed:
-        return const Color(0xFFD32F2F); // Dark Red
+        return AppColors.googleRed; // Dark Red
       case PrayerTimingQuality.notYet:
-        return const Color(0xFFBDBDBD); // Gray
+        return AppColors.grey400; // Gray
     }
   }
 
@@ -87,13 +88,13 @@ class PrayerTimingHelper {
   static Color getLegacyQualityColor(PrayerQuality quality) {
     switch (quality) {
       case PrayerQuality.early:
-        return const Color(0xFF4CAF50); // Green
+        return AppColors.success; // Green
       case PrayerQuality.onTime:
-        return const Color(0xFFFFC107); // Yellow
+        return AppColors.warning; // Yellow
       case PrayerQuality.late:
-        return const Color(0xFFFF9800); // Orange
+        return AppColors.orange; // Orange
       case PrayerQuality.missed:
-        return const Color(0xFFD32F2F); // Red
+        return AppColors.googleRed; // Red
     }
   }
 
@@ -108,7 +109,7 @@ class PrayerTimingHelper {
       nextPrayerTime: nextPrayerTime,
       prayerName: PrayerName.fajr, // Placeholder, not used in calculation
     );
-    
+
     return range.calculateQuality(prayedAt);
   }
 
@@ -125,14 +126,14 @@ class PrayerTimingHelper {
   /// Check if quality is good (early or on time)
   static bool isGoodQuality(PrayerTimingQuality quality) {
     return quality == PrayerTimingQuality.veryEarly ||
-           quality == PrayerTimingQuality.early ||
-           quality == PrayerTimingQuality.onTime;
+        quality == PrayerTimingQuality.early ||
+        quality == PrayerTimingQuality.onTime;
   }
 
   /// Check if quality needs attention (late or very late)
   static bool needsAttention(PrayerTimingQuality quality) {
     return quality == PrayerTimingQuality.late ||
-           quality == PrayerTimingQuality.veryLate;
+        quality == PrayerTimingQuality.veryLate;
   }
 
   /// Get unique icon for each prayer type

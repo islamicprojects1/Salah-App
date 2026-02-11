@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:salah/core/constants/enums.dart';
-import 'package:salah/core/services/prayer_time_service.dart';
 import 'package:salah/core/theme/app_colors.dart';
 import 'package:salah/core/constants/app_dimensions.dart';
 import 'package:salah/core/theme/app_fonts.dart';

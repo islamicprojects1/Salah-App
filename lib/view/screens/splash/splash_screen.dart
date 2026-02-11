@@ -235,7 +235,7 @@ class _SplashScreenState extends State<SplashScreen>
 
   Widget _buildAppName() {
     return Text(
-      'صلاة',
+      'app_title'.tr,
       style: TextStyle(
         fontFamily: 'Tajawal',
         fontSize: 48,
@@ -255,7 +255,7 @@ class _SplashScreenState extends State<SplashScreen>
 
   Widget _buildTagline() {
     return Text(
-      'مواقيت الصلاة',
+      'prayer_times_subtitle'.tr,
       style: TextStyle(
         fontFamily: 'Tajawal',
         fontSize: 18,
@@ -288,7 +288,7 @@ class _SplashScreenState extends State<SplashScreen>
         ),
         const SizedBox(height: 16),
         Text(
-          'جاري التحميل...',
+          'loading_msg'.tr,
           style: TextStyle(
             color: AppColors.splashWhite.withValues(alpha: 0.8),
             fontSize: 14,

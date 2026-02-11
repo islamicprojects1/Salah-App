@@ -16,7 +16,7 @@ class CreateFamilyScreen extends GetView<FamilyController> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(
-          'إنشاء عائلة',
+          'create_family_title'.tr,
           style: AppFonts.titleLarge.copyWith(color: AppColors.textPrimary),
         ),
         centerTitle: true,
@@ -53,7 +53,7 @@ class CreateFamilyScreen extends GetView<FamilyController> {
             const SizedBox(height: AppDimensions.paddingXL),
 
             Text(
-              'اجمع عائلتك في مكان واحد',
+              'create_family_subtitle'.tr,
               style: AppFonts.headlineMedium.copyWith(
                 fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary,
@@ -64,7 +64,7 @@ class CreateFamilyScreen extends GetView<FamilyController> {
             const SizedBox(height: AppDimensions.paddingMD),
 
             Text(
-              'أنشئ مجموعة العائلة وشارك الكود مع أفراد عائلتك للانضمام',
+              'create_family_desc'.tr,
               style: AppFonts.bodyMedium.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -76,8 +76,8 @@ class CreateFamilyScreen extends GetView<FamilyController> {
             // Name Field
             AppTextField(
               controller: controller.familyNameController,
-              label: 'اسم العائلة',
-              hint: 'مثال: عائلة أحمد',
+              label: 'family_name_label'.tr,
+              hint: 'family_name_hint'.tr,
               prefixIcon: Icons.group_outlined,
             ),
 
@@ -85,7 +85,7 @@ class CreateFamilyScreen extends GetView<FamilyController> {
 
             // Action Button
             Obx(() => AppButton(
-              text: 'إنشاء العائلة',
+              text: 'create_family_btn'.tr,
               onPressed: () => controller.createFamily(),
               isLoading: controller.isLoading,
               width: double.infinity,

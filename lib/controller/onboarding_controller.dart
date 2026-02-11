@@ -242,55 +242,43 @@ class OnboardingController extends GetxController with GetTickerProviderStateMix
       case OnboardingStep.welcome:
         return OnboardingPageData(
           lottieAsset: 'assets/animations/welcome.json',
-          title: 'مرحباً بك في قُرب',
-          titleEn: 'Welcome to Qurb',
-          subtitle: 'رفيقك في رحلة الصلاة\nكل يوم خطوة أقرب إلى الله',
-          subtitleEn: 'Your companion in the prayer journey\nEvery day, a step closer to Allah',
+          titleKey: 'onboarding_title_welcome',
+          subtitleKey: 'onboarding_subtitle_welcome',
           emoji: '🕌',
         );
       case OnboardingStep.features:
         return OnboardingPageData(
           lottieAsset: 'assets/animations/features.json',
-          title: 'تابع صلاتك بسهولة',
-          titleEn: 'Track Your Prayer Easily',
-          subtitle: 'سجّل صلاتك بضغطة واحدة\nوشاهد تقدمك اليومي والأسبوعي',
-          subtitleEn: 'Log your prayer with one tap\nand watch your daily and weekly progress',
+          titleKey: 'onboarding_title_features',
+          subtitleKey: 'onboarding_subtitle_features',
           emoji: '✅',
         );
       case OnboardingStep.family:
         return OnboardingPageData(
           lottieAsset: 'assets/animations/family.json',
-          title: 'صلِّ مع عائلتك',
-          titleEn: 'Pray with Your Family',
-          subtitle: 'تابع صلاة أفراد عائلتك\nوشجّعوا بعضكم في رحلة الإيمان',
-          subtitleEn: 'Track your family members\' prayer\nand encourage each other in the faith journey',
+          titleKey: 'onboarding_title_family',
+          subtitleKey: 'onboarding_subtitle_family',
           emoji: '👨‍👩‍👧‍👦',
         );
       case OnboardingStep.permissions:
         return OnboardingPageData(
           lottieAsset: 'assets/animations/location.json',
-          title: 'إعداد الأذونات',
-          titleEn: 'Setup Permissions',
-          subtitle: 'نحتاج بعض الأذونات\nلتجربة كاملة',
-          subtitleEn: 'We need some permissions\nfor a complete experience',
+          titleKey: 'onboarding_title_permissions',
+          subtitleKey: 'onboarding_subtitle_permissions',
           emoji: '🔐',
         );
       case OnboardingStep.profileSetup:
         return OnboardingPageData(
           lottieAsset: 'assets/animations/profile.json',
-          title: 'أخبرنا عنك',
-          titleEn: 'Tell Us About You',
-          subtitle: 'أدخل معلوماتك الأساسية\nلتخصيص تجربتك',
-          subtitleEn: 'Enter your basic info\nto personalize your experience',
+          titleKey: 'onboarding_title_profile',
+          subtitleKey: 'onboarding_subtitle_profile',
           emoji: '👤',
         );
       case OnboardingStep.complete:
         return OnboardingPageData(
           lottieAsset: 'assets/animations/success.json',
-          title: 'أنت جاهز!',
-          titleEn: "You're Ready!",
-          subtitle: 'ابدأ رحلتك مع قُرب\nوتقرّب إلى الله كل يوم',
-          subtitleEn: 'Start your journey with Qurb\nand get closer to Allah every day',
+          titleKey: 'onboarding_title_complete',
+          subtitleKey: 'onboarding_subtitle_complete',
           emoji: '🎉',
         );
     }
@@ -299,22 +287,19 @@ class OnboardingController extends GetxController with GetTickerProviderStateMix
   /// Get button text for current step
   String getButtonText() {
     final step = currentStep.value;
-    final isArabic = Get.locale?.languageCode == 'ar';
-    
+
     switch (step) {
       case OnboardingStep.welcome:
-        return isArabic ? 'ابدأ الرحلة' : 'Start Journey';
+        return 'start_journey'.tr;
       case OnboardingStep.features:
       case OnboardingStep.family:
-        return isArabic ? 'التالي' : 'Next';
+        return 'next'.tr;
       case OnboardingStep.permissions:
-        return allPermissionsGranted
-            ? (isArabic ? 'التالي' : 'Next')
-            : (isArabic ? 'منح الأذونات' : 'Grant Permissions');
+        return allPermissionsGranted ? 'next'.tr : 'grant_permissions'.tr;
       case OnboardingStep.profileSetup:
-        return isArabic ? 'إكمال' : 'Complete';
+        return 'complete_btn'.tr;
       case OnboardingStep.complete:
-        return isArabic ? 'ابدأ الآن' : 'Start Now';
+        return 'get_started'.tr;
     }
   }
 
@@ -328,21 +313,17 @@ class OnboardingController extends GetxController with GetTickerProviderStateMix
 /// Data class for onboarding page content
 class OnboardingPageData {
   final String lottieAsset;
-  final String title;
-  final String titleEn;
-  final String subtitle;
-  final String subtitleEn;
+  final String titleKey;
+  final String subtitleKey;
   final String emoji;
 
   OnboardingPageData({
     required this.lottieAsset,
-    required this.title,
-    required this.titleEn,
-    required this.subtitle,
-    required this.subtitleEn,
+    required this.titleKey,
+    required this.subtitleKey,
     required this.emoji,
   });
 
-  String getLocalizedTitle(String language) => language == 'ar' ? title : titleEn;
-  String getLocalizedSubtitle(String language) => language == 'ar' ? subtitle : subtitleEn;
+  String getLocalizedTitle(String language) => titleKey.tr;
+  String getLocalizedSubtitle(String language) => subtitleKey.tr;
 }

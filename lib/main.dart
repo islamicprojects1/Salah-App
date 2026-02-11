@@ -2,27 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:salah/controller/auth_controller.dart';
+import 'package:salah/core/localization/languages.dart';
+import 'package:salah/core/services/auth_service.dart';
+import 'package:salah/core/services/cloudinary_service.dart';
+import 'package:salah/core/services/connectivity_service.dart';
+import 'package:salah/core/services/firestore_service.dart';
+import 'package:salah/core/services/location_service.dart';
+import 'package:salah/core/services/notification_service.dart';
+import 'package:salah/core/services/storage_service.dart';
+import 'package:salah/data/repositories/prayer_repository.dart';
 import 'firebase_options.dart';
 
-import 'package:salah/core/localization/languages.dart';
 import 'package:salah/core/routes/app_pages.dart';
-import 'package:salah/core/services/storage_service.dart';
 import 'package:salah/core/services/theme_service.dart';
 import 'package:salah/core/services/localization_service.dart';
-import 'package:salah/core/services/auth_service.dart';
-import 'package:salah/core/services/firestore_service.dart';
-import 'package:salah/core/services/notification_service.dart';
-import 'package:salah/core/services/connectivity_service.dart';
 import 'package:salah/core/services/database_helper.dart';
 import 'package:salah/core/services/sync_service.dart';
-import 'package:salah/core/services/location_service.dart';
-import 'package:salah/data/repositories/prayer_repository.dart';
 import 'package:salah/data/repositories/user_repository.dart';
 import 'package:salah/core/services/prayer_time_service.dart';
-import 'package:salah/core/services/family_service.dart';
-import 'package:salah/core/services/cloudinary_service.dart';
 import 'package:salah/core/services/shake_service.dart';
-import 'package:salah/controller/auth_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -134,7 +133,7 @@ class SalahApp extends StatelessWidget {
 
     return GetMaterialApp(
       // App info
-      title: 'صلاة',
+      title: 'app_title'.tr,
       debugShowCheckedModeBanner: false,
 
       // Theme

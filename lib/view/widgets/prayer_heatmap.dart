@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:salah/core/theme/app_colors.dart';
 import 'package:salah/core/theme/app_fonts.dart';
-import 'package:salah/core/constants/app_dimensions.dart';
 import 'package:salah/controller/dashboard_controller.dart';
 
 /// Premium GitHub-style prayer heatmap with glassmorphism and soft edge fades.
@@ -27,10 +26,10 @@ class PrayerHeatmap extends StatelessWidget {
             decoration: BoxDecoration(
               color: AppColors.surface.withValues(alpha: 0.6),
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+              border: Border.all(color: AppColors.white.withValues(alpha: 0.15)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
+                  color: AppColors.black.withValues(alpha: 0.05),
                   blurRadius: 20,
                   offset: const Offset(0, 10),
                 ),
@@ -49,10 +48,10 @@ class PrayerHeatmap extends StatelessWidget {
                       begin: Alignment.centerLeft,
                       end: Alignment.centerRight,
                       colors: [
-                        Colors.black.withValues(alpha: 0.05),
-                        Colors.black,
-                        Colors.black,
-                        Colors.black.withValues(alpha: 0.05),
+                        AppColors.black.withValues(alpha: 0.05),
+                        AppColors.black,
+                        AppColors.black,
+                        AppColors.black.withValues(alpha: 0.05),
                       ],
                       stops: const [0.0, 0.05, 0.95, 1.0],
                     ).createShader(bounds);
@@ -148,7 +147,7 @@ class PrayerHeatmap extends StatelessWidget {
 
   Widget _buildCell(int? count, DateTime date) {
     if (count == null) {
-      return const SizedBox(width: 14, height: 14, child: Center(child: SizedBox(width: 2, height: 2, child: DecoratedBox(decoration: BoxDecoration(color: Colors.white10)))));
+      return SizedBox(width: 14, height: 14, child: Center(child: SizedBox(width: 2, height: 2, child: DecoratedBox(decoration: BoxDecoration(color: AppColors.white10)))));
     }
 
     final isFull = count == 5;
@@ -171,7 +170,7 @@ class PrayerHeatmap extends StatelessWidget {
             )
           ] : null,
           border: Border.all(
-            color: Colors.white.withValues(alpha: count == 0 ? 0.05 : 0.1),
+            color: AppColors.white.withValues(alpha: count == 0 ? 0.05 : 0.1),
             width: 0.5,
           ),
         ),
@@ -182,7 +181,7 @@ class PrayerHeatmap extends StatelessWidget {
   LinearGradient _getGradient(int count) {
     if (count == 0) {
       return LinearGradient(
-        colors: [Colors.white.withValues(alpha: 0.05), Colors.white.withValues(alpha: 0.08)],
+        colors: [AppColors.white.withValues(alpha: 0.05), AppColors.white.withValues(alpha: 0.08)],
         begin: Alignment.topLeft, end: Alignment.bottomRight,
       );
     }

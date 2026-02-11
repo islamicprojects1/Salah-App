@@ -41,13 +41,13 @@ class LocationService extends GetxService {
   bool get hasLocation => currentPosition.value != null;
 
   /// Display string for UI: real city when GPS worked, or clear fallback message.
-  String get currentCity => cityName.value.isNotEmpty ? cityName.value : 'غير محدد';
+  String get currentCity => cityName.value.isNotEmpty ? cityName.value : 'not_specified'.tr;
   /// When using default (Mecca), show this so user knows it's not their actual location.
   String get locationDisplayLabel => isUsingDefaultLocation.value
-      ? 'المواقيت حسب مكة (لم يُحدد موقعك)'
+      ? 'makkah_fallback_label'.tr
       : (cityName.value.isNotEmpty
           ? (countryName.value.isNotEmpty ? '${cityName.value}, ${countryName.value}' : cityName.value)
-          : 'غير محدد');
+          : 'not_specified'.tr);
 
   // ============================================================
   // LOCATION METHODS

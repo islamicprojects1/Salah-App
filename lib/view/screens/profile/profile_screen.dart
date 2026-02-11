@@ -5,9 +5,6 @@ import 'package:get/get.dart';
 import 'package:salah/controller/profile_controller.dart';
 import 'package:salah/core/theme/app_colors.dart';
 import 'package:salah/core/theme/app_fonts.dart';
-import 'package:salah/core/constants/app_dimensions.dart';
-import 'package:salah/view/widgets/app_button.dart';
-import 'package:salah/view/widgets/app_loading.dart';
 import 'package:salah/view/widgets/app_text_field.dart';
 
 class ProfileScreen extends GetView<ProfileController> {

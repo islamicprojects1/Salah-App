@@ -10,7 +10,6 @@ import 'package:salah/controller/dashboard_controller.dart';
 import 'package:salah/view/screens/family/family_dashboard_screen.dart';
 import 'package:salah/core/helpers/prayer_timing_helper.dart';
 import 'package:salah/data/models/prayer_log_model.dart';
-import 'package:salah/view/screens/settings/select_city_screen.dart';
 import 'package:salah/view/widgets/app_loading.dart';
 import 'package:salah/view/widgets/connection_status_indicator.dart';
 import 'package:salah/view/widgets/smart_prayer_circle.dart';
@@ -114,17 +113,17 @@ class _DashboardHomeContentState extends State<DashboardHomeContent>
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.orange.withValues(alpha: 0.1),
+                        color: AppColors.orange.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: Colors.orange.withValues(alpha: 0.3),
+                          color: AppColors.orange.withValues(alpha: 0.3),
                         ),
                       ),
                       child: Row(
                         children: [
                           const Icon(
                             Icons.local_fire_department,
-                            color: Colors.orange,
+                            color: AppColors.orange,
                             size: 16,
                           ),
                           const SizedBox(width: 4),
@@ -132,7 +131,7 @@ class _DashboardHomeContentState extends State<DashboardHomeContent>
                             () => Text(
                               '${controller.currentStreak.value} ${'day_unit'.tr}',
                               style: AppFonts.labelMedium.copyWith(
-                                color: Colors.orange,
+                                color: AppColors.orange,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -218,7 +217,7 @@ class _DashboardHomeContentState extends State<DashboardHomeContent>
                   '$completed/$total',
                   style: AppFonts.titleLarge.copyWith(
                     color: completed >= total
-                        ? Colors.green
+                        ? AppColors.success
                         : AppColors.primary,
                     fontWeight: FontWeight.bold,
                   ),
@@ -233,7 +232,7 @@ class _DashboardHomeContentState extends State<DashboardHomeContent>
                 minHeight: 10,
                 backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                 valueColor: AlwaysStoppedAnimation<Color>(
-                  completed >= total ? Colors.green : AppColors.primary,
+                  completed >= total ? AppColors.success : AppColors.primary,
                 ),
               ),
             ),
@@ -351,12 +350,12 @@ class _DashboardHomeContentState extends State<DashboardHomeContent>
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.done_all_rounded, color: Colors.white, size: 20),
+                    const Icon(Icons.done_all_rounded, color: AppColors.white, size: 20),
                     const SizedBox(width: 8),
                     Text(
                       'log_all_prayers'.tr,
                       style: AppFonts.bodyLarge.copyWith(
-                        color: Colors.white,
+                        color: AppColors.white,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 0.5,
                       ),
@@ -392,11 +391,11 @@ class _DashboardHomeContentState extends State<DashboardHomeContent>
       iconColor = PrayerTimingHelper.getLegacyQualityColor(quality);
       bgColor = iconColor.withValues(alpha: 0.2);
     } else if (isLogged) {
-      bgColor = Colors.green.withValues(alpha: 0.2);
-      iconColor = Colors.green;
+      bgColor = AppColors.success.withValues(alpha: 0.2);
+      iconColor = AppColors.success;
     } else if (isPastUnlogged) {
-      bgColor = Colors.orange.withValues(alpha: 0.15);
-      iconColor = Colors.orange;
+      bgColor = AppColors.orange.withValues(alpha: 0.15);
+      iconColor = AppColors.orange;
     } else if (isCurrent) {
       bgColor = AppColors.primary.withValues(alpha: 0.25);
       iconColor = AppColors.primary;
@@ -460,9 +459,9 @@ class _DashboardHomeContentState extends State<DashboardHomeContent>
               color: isLogged && quality != null
                   ? PrayerTimingHelper.getLegacyQualityColor(quality)
                   : isLogged
-                      ? Colors.green
+                      ? AppColors.success
                       : isPastUnlogged
-                          ? Colors.orange
+                          ? AppColors.orange
                           : AppColors.textPrimary,
               fontWeight: (isCurrent || isPastUnlogged)
                   ? FontWeight.bold
@@ -546,9 +545,4 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
-
-  String _getDateString() {
-    final now = DateTime.now();
-    return '${now.day}/${now.month}/${now.year}';
-  }
 }

@@ -32,14 +32,14 @@ class CustomDrawer extends StatelessWidget {
                     },
                     child: CircleAvatar(
                       radius: 30,
-                      backgroundColor: Colors.white24,
+                      backgroundColor: AppColors.white24,
                       backgroundImage: photoUrl != null
                           ? NetworkImage(photoUrl)
                           : null,
                       child: photoUrl == null
                           ? const Icon(
                               Icons.person,
-                              color: Colors.white,
+                              color: AppColors.white,
                               size: 35,
                             )
                           : null,
@@ -50,13 +50,13 @@ class CustomDrawer extends StatelessWidget {
                 Obx(
                   () => Text(
                     authService.userName ?? 'app_name'.tr,
-                    style: AppFonts.titleMedium.copyWith(color: Colors.white),
+                    style: AppFonts.titleMedium.copyWith(color: AppColors.white),
                   ),
                 ),
                 Obx(
                   () => Text(
                     authService.userEmail ?? '',
-                    style: AppFonts.bodySmall.copyWith(color: Colors.white70),
+                    style: AppFonts.bodySmall.copyWith(color: AppColors.white70),
                   ),
                 ),
               ],

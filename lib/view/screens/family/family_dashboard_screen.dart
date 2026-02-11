@@ -123,7 +123,7 @@ class _FamilyDashboardScreenState extends State<FamilyDashboardScreen>
                           child: Text(
                             family.name,
                             style: AppFonts.headlineMedium.copyWith(
-                              color: Colors.white,
+                              color: AppColors.white,
                             ),
                             overflow: TextOverflow.ellipsis,
                             textAlign: TextAlign.center,
@@ -133,7 +133,7 @@ class _FamilyDashboardScreenState extends State<FamilyDashboardScreen>
                           const SizedBox(width: 8),
                           const Icon(
                             Icons.keyboard_arrow_down,
-                            color: Colors.white70,
+                            color: AppColors.white70,
                           ),
                         ],
                       ],
@@ -146,7 +146,7 @@ class _FamilyDashboardScreenState extends State<FamilyDashboardScreen>
                       vertical: AppDimensions.paddingXS,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
+                      color: AppColors.white10,
                       borderRadius: BorderRadius.circular(
                         AppDimensions.radiusMD,
                       ),
@@ -157,7 +157,7 @@ class _FamilyDashboardScreenState extends State<FamilyDashboardScreen>
                         Text(
                           '${'invite_code_label'.tr}: ${family.inviteCode}',
                           style: AppFonts.bodyLarge.copyWith(
-                            color: Colors.white,
+                            color: AppColors.white,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 2,
                           ),
@@ -166,7 +166,7 @@ class _FamilyDashboardScreenState extends State<FamilyDashboardScreen>
                         IconButton(
                           icon: const Icon(
                             Icons.share,
-                            color: Colors.white,
+                            color: AppColors.white,
                             size: 20,
                           ),
                           onPressed: () {
@@ -191,17 +191,17 @@ class _FamilyDashboardScreenState extends State<FamilyDashboardScreen>
                       onPressed: () => _showAddChildDialog(context, controller),
                       icon: const Icon(
                         Icons.person_add_alt_1,
-                        color: Colors.white,
+                        color: AppColors.white,
                       ),
                       label: Text(
                         'add_child_no_phone_btn'.tr,
                         style: AppFonts.bodyMedium.copyWith(
-                          color: Colors.white,
+                          color: AppColors.white,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       style: TextButton.styleFrom(
-                        backgroundColor: Colors.white10,
+                        backgroundColor: AppColors.white10,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(
                             AppDimensions.radiusMD,
@@ -269,7 +269,7 @@ class _FamilyDashboardScreenState extends State<FamilyDashboardScreen>
                               ),
                               child: member.photoUrl == null
                                   ? Text(
-                                      (member.name ?? '?')[0].toUpperCase(),
+                                      (member.name ?? "member_role".tr)[0].toUpperCase(),
                                       style: TextStyle(
                                         color: AppColors.secondary,
                                         fontWeight: FontWeight.bold,
@@ -301,13 +301,13 @@ class _FamilyDashboardScreenState extends State<FamilyDashboardScreen>
                                         const SizedBox(width: 8),
                                         const Icon(
                                           Icons.local_fire_department,
-                                          color: Colors.orange,
+                                          color: AppColors.orange,
                                           size: 14,
                                         ),
                                         Text(
                                           '$streak',
                                           style: AppFonts.bodySmall.copyWith(
-                                            color: Colors.orange,
+                                            color: AppColors.orange,
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
@@ -534,11 +534,12 @@ class _FamilyDashboardScreenState extends State<FamilyDashboardScreen>
 
   /// Map member prayer count (0-5) to a descriptive color
   Color _getMemberProgressColor(int count) {
-    if (count >= 5)
+    if (count >= 5) {
       return PrayerTimingHelper.getQualityColor(PrayerTimingQuality.veryEarly);
-    if (count >= 3) return Colors.amber;
-    if (count >= 1) return Colors.orange;
-    return Colors.red.shade300;
+    }
+    if (count >= 3) return AppColors.amber;
+    if (count >= 1) return AppColors.orange;
+    return AppColors.error.withValues(alpha: 0.6);
   }
 
   String _relativeTime(DateTime time) {
@@ -659,7 +660,7 @@ class _FamilyDashboardScreenState extends State<FamilyDashboardScreen>
                 () => ListView.separated(
                   shrinkWrap: true,
                   itemCount: controller.myFamilies.length,
-                  separatorBuilder: (_, __) => const Divider(),
+                  separatorBuilder: (context, index) => const Divider(),
                   itemBuilder: (context, index) {
                     final family = controller.myFamilies[index];
                     final isSelected =
@@ -672,7 +673,7 @@ class _FamilyDashboardScreenState extends State<FamilyDashboardScreen>
                         child: Icon(
                           Icons.group,
                           color: isSelected
-                              ? Colors.white
+                              ? AppColors.white
                               : AppColors.secondary,
                         ),
                       ),
@@ -729,7 +730,7 @@ class _FamilyDashboardScreenState extends State<FamilyDashboardScreen>
           ],
         ),
       ),
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppColors.transparent,
       isScrollControlled: true,
     );
   }

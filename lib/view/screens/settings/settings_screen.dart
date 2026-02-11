@@ -8,7 +8,6 @@ import 'package:salah/core/services/theme_service.dart';
 import 'package:salah/core/services/localization_service.dart';
 import 'package:salah/core/theme/app_colors.dart';
 import 'package:salah/core/theme/app_fonts.dart';
-import 'package:salah/data/models/user_model.dart';
 import 'package:salah/view/widgets/app_dialogs.dart';
 
 /// Settings screen for app preferences
@@ -318,29 +317,29 @@ class SettingsScreen extends GetView<SettingsController> {
     // Basic mapping, can be improved with localization keys
     switch (method) {
       case adhan.CalculationMethod.muslim_world_league:
-        return 'Muslim World League';
+        return 'muslim_world_league'.tr;
       case adhan.CalculationMethod.egyptian:
-        return 'Egyptian General Authority';
+        return 'egyptian'.tr;
       case adhan.CalculationMethod.karachi:
-        return 'University of Islamic Sciences, Karachi';
+        return 'karachi'.tr;
       case adhan.CalculationMethod.umm_al_qura:
-        return 'Umm Al-Qura University, Makkah';
+        return 'umm_al_qura'.tr;
       case adhan.CalculationMethod.dubai:
-        return 'Dubai';
+        return 'dubai'.tr;
       case adhan.CalculationMethod.qatar:
-        return 'Qatar';
+        return 'qatar'.tr;
       case adhan.CalculationMethod.kuwait:
-        return 'Kuwait';
+        return 'kuwait'.tr;
       case adhan.CalculationMethod.moon_sighting_committee:
-        return 'Moon Sighting Committee';
+        return 'moon_sighting_committee'.tr;
       case adhan.CalculationMethod.singapore:
-        return 'Singapore';
+        return 'singapore'.tr;
       case adhan.CalculationMethod.turkey:
-        return 'Turkey';
+        return 'turkey'.tr;
       case adhan.CalculationMethod.tehran:
-        return 'Tehran';
+        return 'tehran'.tr;
       case adhan.CalculationMethod.north_america:
-        return 'ISNA (North America)';
+        return 'north_america'.tr;
       default:
         return method.name;
     }
@@ -349,9 +348,9 @@ class SettingsScreen extends GetView<SettingsController> {
   String _getMadhabName(adhan.Madhab madhab) {
     switch (madhab) {
       case adhan.Madhab.shafi:
-        return 'Shafi (Standard)';
+        return 'shafi'.tr;
       case adhan.Madhab.hanafi:
-        return 'Hanafi';
+        return 'hanafi'.tr;
     }
   }
 
@@ -644,7 +643,7 @@ class _NotificationSettingsView extends StatelessWidget {
       subtitle: Text(subtitle, style: AppFonts.bodySmall),
       value: value,
       onChanged: onChanged,
-      activeColor: AppColors.primary,
+      activeThumbColor: AppColors.primary,
     );
   }
 

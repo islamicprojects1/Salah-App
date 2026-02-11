@@ -29,24 +29,24 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   final List<_OnboardingPage> _pages = [
     _OnboardingPage(
       image: ImageAssets.onboardingWelcome,
-      title: 'تابع صلاتك',
-      subtitle: 'سجّل صلواتك بضغطة واحدة\nوتابع تقدمك اليومي',
+      title: 'onboarding_title_1'.tr,
+      subtitle: 'onboarding_subtitle_1'.tr,
       iconFallback: Icons.mosque_outlined,
-      gradientColors: [Color(0xFFFF9A3E), Color(0xFFFFD54F)],
+      gradientColors: [AppColors.onboarding1Start, AppColors.onboarding1End],
     ),
     _OnboardingPage(
       image: ImageAssets.onboardingCommunity,
-      title: 'مع عائلتك',
-      subtitle: 'تابع صلاة أفراد عائلتك\nوشجّعوا بعضكم',
+      title: 'onboarding_title_2'.tr,
+      subtitle: 'onboarding_subtitle_2'.tr,
       iconFallback: Icons.family_restroom_outlined,
-      gradientColors: [Color(0xFF4CAF50), Color(0xFF81C784)],
+      gradientColors: [AppColors.onboarding2Start, AppColors.onboarding2End],
     ),
     _OnboardingPage(
       image: ImageAssets.onboardingLocation,
-      title: 'مواقيت دقيقة',
-      subtitle: 'أوقات الصلاة والقبلة\nحسب موقعك',
+      title: 'onboarding_title_3'.tr,
+      subtitle: 'onboarding_subtitle_3'.tr,
       iconFallback: Icons.location_on_outlined,
-      gradientColors: [Color(0xFF1B5E20), Color(0xFF4CAF50)],
+      gradientColors: [AppColors.onboarding3Start, AppColors.onboarding3End],
     ),
   ];
 
@@ -139,7 +139,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'تخطي',
+                          'skip'.tr,
                           style: AppFonts.bodyMedium.copyWith(
                             color: AppColors.textSecondary,
                           ),
@@ -197,7 +197,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
                     // Next/Start button
                     AppButton(
-                      text: _currentPage == _pages.length - 1 ? 'ابدأ الآن' : 'التالي',
+                      text: _currentPage == _pages.length - 1 ? 'get_started'.tr : 'next'.tr,
                       onPressed: _nextPage,
                       width: double.infinity,
                       icon: _currentPage == _pages.length - 1
@@ -266,7 +266,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                     child: Icon(
                       page.iconFallback,
                       size: AppDimensions.iconOnboardingPlaceholder,
-                      color: Colors.white,
+                      color: AppColors.white,
                     ),
                   );
                 },
@@ -287,7 +287,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
             child: Text(
               page.title,
               style: AppFonts.headlineLarge.copyWith(
-                color: Colors.white,
+                color: AppColors.white,
                 fontWeight: FontWeight.bold,
                 fontSize: 32,
               ),

@@ -45,7 +45,7 @@ class ProfileController extends GetxController {
 
   Future<void> updateProfile() async {
     if (nameController.text.trim().isEmpty) {
-      Get.snackbar('خطأ', 'يرجى إدخال الاسم');
+      Get.snackbar('error'.tr, 'enter_name'.tr);
       return;
     }
 
@@ -76,9 +76,9 @@ class ProfileController extends GetxController {
         },
       );
 
-      Get.snackbar('نجاح', 'تم تحديث الملف الشخصي بنجاح');
+      Get.snackbar('success'.tr, 'profile_update_success'.tr);
     } catch (e) {
-      Get.snackbar('خطأ', 'فشل تحديث الملف الشخصي: $e');
+      Get.snackbar('error'.tr, '${'profile_update_error_msg'.tr}: $e');
     } finally {
       isLoading.value = false;
     }
@@ -110,13 +110,13 @@ class ProfileController extends GetxController {
           userImage.value = url;
           // Proactively update user profile with new image
           await updateProfile();
-          Get.snackbar('نجاح', 'تم رفع وتحديث الصورة بنجاح');
+          Get.snackbar('success'.tr, 'image_upload_success'.tr);
         } else {
           final error = _cloudinaryService.errorMessage.value;
-          Get.snackbar('خطأ الرفع', error.isNotEmpty ? error : 'فشل رفع الصورة، يرجى المحاولة لاحقاً');
+          Get.snackbar('upload_error'.tr, error.isNotEmpty ? error : 'upload_failed_try_later'.tr);
         }
       } catch (e) {
-        Get.snackbar('خطأ تقني', 'حدث خطأ غير متوقع: $e');
+        Get.snackbar('technical_error'.tr, '${'unexpected_error_msg'.tr}: $e');
       } finally {
         isLoading.value = false;
         uploadProgress.value = 0.0;

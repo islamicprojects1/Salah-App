@@ -246,8 +246,8 @@ class NotificationService extends GetxService {
     final in10 = DateTime.now().add(const Duration(minutes: 10));
     scheduleNotificationWithActions(
       id: reminderId,
-      title: 'تذكير: صلاة $prayerName',
-      body: 'هل صليت؟ اضغط للتسجيل',
+      title: 'notification_prayer_title'.trParams({'prayer': prayerName}),
+      body: 'notification_prayer_body'.tr,
       scheduledTime: in10,
       payload: 'reminder|$reminderId|$prayerKey|$adhanIso',
       channelId: ApiConstants.reminderNotificationChannelId,
@@ -313,15 +313,15 @@ class NotificationService extends GetxService {
       importance: Importance.high,
       priority: Priority.high,
       actions: <AndroidNotificationAction>[
-        const AndroidNotificationAction(
+        AndroidNotificationAction(
           'prayed',
-          '✅ صليت',
+          'notification_i_prayed'.tr,
           showsUserInterface: false,
           cancelNotification: true,
         ),
-        const AndroidNotificationAction(
+        AndroidNotificationAction(
           'snooze',
-          '⏰ لاحقاً',
+          'notification_later'.tr,
           showsUserInterface: false,
           cancelNotification: true,
         ),
@@ -428,8 +428,8 @@ class NotificationService extends GetxService {
     final payload = 'adhan|$id|$prayerKey|${prayerTime.toIso8601String()}';
     await scheduleNotificationWithActions(
       id: id,
-      title: 'حان وقت صلاة $prayerName 🕌',
-      body: 'حيّ على الصلاة — اضغط صليت أو لاحقاً',
+      title: 'notification_prayer_title'.trParams({'prayer': prayerName}),
+      body: 'notification_prayer_body'.tr,
       scheduledTime: prayerTime,
       payload: payload,
       channelId: ApiConstants.prayerNotificationChannelId,
@@ -464,8 +464,8 @@ class NotificationService extends GetxService {
     final payload = 'reminder|$id|$prayerKey|${prayerTime.toIso8601String()}';
     await scheduleNotificationWithActions(
       id: id,
-      title: 'هل صليت $prayerName؟ 🤲',
-      body: 'اضغط صليت لتسجيل أو لاحقاً للتذكير بعد 10 دقائق',
+      title: 'notification_prayer_title'.trParams({'prayer': prayerName}),
+      body: 'notification_prayer_body'.tr,
       scheduledTime: reminderTime,
       payload: payload,
       channelId: ApiConstants.reminderNotificationChannelId,
@@ -506,8 +506,8 @@ class NotificationService extends GetxService {
   }) async {
     await showNotification(
       id: DateTime.now().millisecondsSinceEpoch % 100000,
-      title: 'تذكير من $senderName',
-      body: 'ذكّرك بصلاة $prayerName',
+      title: 'remind'.trParams({'name': senderName}),
+      body: 'remind_prayer'.trParams({'prayer': prayerName}),
       channelId: ApiConstants.socialNotificationChannelId,
     );
   }

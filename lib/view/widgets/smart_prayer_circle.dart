@@ -71,7 +71,7 @@ class _SmartPrayerCircleState extends State<SmartPrayerCircle>
       return Center(
         child: GestureDetector(
           onTap: isPrayerTime && !isLogged
-              ? () => controller.logPrayer(currentPrayer!)
+              ? () => controller.logPrayer(currentPrayer)
               : null,
           child: SizedBox(
             width: 320,
@@ -91,16 +91,16 @@ class _SmartPrayerCircleState extends State<SmartPrayerCircle>
                       // Main Ambient Glow
                       BoxShadow(
                         color: isLogged
-                            ? Colors.green.withValues(alpha: 0.15)
+                            ? AppColors.success.withValues(alpha: 0.15)
                             : isPrayerTime
                             ? AppColors.primary.withValues(alpha: 0.2)
-                            : Colors.black.withValues(alpha: 0.05),
+                            : AppColors.black.withValues(alpha: 0.05),
                         blurRadius: 40,
                         spreadRadius: 2,
                       ),
                       // Subtle depth shadow
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
+                        color: AppColors.black.withValues(alpha: 0.05),
                         blurRadius: 10,
                         spreadRadius: -5,
                         offset: const Offset(0, 5),
@@ -183,19 +183,21 @@ class _SmartPrayerCircleState extends State<SmartPrayerCircle>
                             if (isLogged) ...[
                               const Icon(
                                 Icons.check_circle_rounded,
-                                color: Colors.green,
+                                color: AppColors.success,
                                 size: 24,
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                'تقبل الله',
+                                'god_accept_prayers'.tr,
                                 style: AppFonts.labelLarge.copyWith(
-                                  color: Colors.green,
+                                  color: AppColors.success,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
                               Text(
-                                'سُجّلت صلاة ${currentPrayer?.name}',
+                                'prayer_logged_success'.trParams({
+                                  'prayer': currentPrayer?.name ?? '',
+                                }),
                                 style: AppFonts.labelSmall.copyWith(fontSize: 9),
                               ),
                             ] else if (isPrayerTime) ...[
@@ -214,13 +216,13 @@ class _SmartPrayerCircleState extends State<SmartPrayerCircle>
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                'حـان الآن',
+                                'it_is_now'.tr,
                                 style: AppFonts.labelSmall.copyWith(
                                   color: AppColors.textSecondary,
                                 ),
                               ),
                               Text(
-                                currentPrayer?.name ?? '',
+                                currentPrayer.name,
                                 style: AppFonts.titleSmall.copyWith(
                                   color: AppColors.primary,
                                   fontWeight: FontWeight.bold,
@@ -229,7 +231,9 @@ class _SmartPrayerCircleState extends State<SmartPrayerCircle>
                             ] else ...[
                               // Next Prayer Info
                               Text(
-                                'القادمة: ${nextPrayer?.name ?? ''}',
+                                'next_prayer_at'.trParams({
+                                  'prayer': nextPrayer?.name ?? '',
+                                }),
                                 style: AppFonts.labelSmall.copyWith(
                                   color: AppColors.textSecondary,
                                 ),
@@ -349,7 +353,6 @@ class _RealClockPainter extends CustomPainter {
         // Don't draw where numbers are
         final angle = (i * 6 - 90) * (math.pi / 180);
         final r1 = radius - 10;
-        final r2 = radius - 5;
 
         final x1 = center.dx + r1 * math.cos(angle);
         final y1 = center.dy + r1 * math.sin(angle);
@@ -413,7 +416,7 @@ class _RealClockPainter extends CustomPainter {
 
     // Shadow
     final shadowPaint = Paint()
-      ..color = Colors.black.withValues(alpha: 0.2)
+      ..color = AppColors.black.withValues(alpha: 0.2)
       ..strokeWidth = width
       ..strokeCap = StrokeCap.round
       ..maskFilter = const MaskFilter.blur(ui.BlurStyle.normal, 2);
@@ -551,7 +554,7 @@ class _PrayerProgressPainter extends CustomPainter {
 
       // Core Dot
       final corePaint = Paint()
-        ..color = Colors.white
+        ..color = AppColors.white
         ..style = PaintingStyle.fill
         ..shadowLayer(4, 0, 0, AppColors.secondary);
       canvas.drawCircle(markerCenter, 5, corePaint);
@@ -574,6 +577,6 @@ class _PrayerProgressPainter extends CustomPainter {
 
 extension PaintExtension on Paint {
   void shadowLayer(double blur, double x, double y, Color color) {
-    this.maskFilter = MaskFilter.blur(BlurStyle.normal, blur);
+    maskFilter = MaskFilter.blur(BlurStyle.normal, blur);
   }
 }

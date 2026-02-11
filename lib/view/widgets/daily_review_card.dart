@@ -41,15 +41,15 @@ class DailyReviewCard extends StatelessWidget {
       IconData messageIcon;
       if (completed >= total) {
         message = 'all_prayers_complete'.tr;
-        messageColor = Colors.green;
+        messageColor = AppColors.success;
         messageIcon = Icons.star_rounded;
       } else if (completed >= 3) {
         message = 'most_prayers_done'.tr;
-        messageColor = Colors.amber.shade700;
+        messageColor = AppColors.amber;
         messageIcon = Icons.thumb_up_rounded;
       } else if (completed >= 1) {
         message = 'some_prayers_missed'.tr;
-        messageColor = Colors.orange;
+        messageColor = AppColors.orange;
         messageIcon = Icons.favorite_rounded;
       } else {
         message = 'no_prayers_today'.tr;
@@ -65,8 +65,8 @@ class DailyReviewCard extends StatelessWidget {
             colors: [
               AppColors.surface,
               completed >= 5
-                  ? Colors.green.withValues(alpha: 0.08)
-                  : Colors.amber.withValues(alpha: 0.05),
+                  ? AppColors.success.withValues(alpha: 0.08)
+                  : AppColors.amber.withValues(alpha: 0.05),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -74,7 +74,7 @@ class DailyReviewCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
           border: Border.all(
             color: completed >= 5
-                ? Colors.green.withValues(alpha: 0.2)
+                ? AppColors.success.withValues(alpha: 0.2)
                 : AppColors.primary.withValues(alpha: 0.1),
           ),
         ),
@@ -99,7 +99,7 @@ class DailyReviewCard extends StatelessWidget {
                   '$completed/$total',
                   style: AppFonts.titleLarge.copyWith(
                     color: completed >= total
-                        ? Colors.green
+                        ? AppColors.success
                         : AppColors.primary,
                     fontWeight: FontWeight.bold,
                   ),
@@ -183,10 +183,10 @@ class DailyReviewCard extends StatelessWidget {
               ? Icons.check_circle
               : Icons.check_circle_outline;
     } else if (isLogged) {
-      dotColor = Colors.green;
+      dotColor = AppColors.success;
       dotIcon = Icons.check_circle;
     } else {
-      dotColor = Colors.red.withValues(alpha: 0.5);
+      dotColor = AppColors.error.withValues(alpha: 0.5);
       dotIcon = Icons.cancel_rounded;
     }
 

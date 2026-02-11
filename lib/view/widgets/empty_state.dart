@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get_utils/src/extensions/internacionalization.dart';
 import '../../core/constants/app_dimensions.dart';
 import '../../core/constants/image_assets.dart';
 
@@ -39,7 +40,9 @@ class EmptyState extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(AppDimensions.paddingLG),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.primary.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -88,8 +91,8 @@ class EmptyState extends StatelessWidget {
   /// Empty prayers state
   factory EmptyState.prayers({Widget? action}) {
     return EmptyState(
-      title: 'لا توجد صلوات مسجلة',
-      subtitle: 'سجّل صلاتك الأولى اليوم',
+      title: 'no_prayers_logged'.tr,
+      subtitle: 'log_first_prayer'.tr,
       imagePath: ImageAssets.emptyPrayers,
       action: action,
     );
@@ -98,8 +101,8 @@ class EmptyState extends StatelessWidget {
   /// Empty community state
   factory EmptyState.community({Widget? action}) {
     return EmptyState(
-      title: 'لا توجد مجموعات',
-      subtitle: 'أنشئ مجموعة أو انضم لعائلتك',
+      title: 'no_groups'.tr,
+      subtitle: 'create_or_join_family_btn'.tr,
       imagePath: ImageAssets.emptyCommunity,
       action: action,
     );
@@ -108,14 +111,14 @@ class EmptyState extends StatelessWidget {
   /// Error state
   factory EmptyState.error({String? message, VoidCallback? onRetry}) {
     return EmptyState(
-      title: 'حدث خطأ',
-      subtitle: message ?? 'يرجى المحاولة مرة أخرى',
+      title: 'error_occurred'.tr,
+      subtitle: message ?? 'please_try_again'.tr,
       icon: Icons.error_outline,
       action: onRetry != null
           ? TextButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh),
-              label: const Text('إعادة المحاولة'),
+              label: Text('retry'.tr),
             )
           : null,
     );
@@ -124,14 +127,14 @@ class EmptyState extends StatelessWidget {
   /// No internet state
   factory EmptyState.noInternet({VoidCallback? onRetry}) {
     return EmptyState(
-      title: 'لا يوجد اتصال بالإنترنت',
-      subtitle: 'تحقق من اتصالك وحاول مرة أخرى',
+      title: 'no_internet'.tr,
+      subtitle: 'check_connection'.tr,
       icon: Icons.wifi_off,
       action: onRetry != null
           ? TextButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh),
-              label: const Text('إعادة المحاولة'),
+              label: Text('retry'.tr),
             )
           : null,
     );

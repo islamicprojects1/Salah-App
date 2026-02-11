@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:salah/core/constants/enums.dart';
+import 'package:salah/core/helpers/prayer_names.dart';
 import '../../core/constants/app_dimensions.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/helpers/date_time_helper.dart';
@@ -27,8 +29,6 @@ class PrayerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Card(
       elevation: isCurrentPrayer ? 4 : 1,
       shape: RoundedRectangleBorder(
@@ -73,7 +73,7 @@ class PrayerCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _getPrayerNameArabic(),
+                      PrayerNames.displayName(prayer),
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: isCurrentPrayer
                             ? FontWeight.bold
@@ -99,7 +99,7 @@ class PrayerCard extends StatelessWidget {
                   onPressed: onMarkPrayed,
                   icon: const Icon(Icons.check_circle_outline),
                   color: AppColors.primary,
-                  tooltip: 'تسجيل الصلاة',
+                  tooltip: 'log_prayer_tooltip'.tr,
                 )
               else if (isPrayed && quality != null)
                 _buildQualityBadge(context),
@@ -114,16 +114,16 @@ class PrayerCard extends StatelessWidget {
     String label;
     switch (quality!) {
       case PrayerQuality.early:
-        label = 'أول الوقت';
+        label = 'prayer_early'.tr;
         break;
       case PrayerQuality.onTime:
-        label = 'في الوقت';
+        label = 'prayer_on_time'.tr;
         break;
       case PrayerQuality.late:
-        label = 'متأخر';
+        label = 'prayer_late'.tr;
         break;
       case PrayerQuality.missed:
-        label = 'فائتة';
+        label = 'prayer_missed'.tr;
         break;
     }
 
@@ -195,20 +195,4 @@ class PrayerCard extends StatelessWidget {
     }
   }
 
-  String _getPrayerNameArabic() {
-    switch (prayer) {
-      case PrayerName.fajr:
-        return 'الفجر';
-      case PrayerName.sunrise:
-        return 'الشروق';
-      case PrayerName.dhuhr:
-        return 'الظهر';
-      case PrayerName.asr:
-        return 'العصر';
-      case PrayerName.maghrib:
-        return 'المغرب';
-      case PrayerName.isha:
-        return 'العشاء';
-    }
-  }
 }
