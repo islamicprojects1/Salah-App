@@ -48,79 +48,72 @@ void main() async {
   });
 }
 
-/// Initialize all app services
-/// Optimized to initialize independent services in parallel for faster startup
 Future<void> initServices() async {
-  // 1. Storage & Database services (parallel)
+  // 1. Foundation (Sequential & Awaited)
+  // These are the core dependencies for everything else.
+  final storage = await StorageService().init();
+  Get.put(storage, permanent: true);
+
+  final db = await DatabaseHelper().init();
+  Get.put(db, permanent: true);
+
+  // 2. UI Foundation (Parallel - they only depend on Storage)
   await Future.wait([
-    Get.putAsync<StorageService>(() async {
-      final service = StorageService();
-      return await service.init();
-    }),
-    Get.putAsync<DatabaseHelper>(() async {
-      final service = DatabaseHelper();
-      return await service.init();
-    }),
+    ThemeService().init().then((s) => Get.put(s, permanent: true)),
+    LocalizationService().init().then((s) => Get.put(s, permanent: true)),
   ]);
 
-  // 2. Initialize independent services in parallel
+  // 3. Independent Services (Parallel)
   await Future.wait([
-    Get.putAsync<ThemeService>(() async {
-      final service = ThemeService();
-      return await service.init();
-    }),
-    Get.putAsync<LocalizationService>(() async {
-      final service = LocalizationService();
-      return await service.init();
-    }),
-    Get.putAsync<LocationService>(() => LocationService().init()),
-    Get.putAsync<ConnectivityService>(() => ConnectivityService().init()),
-    Get.putAsync<CloudinaryService>(() => CloudinaryService().init()),
+    LocationService().init().then((s) => Get.put(s, permanent: true)),
+    ConnectivityService().init().then((s) => Get.put(s, permanent: true)),
+    CloudinaryService().init().then((s) => Get.put(s, permanent: true)),
   ]);
 
-  // 3. Firestore
-  await Get.putAsync<FirestoreService>(() => FirestoreService().init());
+  // 4. Data Layer (Awaited sequentially due to internal dependencies)
+  final firestore = await FirestoreService().init();
+  Get.put(firestore, permanent: true);
 
-  // 4. Auth service (depends on Firestore)
-  await Get.putAsync<AuthService>(() => AuthService().init());
+  final auth = await AuthService().init();
+  Get.put(auth, permanent: true);
 
-  // 5. Sync service – holds sync state; worker started after PrayerRepository is registered
-  await Get.putAsync<SyncService>(() => SyncService().init());
+  final syncService = await SyncService().init();
+  Get.put(syncService, permanent: true);
 
-  // 6. Prayer repository (permanent) – handles offline sync; SyncService worker calls syncAllPending on reconnect
-  Get.put<PrayerRepository>(
-    PrayerRepository(
-      firestore: Get.find(),
-      database: Get.find(),
-      connectivity: Get.find(),
-      syncService: Get.find(),
-      auth: Get.find(),
-    ),
-    permanent: true,
+  // 5. Repositories
+  final prayerRepo = PrayerRepository(
+    firestore: Get.find(),
+    database: Get.find(),
+    connectivity: Get.find(),
+    syncService: Get.find(),
+    auth: Get.find(),
   );
-  Get.find<SyncService>().startConnectivityWorker();
+  Get.put<PrayerRepository>(prayerRepo, permanent: true);
 
-  // 6b. UserRepository (DashboardController needs it)
-  Get.put<UserRepository>(
-    UserRepository(
-      firestore: Get.find(),
-      database: Get.find(),
-      connectivity: Get.find(),
-      prayerRepository: Get.find(),
-    ),
-    permanent: true,
+  final userRepo = UserRepository(
+    firestore: Get.find(),
+    database: Get.find(),
+    connectivity: Get.find(),
+    prayerRepository: Get.find(),
   );
+  Get.put<UserRepository>(userRepo, permanent: true);
 
-  // 7. Auth controller (depends on all auth-related services)
+  // 6. Controllers & Workers
   Get.put(AuthController(), permanent: true);
+  
+  // Start background workers
+  syncService.startConnectivityWorker();
 }
 
 Future<void> initLateServices() async {
+  // Late services are those that aren't needed for the initial Dashboard render
+  // but should be ready shortly after.
   await Future.wait([
-    Get.putAsync<AudioService>(() => AudioService().init()),
-    Get.putAsync<PrayerTimeService>(() => PrayerTimeService().init()),
-    Get.putAsync<NotificationService>(() => NotificationService().init()),
-    Get.putAsync<ShakeService>(() async => ShakeService()),
+    AudioService().init().then((s) => Get.put(s, permanent: true)),
+    PrayerTimeService().init().then((s) => Get.put(s, permanent: true)),
+    NotificationService().init().then((s) => Get.put(s, permanent: true)),
+    // ShakeService is sync or doesn't have an init() that needs awaiting
+    Future.sync(() => Get.put(ShakeService(), permanent: true)),
   ]);
 }
 

@@ -46,7 +46,11 @@ class LiveContextService extends GetxService {
   StreamSubscription<List<PrayerLogModel>>? _logsSubscription;
   PrayerName? _lastPlayedPrayer;
 
+  bool _isInitialized = false;
+
   Future<LiveContextService> init() async {
+    if (_isInitialized) return this;
+    _isInitialized = true;
     _subscribeToTodayLogs();
     _recomputeContext();
     _startTimer();

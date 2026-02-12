@@ -28,12 +28,12 @@ class CloudinaryService extends GetxService {
   final uploadProgress = 0.0.obs;
   final errorMessage = ''.obs;
 
-  // ============================================================
-  // INITIALIZATION
-  // ============================================================
-  
+  bool _isInitialized = false;
+
   /// Initialize the service
   Future<CloudinaryService> init() async {
+    if (_isInitialized) return this;
+    _isInitialized = true;
     _cloudinary = CloudinaryPublic(
       _cloudName,
       _uploadPreset,

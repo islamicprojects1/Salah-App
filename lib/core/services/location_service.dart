@@ -17,12 +17,16 @@ class LocationService extends GetxService {
   /// True when GPS failed and we're using Mecca as fallback (don't show "Makkah" as user's city).
   final isUsingDefaultLocation = false.obs;
 
+  bool _isInitialized = false;
+
   // ============================================================
   // INITIALIZATION
   // ============================================================
   
   /// Initialize the service
   Future<LocationService> init() async {
+    if (_isInitialized) return this;
+    _isInitialized = true;
     await getCurrentLocation();
     return this;
   }

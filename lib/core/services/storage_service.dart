@@ -11,9 +11,12 @@ import '../constants/storage_keys.dart';
 class StorageService extends GetxService {
   late final GetStorage _storage;
   
+  bool _isInitialized = false;
+
   /// Initialize the storage service
-  /// Must be called before using any storage operations
   Future<StorageService> init() async {
+    if (_isInitialized) return this;
+    _isInitialized = true;
     await GetStorage.init();
     _storage = GetStorage();
     return this;

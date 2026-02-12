@@ -19,12 +19,12 @@ class AuthService extends GetxService {
   final isLoading = false.obs;
   final errorMessage = ''.obs;
 
-  // ============================================================
-  // INITIALIZATION
-  // ============================================================
-  
+  bool _isInitialized = false;
+
   /// Initialize the service
   Future<AuthService> init() async {
+    if (_isInitialized) return this;
+    _isInitialized = true;
     _auth = FirebaseAuth.instance;
     _googleSignIn = GoogleSignIn();
     

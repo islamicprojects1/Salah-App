@@ -30,8 +30,12 @@ class SmartNotificationService extends GetxService {
   // INITIALIZATION
   // ============================================================
 
+  bool _isInitialized = false;
+
   /// Initialize the service
   Future<SmartNotificationService> init() async {
+    if (_isInitialized) return this;
+    _isInitialized = true;
     _notificationsPlugin = FlutterLocalNotificationsPlugin();
     _storageService = Get.find<StorageService>();
 

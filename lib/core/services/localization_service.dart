@@ -21,8 +21,12 @@ class LocalizationService extends GetxService {
   /// Fallback locale (Arabic)
   static const Locale fallbackLocale = Locale('ar');
   
+  bool _isInitialized = false;
+
   /// Initialize localization service
   Future<LocalizationService> init() async {
+    if (_isInitialized) return this;
+    _isInitialized = true;
     _loadSavedLanguage();
     return this;
   }

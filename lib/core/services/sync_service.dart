@@ -29,7 +29,11 @@ class SyncService extends GetxService {
   /// Observable for reactive UI: Obx(() => syncService.isOnlineObs.value).
   RxBool get isOnlineObs => _connectivity.isConnected;
 
+  bool _isInitialized = false;
+
   Future<SyncService> init() async {
+    if (_isInitialized) return this;
+    _isInitialized = true;
     _connectivity = Get.find<ConnectivityService>();
     _database = Get.find<DatabaseHelper>();
     _storage = Get.find<StorageService>();

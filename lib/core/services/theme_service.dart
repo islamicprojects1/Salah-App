@@ -13,8 +13,12 @@ class ThemeService extends GetxService {
   /// Current theme mode
   final Rx<AppThemeMode> currentThemeMode = AppThemeMode.system.obs;
   
+  bool _isInitialized = false;
+
   /// Initialize theme service
   Future<ThemeService> init() async {
+    if (_isInitialized) return this;
+    _isInitialized = true;
     _loadSavedTheme();
     return this;
   }

@@ -110,10 +110,12 @@ class PrayerTimeService extends GetxService {
 
   // ============================================================
   // INITIALIZATION
-  // ============================================================
+  bool _isInitialized = false;
 
   /// Initialize the service
   Future<PrayerTimeService> init() async {
+    if (_isInitialized) return this;
+    _isInitialized = true;
     // Initialize dependencies
     if (Get.isRegistered<LocationService>()) {
       _locationService = Get.find<LocationService>();

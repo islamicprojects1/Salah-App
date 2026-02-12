@@ -8,7 +8,11 @@ class AudioService extends GetxService {
   late final AudioPlayer _player;
   final _storage = Get.find<StorageService>();
 
+  bool _isInitialized = false;
+
   Future<AudioService> init() async {
+    if (_isInitialized) return this;
+    _isInitialized = true;
     _player = AudioPlayer();
     return this;
   }

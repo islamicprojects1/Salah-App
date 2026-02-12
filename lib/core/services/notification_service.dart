@@ -27,8 +27,12 @@ class NotificationService extends GetxService {
   // INITIALIZATION
   // ============================================================
 
+  bool _isInitialized = false;
+
   /// Initialize the service
   Future<NotificationService> init() async {
+    if (_isInitialized) return this;
+    _isInitialized = true;
     _notifications = FlutterLocalNotificationsPlugin();
 
     // Initialize timezone

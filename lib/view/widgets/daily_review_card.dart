@@ -39,6 +39,9 @@ class DailyReviewCard extends StatelessWidget {
       String message;
       Color messageColor;
       IconData messageIcon;
+      final theme = Theme.of(context);
+      final colorScheme = theme.colorScheme;
+
       if (completed >= total) {
         message = 'all_prayers_complete'.tr;
         messageColor = AppColors.success;
@@ -53,7 +56,7 @@ class DailyReviewCard extends StatelessWidget {
         messageIcon = Icons.favorite_rounded;
       } else {
         message = 'no_prayers_today'.tr;
-        messageColor = AppColors.textSecondary;
+        messageColor = theme.textTheme.bodySmall?.color ?? AppColors.textSecondary;
         messageIcon = Icons.wb_sunny_outlined;
       }
 
@@ -63,7 +66,7 @@ class DailyReviewCard extends StatelessWidget {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              AppColors.surface,
+              colorScheme.surface,
               completed >= 5
                   ? AppColors.success.withValues(alpha: 0.08)
                   : AppColors.amber.withValues(alpha: 0.05),
@@ -75,7 +78,7 @@ class DailyReviewCard extends StatelessWidget {
           border: Border.all(
             color: completed >= 5
                 ? AppColors.success.withValues(alpha: 0.2)
-                : AppColors.primary.withValues(alpha: 0.1),
+                : colorScheme.primary.withValues(alpha: 0.1),
           ),
         ),
         child: Column(
@@ -85,12 +88,12 @@ class DailyReviewCard extends StatelessWidget {
             Row(
               children: [
                 Icon(Icons.nights_stay_rounded,
-                    color: AppColors.primary, size: 22),
+                    color: colorScheme.primary, size: 22),
                 const SizedBox(width: 8),
                 Text(
                   'daily_review_title'.tr,
                   style: AppFonts.titleMedium.copyWith(
-                    color: AppColors.textPrimary,
+                    color: colorScheme.onSurface,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -100,7 +103,7 @@ class DailyReviewCard extends StatelessWidget {
                   style: AppFonts.titleLarge.copyWith(
                     color: completed >= total
                         ? AppColors.success
-                        : AppColors.primary,
+                        : colorScheme.primary,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -124,6 +127,7 @@ class DailyReviewCard extends StatelessWidget {
                 final quality = log?.quality;
 
                 return _buildReviewDot(
+                  context,
                   name: prayer.name,
                   isLogged: isLogged,
                   quality: quality,
@@ -167,7 +171,8 @@ class DailyReviewCard extends StatelessWidget {
     });
   }
 
-  Widget _buildReviewDot({
+  Widget _buildReviewDot(
+    BuildContext context, {
     required String name,
     required bool isLogged,
     PrayerQuality? quality,
@@ -186,7 +191,7 @@ class DailyReviewCard extends StatelessWidget {
       dotColor = AppColors.success;
       dotIcon = Icons.check_circle;
     } else {
-      dotColor = AppColors.error.withValues(alpha: 0.5);
+      dotColor = Theme.of(context).colorScheme.error.withValues(alpha: 0.5);
       dotIcon = Icons.cancel_rounded;
     }
 

@@ -11,12 +11,16 @@ class FirestoreService extends GetxService {
 
   late final FirebaseFirestore _firestore;
 
+  bool _isInitialized = false;
+
   // ============================================================
   // INITIALIZATION
   // ============================================================
 
   /// Initialize the service
   Future<FirestoreService> init() async {
+    if (_isInitialized) return this;
+    _isInitialized = true;
     _firestore = FirebaseFirestore.instance;
 
     // Enable offline persistence

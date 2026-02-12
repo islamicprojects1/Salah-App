@@ -16,7 +16,11 @@ class DatabaseHelper extends GetxService {
   // INITIALIZATION
   // ============================================================
 
+  bool _isInitialized = false;
+
   Future<DatabaseHelper> init() async {
+    if (_isInitialized) return this;
+    _isInitialized = true;
     _database = await _initDatabase();
     // Ensure all tables exist (fix for migration edge cases)
     await _ensureTablesExist();

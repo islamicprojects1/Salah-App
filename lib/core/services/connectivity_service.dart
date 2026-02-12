@@ -18,13 +18,13 @@ class ConnectivityService extends GetxService {
   late final Connectivity _connectivity;
   StreamSubscription<List<ConnectivityResult>>? _subscription;
 
-  // ============================================================
-  // INITIALIZATION
-  // ============================================================
-  
+  bool _isInitialized = false;
+
   /// Initialize the service
   Future<ConnectivityService> init() async {
+    if (_isInitialized) return this;
     _connectivity = Connectivity();
+    _isInitialized = true;
     await _checkConnectivity();
     _startListening();
     return this;
