@@ -19,8 +19,8 @@ class MainActivity : FlutterActivity(), SensorEventListener {
     private var accelerometer: Sensor? = null
     private var methodChannel: MethodChannel? = null
     
-    // Sensitivity threshold: 2.7 G-force
-    private val SHAKE_THRESHOLD_GRAVITY = 2.7f
+    // Sensitivity threshold: 3.2 G-force (increased from 2.7 for more deliberate movement)
+    private val SHAKE_THRESHOLD_GRAVITY = 3.2f
     private val SHAKE_SLOP_TIME_MS = 500
     private var mShakeTimestamp: Long = 0
 

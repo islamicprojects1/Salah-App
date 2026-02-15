@@ -25,7 +25,9 @@ class ShakeService extends GetxService {
 
   void _handleShake() {
     // Only navigate if we aren't already on the Qibla screen or navigating to it
-    if (Get.currentRoute == AppRoutes.qibla || _isNavigating) return;
+    // Check using split to ignore any query parameters if they exist
+    final current = Get.currentRoute.split('?').first;
+    if (current == AppRoutes.qibla || _isNavigating) return;
 
     _isNavigating = true;
 

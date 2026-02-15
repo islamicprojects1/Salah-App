@@ -1,0 +1,52 @@
+Salah App — Quantum Leap Task Breakdown
+Phase 1: Intelligent Qada (القضاء) System
+ Create QadaDetectionService in lib/core/services/qada_detection_service.dart
+ Add UnloggedPrayerInfo model class
+ Modify DashboardController.didChangeAppLifecycleState → trigger qada checks on resume
+ Add midnight rollover timer in DashboardController._initDashboard
+ Enhance NotificationService._handlePrayedAction → call LiveContextService.onPrayerLogged()
+ Add escalating snooze logic in NotificationService._handleSnoozeAction
+ Enhance SmartNotificationService.showMissedPrayersReminder with qada data
+ Add scheduleEveningQadaReview() method
+ Create QadaReviewBottomSheet widget
+ Modify MissedPrayerCard to support past days
+Phase 2: Live Notification Engine
+ In DashboardController.logPrayer → cancel corresponding reminder notification
+ In DashboardController.logPastPrayer → cancel corresponding reminder notification
+ Add "all 5 prayed" celebration trigger
+ Add cancelPrayerReminder(PrayerName) to 
+NotificationService
+ Add rescheduleAllForToday() to 
+NotificationService
+Phase 3: All-Scenario Infrastructure
+3A: Offline Resilience
+ Enhance PrayerRepository.addPrayerLog → immediate stream emit
+ Add exponential backoff in 
+syncAllPending
+ Enhance SyncService.startConnectivityWorker → trigger notification reschedule on reconnect
+3B: Location/Timezone Change
+ Add onLocationChanged() in 
+PrayerTimeService
+ Modify LocationService → call PrayerTimeService.onLocationChanged on city change
+ Trigger notification reschedule after prayer time recalculation
+3C: Midnight Rollover
+ Enhance LiveContextService._recomputeContext → detect date boundary crossing
+ Re-subscribe to today's logs on new day
+ Trigger qada check for yesterday on date change
+3D: Cold Start Recovery
+ Register QadaDetectionService in 
+main.dart
+ Process pending notification actions on cold start
+Phase 4: Social Pulse Intelligence
+ Enhance FamilyService.addPulseEvent → trigger local notification for family
+ Add checkFamilyPrayerStatus() hourly check
+ Add celebrateFamilyCompletion() trigger
+ Enhance family dashboard pulse section with real-time animations
+ Add "last seen" / "last prayer" to member cards
+Localization
+ Add new Arabic strings to ar_translations.dart
+ Add new English strings to en_translations.dart
+Verification
+ flutter analyze passes with no errors
+ flutter build apk --debug succeeds
+ Manual testing: qada detection, notification sync, offline, midnight rollover

@@ -23,6 +23,8 @@ import '../../controller/missed_prayers_controller.dart';
 import '../../view/screens/profile/profile_screen.dart';
 import '../../controller/profile_controller.dart';
 import '../../view/screens/qibla/qibla_screen.dart';
+import '../../view/screens/notifications/notifications_screen.dart';
+import '../../controller/notifications_controller.dart';
 
 /// App pages configuration for GetX routing
 ///
@@ -146,6 +148,16 @@ class AppPages {
     GetPage(
       name: AppRoutes.qibla,
       page: () => const QiblaScreen(),
+      transition: Transition.cupertino,
+    ),
+
+    // Notifications
+    GetPage(
+      name: AppRoutes.notifications,
+      page: () => const NotificationsScreen(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut<NotificationsController>(() => NotificationsController());
+      }),
       transition: Transition.cupertino,
     ),
   ];

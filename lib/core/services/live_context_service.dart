@@ -9,6 +9,7 @@ import 'package:salah/data/models/live_context_models.dart';
 import 'package:salah/data/models/prayer_log_model.dart';
 import 'package:salah/data/models/prayer_time_model.dart';
 import 'package:salah/data/repositories/prayer_repository.dart';
+import 'package:salah/core/services/qada_detection_service.dart';
 
 /// LiveContextService
 ///
@@ -45,12 +46,14 @@ class LiveContextService extends GetxService {
   Timer? _timer;
   StreamSubscription<List<PrayerLogModel>>? _logsSubscription;
   PrayerName? _lastPlayedPrayer;
+  DateTime? _currentDate;
 
   bool _isInitialized = false;
 
   Future<LiveContextService> init() async {
     if (_isInitialized) return this;
     _isInitialized = true;
+    _currentDate = DateTime.now();
     _subscribeToTodayLogs();
     _recomputeContext();
     _startTimer();
@@ -88,14 +91,30 @@ class LiveContextService extends GetxService {
   }
 
   void _recomputeContext() {
+    final now = DateTime.now();
+
+    // Detect midnight rollover
+    if (_currentDate != null) {
+      final lastDate = DateTime(_currentDate!.year, _currentDate!.month, _currentDate!.day);
+      final today = DateTime(now.year, now.month, now.day);
+      if (today.isAfter(lastDate)) {
+        _currentDate = now;
+        _lastPlayedPrayer = null;
+        _subscribeToTodayLogs(); // Re-subscribe for new day
+        // Trigger qada check for yesterday
+        if (Get.isRegistered<QadaDetectionService>()) {
+          Get.find<QadaDetectionService>().checkForUnloggedPrayers();
+        }
+      }
+    }
+
     final prayers = _prayerTimeService.getTodayPrayers();
     if (prayers.isEmpty) {
       prayerContext.value = PrayerContextModel.empty();
-      todaySummary.value = DaySummary.empty(DateTime.now());
+      todaySummary.value = DaySummary.empty(now);
       return;
     }
 
-    final now = DateTime.now();
     PrayerTimeModel? current;
     PrayerTimeModel? next;
 

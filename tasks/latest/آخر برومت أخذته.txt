@@ -1,0 +1,263 @@
+🕌 Salah App — Quantum Leap Implementation Plan
+Overview
+Based on exhaustive analysis of 30+ files across the codebase, this plan transforms the app from a basic prayer tracker into a living, intelligent prayer companion that handles every conceivable scenario.
+
+The user's core demand: "كل السيناريوهات الممكنة — حرفياً بدي اياه live — فش سيناريو إلا واحنا عارفينه"
+
+User Review Required
+IMPORTANT
+
+This is a large-scale improvement touching 15+ files. Each phase is self-contained and can be committed independently. The plan is ordered by impact and dependency.
+
+WARNING
+
+Phase 1 (Qada System) modifies 
+DashboardController
+, 
+NotificationService
+, and 
+PrayerRepository
+ — the app's core. A build verification is mandatory after each file change.
+
+Phase 1: Intelligent Qada (القضاء) System
+Problem: When the user has no internet, or simply forgets to tap "prayed," there's no smart recovery. The 
+MissedPrayersController
+ only shows today's missed prayers with a static flow. Notifications don't sync back to the dashboard responsively.
+
+Scenario Coverage
+#	Scenario	Current State	After
+1	User prays but forgets to log	Shows in missed prayers sheet (manual)	Smart auto-reminder 30min after adhan + evening batch review
+2	User taps "Prayed" on notification while offline	Logs locally, but dashboard doesn't update instantly	Instant local update + queue for sync
+3	User prays qada (makeup prayer from yesterday)	❌ Not supported	New "Log Past Prayer" flow with date picker
+4	App was killed when notification fired	Pending log saved, but processed only on init	Process immediately on cold start via 
+_processPendingPrayerLogFromNotification
+ (already exists, needs enhancement)
+5	User opens app after midnight (today's prayers are new)	Works, but no prompt for yesterday's unlogged	Auto-detect unlogged from yesterday, prompt a mini-review
+6	Notification "snooze" → user never prays	Snoozed once, then forgotten	Escalating reminders: 5min → 15min → 30min → mark as "unlogged" at next adhan
+7	User changes timezone/location mid-day	Prayer times don't update	Force recalculation on location change + reschedule notifications
+8	Family member prays → notification to others	Only Firestore document, no push	Real-time pulse + local notification for family
+Component: Qada/Makeup Prayer Detection Service
+[NEW] 
+qada_detection_service.dart
+New GetxService that:
+
+On every app resume (
+didChangeAppLifecycleState
+) → checks if yesterday has unlogged prayers
+On midnight rollover (timer detects date change) → prompts for yesterday's review
+Exposes RxList<UnloggedPrayerInfo> containing prayer name, date, adhan time
+Works fully offline using 
+DatabaseHelper
+ and 
+PrayerTimeService
+Integrates with 
+SmartNotificationService
+ to show evening batch reminder
+dart
+class QadaDetectionService extends GetxService {
+  final pendingQada = <UnloggedPrayerInfo>[].obs;
+  final hasYesterdayUnlogged = false.obs;
+  
+  // Called on: app resume, midnight, after prayer log
+  Future<void> checkForUnloggedPrayers({int daysBack = 1}) async { ... }
+  
+  // Auto-prompt: shows bottom sheet or notification
+  Future<void> promptQadaReview() async { ... }
+}
+Component: Enhanced Notification ↔ Dashboard Sync
+[MODIFY] 
+notification_service.dart
+_handlePrayedAction
+ (line 187-225): After logging prayer, call LiveContextService.onPrayerLogged() to instantly refresh dashboard — currently only tries 
+DashboardController
+ which may not exist
+Escalating snooze: Currently snoozes once to +10min. Change to track snooze count in StorageService and escalate: 5min → 15min → 30min → auto-mark "unlogged"
+Background payload enrichment: Add snoozeCount and originalScheduleTime to notification payload so we know how many times user snoozed
+[MODIFY] 
+dashboard_controller.dart
+didChangeAppLifecycleState
+ (line 94-99): On resume, call QadaDetectionService.checkForUnloggedPrayers() and refresh notifications
+_initDashboard
+ (line 105-135): Add midnight rollover timer that detects date change and triggers full reload + qada check
+Notification reschedule on location change: Add listener on LocationService changes to recalculate prayer times and reschedule all notifications
+[MODIFY] 
+smart_notification_service.dart
+showMissedPrayersReminder
+ (line 346-385): Enhance to include the specific prayer names and use QadaDetectionService data
+Add new method: scheduleEveningQadaReview() — fires at 9 PM if any prayer today is unlogged
+Add new method: scheduleEscalatingReminder() — replaces simple snooze with escalating pattern
+Component: Qada UI
+[NEW] 
+qada_review_bottom_sheet.dart
+Premium bottom sheet that:
+
+Shows unlogged prayers from yesterday/today with beautiful prayer icons
+One-tap "صليتها" (I prayed it) or "فاتتني" (I missed it) per prayer
+Supports batch actions ("صليت الكل" — I prayed all)
+Uses existing AppColors and matches app theme
+Strings added to ar_translations.dart and en_translations.dart
+[MODIFY] 
+missed_prayer_card.dart
+Add support for prayers from past days (currently only today)
+Add date header when showing multi-day qada
+Phase 2: Live Notification Engine
+Problem: Notifications are scheduled but don't react to real-time changes. If user logs a prayer via the app, the reminder notification for that prayer still fires 30min later.
+
+Scenario Coverage
+#	Scenario	Current State	After
+1	User logs prayer in app → 30min reminder still fires	❌ Still fires	Cancel reminder notification when prayer is logged
+2	Prayer time passes with no action	Static notifications only	Progressive notification: adhan → 15min gentle → 30min stronger → 1hr "you still have time"
+3	All 5 prayers logged → no celebration	❌ Nothing happens	Streak celebration notification + sound + family pulse event
+4	Fajr specifically	Same as other prayers	Special Fajr wake-up with louder channel + family "Fajr squad" notification
+5	User turns off specific prayer notification	Respected, but other timings not adjusted	Notification preferences per-prayer with granular control
+[MODIFY] 
+dashboard_controller.dart
+In 
+logPrayer()
+ (line 404-445) and 
+logPastPrayer()
+ (line 447-487): After logging, cancel the corresponding reminder notification ID
+After logging: check if all 5 prayers are done → trigger celebration
+_scheduleNotifications()
+ (line 244-318): Refactor to use a smart scheduling approach that avoids redundant notifications
+[MODIFY] 
+notification_service.dart
+Add cancelPrayerReminder(PrayerName prayer) method that cancels both adhan and reminder notifications for a specific prayer
+Add rescheduleAllForToday() method that recalculates which notifications are still needed (skipping already-logged prayers)
+Phase 3: All-Scenario Infrastructure
+3A: Offline-First Resilience
+[MODIFY] 
+prayer_repository.dart
+addPrayerLog
+ (line 43-69): After local save succeeds, immediately emit to stream so UI updates even without internet
+syncAllPending
+ (line 105-177): Add exponential backoff for failed syncs instead of linear retry
+Add getPendingQadaCount() — returns count of unlogged prayers from past days
+[MODIFY] 
+sync_service.dart
+startConnectivityWorker
+ (line 47-54): On reconnect, also trigger NotificationService.rescheduleAllForToday() and family pulse sync
+Add syncFamilyPulse() — pushes any queued family events
+3B: Timezone / Location Change Handling
+[MODIFY] 
+prayer_time_service.dart
+Add onLocationChanged() callback that triggers full recalculation
+Add onTimezoneChanged() using dart:io Platform timezone detection
+After recalculation, notify 
+DashboardController
+ and 
+NotificationService
+ to reschedule
+[MODIFY] 
+location_service.dart
+Add reactive: when selectedCity changes, call PrayerTimeService.onLocationChanged()
+Emit event for downstream listeners
+3C: Midnight Rollover & Day Boundary
+[MODIFY] 
+live_context_service.dart
+In 
+_recomputeContext()
+ (line 90-134): Detect date change (midnight crossing) → re-subscribe to today's logs, recalculate prayer times for new day
+Track _currentDate and compare with DateTime.now() each tick
+On date change: trigger QadaDetectionService.checkForUnloggedPrayers() for yesterday
+3D: App Killed / Cold Start Recovery
+[MODIFY] 
+main.dart
+In 
+initLateServices()
+ (line 108-118): Register QadaDetectionService and trigger initial qada check
+Process any pending notification actions that were stored in StorageService
+Phase 4: Social Pulse Intelligence
+Problem: Family pulse is a simple Firestore log. There's no real-time feeling — "ربط الناس بذكاء."
+
+Scenario Coverage
+#	Scenario	Current	After
+1	Family member prays Fajr	Text in pulse feed	Animated pulse + push notification "ابنك أحمد صلى الفجر! 🌅"
+2	Whole family prays on time	Nothing	"العائلة كلها صلت في الوقت! 🎉" celebration
+3	Member hasn't prayed for 2+ hours	Nothing	Gentle nudge to family leader: "محمد لم يسجل الظهر بعد"
+4	Member on a streak	No notification	"سارة عندها 7 أيام streak! شجعها 💪"
+5	Family offline member	Data doesn't show	Show last known status with "آخر تحديث: 3 ساعات"
+[MODIFY] 
+family_service.dart
+addPulseEvent
+ (line 293-314): After adding pulse, trigger local notification for other family members via NotificationService.showEncouragementNotification()
+Add checkFamilyPrayerStatus() — runs every hour, identifies members who haven't logged current prayer → notifies family leader
+Add celebrateFamilyCompletion() — when all members log a prayer → special pulse event
+[MODIFY] 
+family_dashboard_screen.dart
+Pulse section (line 438-513): Add real-time animation for new pulse events (slide-in animation)
+Member cards (line 284-434): Show "last seen" / "last prayer" timestamp + connection status indicator
+Add nudge button that sends gentle local notification to family member
+New Localization Strings
+[MODIFY] 
+ar_translations.dart
+Add 20+ new Arabic strings for qada, celebrations, family notifications, etc.
+
+[MODIFY] 
+en_translations.dart
+Matching English strings.
+
+Verification Plan
+Manual Testing (User)
+TIP
+
+These tests require the app running on a real device or detailed emulator for notification testing.
+
+Qada Detection Test:
+
+Log only 3 out of 5 prayers today
+Wait until the evening → verify qada review notification appears
+Open the app → verify the bottom sheet prompts for the 2 missing prayers
+Log them as "prayed" → verify dashboard updates and streak is maintained
+Notification Sync Test:
+
+Don't touch the app until a prayer time notification fires
+Tap "صليت" (Prayed) on the notification
+Open the app → verify the prayer shows as logged on dashboard immediately
+Verify the 30-min reminder for that prayer does NOT fire
+Offline Test:
+
+Turn off WiFi and mobile data
+Log a prayer → verify it saves locally (green checkmark appears)
+Turn data back on → verify it syncs to Firestore (check sync indicator)
+Verify the family pulse shows the prayer event after sync
+Midnight Rollover Test:
+
+Keep the app open before midnight
+Wait past midnight → verify today's prayers reset to the new day
+Verify yesterday's unlogged prayers trigger the qada prompt
+Location Change Test:
+
+Change city in settings
+Verify prayer times update immediately on dashboard
+Verify notifications are rescheduled for new times
+Family Pulse Test:
+
+Have two accounts in the same family
+Log a prayer on Account 1
+Verify Account 2 receives a notification
+Verify the pulse feed updates on Account 2
+Automated Testing
+bash
+# Build verification after each phase (run from project root)
+flutter analyze --no-fatal-infos
+flutter build apk --debug
+IMPORTANT
+
+Currently there are no meaningful automated tests (only a default 
+widget_test.dart
+). Unit tests should be added as a follow-up task, starting with QadaDetectionService and 
+PrayerRepository
+.
+
+Execution Order
+Phase 1A: Create QadaDetectionService + modify 
+DashboardController
+ for qada detection
+Phase 1B: Create QadaReviewBottomSheet UI
+Phase 2: Enhance notification ↔ dashboard sync (cancel reminders on log)
+Phase 3A-D: Infrastructure (offline resilience, timezone, midnight rollover, cold start)
+Phase 4: Family pulse intelligence
+Localization: Add all new strings
+Verify: Full manual test pass
+Each phase results in a committable, non-breaking change.

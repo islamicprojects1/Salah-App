@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:salah/core/services/location_service.dart';
@@ -17,7 +18,7 @@ class SelectedCityController extends GetxController {
   final detectedCityName = ''.obs;
   final isSearching = false.obs;
   final searchResults = <Map<String, dynamic>>[].obs;
-  
+
   // Timer for debouncing search
   Timer? _searchDebounce;
 
@@ -33,31 +34,35 @@ class SelectedCityController extends GetxController {
     try {
       currentLocationLoading.value = true;
       final position = await _locationService.getCurrentLocation();
-      
+
       if (position != null && !_locationService.isUsingDefaultLocation.value) {
         detectedCityName.value = _locationService.cityName.value;
-        
+
         // Save to storage
         await _storageService.saveLocation(
           latitude: position.latitude,
           longitude: position.longitude,
           cityName: _locationService.cityName.value,
         );
-        
+
         // Refresh prayer times
         await _prayerTimeService.calculatePrayerTimes();
-        
+
         // If manual click (not automatic), close the screen
         if (!isAutomatic) {
           Get.back();
         }
       } else if (!isAutomatic) {
         // Only show error if manual click
-        Get.snackbar(
-          "error".tr,
-          "location_error_gps".tr,
-          snackPosition: SnackPosition.BOTTOM,
-        );
+        if (_locationService.isPermanentlyDenied.value) {
+          _showPermissionSettingsDialog();
+        } else {
+          Get.snackbar(
+            "error".tr,
+            "location_error_gps".tr,
+            snackPosition: SnackPosition.BOTTOM,
+          );
+        }
       }
     } finally {
       currentLocationLoading.value = false;
@@ -97,12 +102,31 @@ class SelectedCityController extends GetxController {
     });
   }
 
+  void _showPermissionSettingsDialog() {
+    Get.dialog(
+      AlertDialog(
+        title: Text("location_permission".tr),
+        content: Text("location_permission_permanently_denied_help".tr),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: Text("cancel".tr)),
+          ElevatedButton(
+            onPressed: () {
+              Get.back();
+              _locationService.openAppSettings();
+            },
+            child: Text("open_settings".tr),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// Select a location from search results
   Future<void> selectLocation(Map<String, dynamic> result) async {
     try {
       final double lat = double.parse(result['lat']);
       final double lon = double.parse(result['lon']);
-      
+
       // Extract city name from display name or address if available
       String cityName = _extractCityName(result);
       String countryName = _extractCountryName(result);
@@ -139,7 +163,12 @@ class SelectedCityController extends GetxController {
   String _extractCityName(Map<String, dynamic> result) {
     final address = result['address'] as Map<String, dynamic>?;
     if (address != null) {
-      return address['city'] ?? address['town'] ?? address['village'] ?? address['state'] ?? result['name'] ?? '';
+      return address['city'] ??
+          address['town'] ??
+          address['village'] ??
+          address['state'] ??
+          result['name'] ??
+          '';
     }
     // Fallback: use first part of display_name
     return result['display_name'].split(',')[0];

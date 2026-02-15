@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:salah/core/theme/app_colors.dart';
 
@@ -10,6 +11,11 @@ import 'package:salah/core/theme/app_colors.dart';
 class AppFeedback {
   AppFeedback._();
 
+  /// Trigger haptic feedback for success.
+  static void hapticSuccess() {
+    HapticFeedback.lightImpact();
+  }
+
   /// Show an error message via GetX snackbar.
   /// Use for validation errors, network errors, or any user-facing failure.
   static void showError(String title, [String? message]) {
@@ -20,7 +26,7 @@ class AppFeedback {
       backgroundColor: AppColors.error.withValues(alpha: 0.95),
       colorText: AppColors.white,
       icon: Icon(Icons.error_outline, color: AppColors.white, size: 28),
-      margin: const EdgeInsets.all(16),
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 80),
       duration: const Duration(seconds: 4),
     );
   }
@@ -34,7 +40,7 @@ class AppFeedback {
       backgroundColor: AppColors.primary.withValues(alpha: 0.95),
       colorText: AppColors.white,
       icon: Icon(Icons.check_circle_outline, color: AppColors.white, size: 28),
-      margin: const EdgeInsets.all(16),
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 80),
       duration: const Duration(seconds: 3),
     );
   }
@@ -53,7 +59,7 @@ class AppFeedback {
           ? AppColors.orange.withValues(alpha: 0.95)
           : AppColors.textSecondary.withValues(alpha: 0.95),
       colorText: AppColors.white,
-      margin: const EdgeInsets.all(16),
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 80),
       duration: const Duration(seconds: 3),
     );
   }

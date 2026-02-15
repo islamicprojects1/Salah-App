@@ -100,7 +100,7 @@ const Map<String, String> arTranslations = {
   'updating_location': 'جاري التحديث...',
   'location_default_hint':
       'المواقيت مؤقتاً حسب مكة. فعّل الموقع أو انقر لتحديث.',
-  'makkah_fallback_label': 'المواقيت حسب مكة (لم يُحدد موقعك)',
+  'makkah_fallback_label': 'مكة (الموقع الافتراضي)',
 
   // ==================== Premium Settings & Menu ====================
   'app_appearance': 'شكل التطبيق',
@@ -134,6 +134,22 @@ const Map<String, String> arTranslations = {
   'theme_dark': 'داكن',
   'language_arabic': 'العربية',
   'language_english': 'English',
+  'language_settings': 'إعدادات اللغة',
+
+  // ==================== Family Status & Social ====================
+  'status_prayed_on_time': 'صلى @prayer',
+  'status_prayed_late': 'صلى متأخراً',
+  'status_not_prayed_yet': 'لم يصلِّ بعد',
+  'status_limited_time': 'باقي وقت قليل',
+  'status_missed': 'فاتت',
+  'status_future': 'لم يحن وقتها',
+  'encourage_jazakallah': 'بارك الله فيك',
+  'encourage_may_allah_open': 'فتح الله عليك',
+  'encourage_may_allah_help': 'أعانك الله على الصلاة',
+  'encourage_dua_done': 'تم الدعاء له',
+  'encourage_keep_going': 'استمر يا بطل',
+  'early_bird': 'حث على التبكير',
+  'gentle_reminder': 'تذكير لطيف',
 
   // ==================== Qibla Screen ====================
   'qibla_direction': 'اتجاه القبلة',
@@ -182,6 +198,10 @@ const Map<String, String> arTranslations = {
   // ==================== Family Module ====================
   'family': 'العائلة',
   'family_pulse': 'نبض العائلة',
+  'family_pulse_prayer': 'صلاة عائلية 🤲',
+  'family_pulse_prayer_body': '@name صلّى @prayer',
+  'family_celebration_title': '🎉 تكبير عائلي!',
+  'family_celebration_body': 'جميع أفراد عائلة @family صلّوا اليوم!',
   'create_family': 'إنشاء عائلة',
   'create_family_title': 'إنشاء عائلة',
   'create_family_subtitle': 'اجمع عائلتك في مكان واحد',
@@ -220,9 +240,10 @@ const Map<String, String> arTranslations = {
   'family_created_success': 'تم إنشاء العائلة بنجاح',
   'family_joined_success': 'تم الانضمام للعائلة بنجاح',
   'child_added_success': 'تم إضافة الطفل بنجاح',
-  'prayer_logged_for_member_success': 'تم تسجيل الصلاة عنه بنجاح',
-  'encouragement_sent_success': 'تم إرسال تشجيع لـ @name',
-  'encouragement_notif_body': 'شجعك @member على الصلاة! ✨',
+  'family_flame': 'شعلة العائلة',
+  'flame_flickering': 'الشعلة تتوهج',
+  'family_pulse_prayer_notif': '@name صلّى @prayer',
+  'family_pulse_encouragement_notif': 'شجّعك @name على الصلاة! ✨',
 
   // ==================== Prayer Actions & Logging ====================
   'prayer_accepted': 'تقبل الله صلاتك',
@@ -239,6 +260,7 @@ const Map<String, String> arTranslations = {
   'god_accept_prayers': 'تقبل الله',
   'already_logged': 'تنبيه',
   'prayer_already_logged': 'لقد قمت بتسجيل هذه الصلاة مسبقاً',
+  'no_past_prayers_yet': 'لم يحن وقت أي صلاة بعد',
   'already_logged_snackbar': 'لقد قمت بتسجيل هذه الصلاة مسبقاً',
   'prayer_logged_success': 'سُجّلت صلاة @prayer',
   'prayer_log_failed': 'فشل تسجيل الصلاة',
@@ -431,9 +453,71 @@ const Map<String, String> arTranslations = {
   'error_already_member': 'أنت عضو في هذه العائلة بالفعل',
   'dashboard_load_error': 'فشل تحميل لوحة التحكم',
   'unexpected_error_msg': 'حدث خطأ غير متوقع',
+  'location_permission_permanently_denied_help': 'لقد قمت برفض إذن الموقع نهائياً. يرجى تفعيله من إعدادات الهاتف لتحديد موقعك بدقة.',
 
   // ==================== Compatibility Redundant Keys (to be removed once UI is safe) ====================
   'ok_btn': 'حسناً',
   'cancel_btn': 'إلغاء',
   'skip': 'تخطي',
+
+  // ==================== Qada & Smart Reminders ====================
+  'qada_review_title': 'مراجعة الصلوات 🔔',
+  'qada_review_body': 'لم تسجل @count صلوات اليوم: @prayers',
+  'qada_yesterday_title': 'صلوات أمس ⏪',
+  'qada_yesterday_body': 'لم تسجل بعض صلوات الأمس. هل صليتها؟',
+  'qada_sheet_title': 'صلوات لم تُسجَّل',
+  'qada_sheet_subtitle': 'هل صليت هذه الصلوات؟',
+  'qada_i_prayed': 'صليتها ✅',
+  'qada_i_missed': 'فاتتني 😔',
+  'qada_log_all': 'صليت الكل ✅',
+  'qada_yesterday': 'أمس',
+  'qada_today': 'اليوم',
+  'snooze_escalation_1': 'تذكير بعد 5 دقائق',
+  'snooze_escalation_2': 'تذكير بعد 15 دقيقة',
+  'snooze_escalation_3': 'تذكير أخير بعد 30 دقيقة',
+  'celebration_all_prayers': '🎉 أكملت كل الصلوات! ما شاء الله',
+  'celebration_streak': '🔥 سلسلة @count يوم! واصل',
+  'family_member_prayed': '🕌 @name صلّى @prayer',
+  'family_all_prayed': '🎉 العائلة كلها صلت @prayer في الوقت!',
+  'family_gentle_nudge': '💙 @name لم يسجل @prayer بعد',
+  'family_streak_celebrate': '💪 @name عندها @count أيام streak! شجّعوها',
+  'family_last_seen': 'آخر تحديث: @time',
+  'notification_schedule_error': 'فشل جدولة الإشعارات',
+
+  // Profile
+  'enter_your_name': 'أدخل اسمك',
+  'profile_updated': 'تم تحديث الملف الشخصي بنجاح',
+  'update_failed': 'فشل التحديث',
+  'name_required': 'الاسم مطلوب',
+  
+  // Privacy
+  'privacy_settings': 'إعدادات الخصوصية',
+  'visibility': 'الظهور',
+  'public': 'عام',
+  'public_desc': 'يظهر للجميع',
+  'family_only': 'العائلة فقط',
+  'family_only_desc': 'يظهر لأفراد عائلتك فقط',
+  'anonymous': 'مجهول',
+  'anonymous_desc': 'لا يظهر اسمك أو صورتك',
+  'profile_details': 'تفاصيل الملف',
+  'show_name': 'إظهار الاسم',
+  'show_photo': 'إظهار الصورة',
+  'show_streak': 'إظهار التتابع',
+  'community': 'المجتمع',
+  'show_in_leaderboard': 'الظهور في المتصدرين',
+  'show_in_leaderboard_desc': 'السماح بالظهور في قائمة المتصدرين العامة',
+  'failed_to_update_privacy': 'فشل تحديث إعدادات الخصوصية',
+
+  // Export
+  'export_data': 'تصدير البيانات',
+  'exporting_data': 'جاري تصدير البيانات...',
+  'prayer_logs_export': 'سجل الصلوات - Salah App',
+  'here_is_my_prayer_data': 'إليك سجل صلواتي من تطبيق Salah App',
+  'export_failed': 'فشل تصدير البيانات',
+
+  // Prayer Adjustments
+  'adjust_prayer_times': 'تعديل أوقات الصلاة',
+  'adjustment_desc': 'تعديل يدوي لأوقات الصلاة بالدقائق. يؤثر على وقت التنبيه.',
+  'offset_too_large': 'لا يمكن أن يتجاوز التعديل 60 دقيقة',
+  'min': 'دقيقة',
 };

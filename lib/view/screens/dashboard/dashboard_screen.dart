@@ -510,17 +510,29 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           spacing: 3,
           children: [
-            Icon(
-              Icons.edit_location_outlined,
-              size: 18,
-              color: AppColors.textSecondary,
-            ),
             Obx(
-              () => Text(
-                controller.currentCity.value.split(',').first,
-                style: AppFonts.titleMedium.copyWith(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.bold,
+              () => Icon(
+                controller.currentCity.value == 'makkah_fallback_label'.tr
+                    ? Icons.location_off_outlined
+                    : Icons.edit_location_outlined,
+                size: 18,
+                color: controller.currentCity.value == 'makkah_fallback_label'.tr
+                    ? AppColors.error
+                    : AppColors.textSecondary,
+              ),
+            ),
+            Flexible(
+              child: Obx(
+                () => Text(
+                  controller.currentCity.value.split(',').first,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  style: AppFonts.titleMedium.copyWith(
+                    color: controller.currentCity.value == 'makkah_fallback_label'.tr
+                        ? AppColors.error
+                        : AppColors.textPrimary,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),

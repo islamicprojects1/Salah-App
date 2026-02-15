@@ -6,6 +6,8 @@ import 'package:salah/core/constants/enums.dart';
 import 'dart:math';
 import 'package:salah/core/services/auth_service.dart';
 import 'package:salah/core/services/database_helper.dart';
+import 'package:salah/core/services/fcm_service.dart';
+import 'package:salah/core/services/notification_service.dart';
 import 'package:salah/data/models/family_model.dart';
 import 'package:salah/data/models/user_model.dart';
 import 'package:salah/data/models/family_activity_model.dart';
@@ -128,7 +130,9 @@ class FamilyService extends GetxService {
 
       return true;
     } catch (e) {
-      errorMessage.value = 'error_create_family'.trParams({'error': e.toString()});
+      errorMessage.value = 'error_create_family'.trParams({
+        'error': e.toString(),
+      });
       return false;
     } finally {
       isLoading.value = false;
@@ -187,7 +191,9 @@ class FamilyService extends GetxService {
 
       return true;
     } catch (e) {
-      errorMessage.value = 'error_join_family'.trParams({'error': e.toString()});
+      errorMessage.value = 'error_join_family'.trParams({
+        'error': e.toString(),
+      });
       return false;
     } finally {
       isLoading.value = false;
@@ -260,6 +266,26 @@ class FamilyService extends GetxService {
         return false;
       }
 
+      // Check if this prayer was already logged today (prevent duplicates)
+      final today = DateTime.now();
+      final startOfDay = DateTime(today.year, today.month, today.day);
+      final existing = await _firestore
+          .collection('users')
+          .doc(memberId)
+          .collection('prayer_logs')
+          .where('prayer', isEqualTo: prayerName)
+          .where(
+            'adhanTime',
+            isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay),
+          )
+          .limit(1)
+          .get();
+
+      if (existing.docs.isNotEmpty) {
+        errorMessage.value = 'prayer_already_logged'.tr;
+        return false;
+      }
+
       // Add log to the member's collection (oderId = owner of the log)
       await _firestore
           .collection('users')
@@ -310,7 +336,88 @@ class FamilyService extends GetxService {
             if (prayerName != null) 'prayer': prayerName,
             'timestamp': FieldValue.serverTimestamp(),
           });
+
+      // Trigger real-time FCM notification for other family members
+      if (Get.isRegistered<FcmService>()) {
+        final fcm = Get.find<FcmService>();
+        final typeText = type == 'prayer_logged'
+            ? 'family_pulse_prayer_notif'.trParams({
+                'name': userName,
+                'prayer': prayerName ?? '',
+              })
+            : 'family_pulse_encouragement_notif'.trParams({'name': userName});
+
+        fcm.sendNotificationToFamily(
+          familyId: familyId,
+          title: 'family_pulse'.tr,
+          body: typeText,
+        );
+      }
+
+      // Check if all family members have completed their prayers
+      if (type == 'prayer_logged') {
+        checkFamilyPrayerStatus(familyId);
+      }
     } catch (_) {}
+  }
+
+  /// Check if all family members have prayed the current prayer.
+  /// If so, triggers a family celebration notification.
+  Future<void> checkFamilyPrayerStatus(String familyId) async {
+    try {
+      final family = myFamilies.firstWhereOrNull((f) => f.id == familyId);
+      if (family == null) return;
+
+      final now = DateTime.now();
+      final startOfDay = DateTime(now.year, now.month, now.day);
+      final memberCount = family.members.length;
+      if (memberCount <= 1) return; // Solo family, no celebration
+
+      // Count unique members who logged any prayer today
+      final pulseSnap = await _firestore
+          .collection('families')
+          .doc(familyId)
+          .collection('pulse')
+          .where('type', isEqualTo: 'prayer_logged')
+          .where(
+            'timestamp',
+            isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay),
+          )
+          .get();
+
+      final uniqueMembers = pulseSnap.docs
+          .map((d) => d.data()['userId'] as String?)
+          .where((id) => id != null)
+          .toSet();
+
+      // If all members have at least one prayer logged today, celebrate!
+      if (uniqueMembers.length >= memberCount) {
+        celebrateFamilyCompletion(familyId, family.name);
+      }
+    } catch (_) {}
+  }
+
+  /// Fire a celebration notification when all family members prayed today.
+  void celebrateFamilyCompletion(String familyId, String familyName) {
+    if (!Get.isRegistered<NotificationService>()) return;
+    final notif = Get.find<NotificationService>();
+    notif.showNotification(
+      id: 950,
+      title: 'family_celebration_title'.tr,
+      body: 'family_celebration_body'.trParams({'family': familyName}),
+      channelId: 'family_channel',
+    );
+
+    // Also post a pulse event about the celebration
+    final user = _authService.currentUser.value;
+    if (user != null) {
+      _firestore.collection('families').doc(familyId).collection('pulse').add({
+        'type': 'family_celebration',
+        'userId': user.uid,
+        'userName': familyName,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+    }
   }
 
   /// Live stream of family pulse events (last 25, newest first)

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:salah/core/constants/enums.dart';
@@ -8,6 +9,7 @@ import 'package:salah/core/routes/app_routes.dart';
 import 'package:salah/core/services/auth_service.dart';
 import 'package:salah/core/services/family_service.dart';
 import 'package:salah/core/services/firestore_service.dart';
+import 'package:salah/core/services/notification_service.dart';
 import 'package:salah/data/models/family_model.dart';
 import 'package:salah/data/models/family_pulse_model.dart';
 import 'package:salah/data/models/user_model.dart';
@@ -48,8 +50,46 @@ class FamilyController extends GetxController {
   void _subscribePulse(String familyId) {
     _pulseSubscription?.cancel();
     _pulseSubscription = _familyService.getPulseStream(familyId).listen((list) {
+      _handleNewPulseEvents(list);
       pulseEvents.assignAll(list);
     });
+  }
+
+  void _handleNewPulseEvents(List<FamilyPulseEvent> newEvents) {
+    // If pulseEvents was empty, this is the first load, don't notify for old stuff
+    if (pulseEvents.isEmpty) return;
+
+    final myId = _authService.userId;
+    if (myId == null) return;
+
+    final now = DateTime.now();
+
+    // Find events in the new list that weren't in the current list
+    // and are from OTHER users and are RECENT (within last 30 seconds)
+    for (final event in newEvents) {
+      if (event.userId == myId) continue;
+
+      // Check if we already have this event ID in our current list
+      if (pulseEvents.any((e) => e.id == event.id)) continue;
+
+      // Only notify if the event is very recent (to avoid backlog notifications)
+      final diff = now.difference(event.timestamp).inSeconds.abs();
+      if (diff < 30) {
+        _triggerLocalNotification(event);
+      }
+    }
+  }
+
+  void _triggerLocalNotification(FamilyPulseEvent event) {
+    if (!Get.isRegistered<NotificationService>()) return;
+    final notif = Get.find<NotificationService>();
+
+    notif.showNotification(
+      id: 900 + event.timestamp.millisecondsSinceEpoch % 1000,
+      title: 'family_pulse'.tr,
+      body: event.displayText,
+      channelId: 'family_channel',
+    );
   }
 
   @override
@@ -61,6 +101,11 @@ class FamilyController extends GetxController {
 
   final memberProgress = <String, int>{}.obs;
   final memberStreaks = <String, int>{}.obs;
+  final memberLastPrayer = <String, DateTime?>{}.obs;
+  final memberLastPrayerName = <String, String?>{}.obs;
+  final memberLastPrayerQuality = <String, String?>{}.obs;
+  final memberLastPrayerAdhanTime = <String, DateTime?>{}.obs;
+  final memberDailyLogs = <String, Map<String, String>>{}.obs; // userId -> { prayerName: quality }
 
   final List<StreamSubscription<dynamic>> _memberSubscriptions = [];
 
@@ -145,6 +190,39 @@ class FamilyController extends GetxController {
     _memberSubscriptions.add(
       _familyService.getMemberTodayLogs(userId).listen((snapshot) {
         memberProgress[userId] = snapshot.docs.length;
+        DateTime? latest;
+        String? latestName;
+        String? latestQuality;
+        DateTime? latestAdhan;
+
+        final Map<String, String> dailyLogs = {};
+
+        for (final doc in snapshot.docs) {
+          final data = doc.data();
+          final prayerName = data['prayer'] as String?;
+          final quality = (data['quality'] ?? data['timingQuality']) as String?;
+          
+          if (prayerName != null && quality != null) {
+            dailyLogs[prayerName.toLowerCase()] = quality;
+          }
+
+          final ts = data['prayedAt'];
+          if (ts is Timestamp) {
+            final dt = ts.toDate();
+            if (latest == null || dt.isAfter(latest)) {
+              latest = dt;
+              latestName = prayerName;
+              latestQuality = quality;
+              final adhanTs = data['adhanTime'];
+              if (adhanTs is Timestamp) latestAdhan = adhanTs.toDate();
+            }
+          }
+        }
+        memberDailyLogs[userId] = dailyLogs;
+        memberLastPrayer[userId] = latest;
+        memberLastPrayerName[userId] = latestName;
+        memberLastPrayerQuality[userId] = latestQuality;
+        memberLastPrayerAdhanTime[userId] = latestAdhan;
       }),
     );
     _memberSubscriptions.add(
@@ -175,11 +253,13 @@ class FamilyController extends GetxController {
     }
   }
 
-  Future<void> pokeMember(String userId, String name) async {
-    final success = await _familyService.sendEncouragement(
-      userId,
-      'encouragement_notif_body'.trParams({'member': _authService.currentUser.value?.displayName ?? 'member'.tr}),
-    );
+  Future<void> pokeMember(String userId, String name, {String? customMessage}) async {
+    final message = customMessage ??
+        'encouragement_notif_body'.trParams({
+          'member': _authService.currentUser.value?.displayName ?? 'member'.tr,
+        });
+
+    final success = await _familyService.sendEncouragement(userId, message);
     if (success) {
       final myId = _authService.currentUser.value?.uid;
       if (myId != null) {
@@ -189,7 +269,10 @@ class FamilyController extends GetxController {
           data: {'toUserId': userId},
         );
       }
-      AppFeedback.showSuccess('done'.tr, 'encouragement_sent_success'.trParams({'name': name}));
+      AppFeedback.showSuccess(
+        'done'.tr,
+        'encouragement_sent_success'.trParams({'name': name}),
+      );
     } else {
       AppFeedback.showError('خطأ', errorMessage);
     }

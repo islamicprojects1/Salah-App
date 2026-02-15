@@ -42,6 +42,8 @@ class FamilyPulseEvent {
         return PulseEventType.encouragement;
       case 'daily_complete':
         return PulseEventType.dailyComplete;
+      case 'family_celebration':
+        return PulseEventType.familyCelebration;
       default:
         return PulseEventType.prayerLogged;
     }
@@ -58,6 +60,8 @@ class FamilyPulseEvent {
         return '$userName شجّع على الصلاة';
       case PulseEventType.dailyComplete:
         return '$userName أكمل صلوات اليوم 🎉';
+      case PulseEventType.familyCelebration:
+        return '🎉 العائلة كلها صلّت اليوم! تكبير!';
     }
   }
 

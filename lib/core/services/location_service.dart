@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
+import 'package:salah/core/services/prayer_time_service.dart';
 
 /// Service for managing location
 class LocationService extends GetxService {
@@ -16,6 +17,8 @@ class LocationService extends GetxService {
   final errorMessage = ''.obs;
   /// True when GPS failed and we're using Mecca as fallback (don't show "Makkah" as user's city).
   final isUsingDefaultLocation = false.obs;
+  /// True when permission is denied and "Don't ask again" was selected.
+  final isPermanentlyDenied = false.obs;
 
   bool _isInitialized = false;
 
@@ -81,9 +84,12 @@ class LocationService extends GetxService {
       }
       
       if (permission == LocationPermission.deniedForever) {
+        isPermanentlyDenied.value = true;
         errorMessage.value = 'location_permission_permanently_denied';
         return _getDefaultLocation();
       }
+      
+      isPermanentlyDenied.value = false;
       
       // Get position
       final position = await Geolocator.getCurrentPosition(
@@ -133,7 +139,11 @@ class LocationService extends GetxService {
       cityName.value = city;
       countryName.value = country;
       isUsingDefaultLocation.value = false;
-      
+
+      // Trigger prayer time recalculation + notification reschedule
+      if (Get.isRegistered<PrayerTimeService>()) {
+        Get.find<PrayerTimeService>().onLocationChanged();
+      }
     } catch (e) {
       errorMessage.value = e.toString();
     } finally {

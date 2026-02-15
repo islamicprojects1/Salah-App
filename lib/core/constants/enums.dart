@@ -64,7 +64,7 @@ enum PrivacyMode {
 
 enum MemberRole { parent, child }
 
-enum PulseEventType { prayerLogged, encouragement, dailyComplete }
+enum PulseEventType { prayerLogged, encouragement, dailyComplete, familyCelebration }
 
 enum ActivityType {
   prayerLog,

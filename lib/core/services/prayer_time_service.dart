@@ -7,8 +7,11 @@ import 'package:salah/core/constants/enums.dart';
 import 'package:salah/core/helpers/prayer_names.dart';
 import 'package:salah/core/services/database_helper.dart';
 import 'package:salah/core/services/location_service.dart';
+import 'package:salah/core/services/notification_service.dart';
 import 'package:salah/core/services/storage_service.dart';
 import 'package:salah/data/models/prayer_time_model.dart';
+
+import 'package:salah/core/services/auth_service.dart';
 
 /// Service for calculating prayer times using Adhan package
 class PrayerTimeService extends GetxService {
@@ -273,36 +276,50 @@ class PrayerTimeService extends GetxService {
   }
 
   List<PrayerTimeModel> _timesToModels(PrayerTimes times) {
+    // Apply manual offsets
+    Map<String, int> offsets = {};
+    if (Get.isRegistered<StorageService>()) {
+      final storedOffsets = _storageService.read<Map<String, dynamic>>('prayer_offsets');
+      if (storedOffsets != null) {
+        offsets = storedOffsets.map((key, value) => MapEntry(key, value as int));
+      }
+    }
+
+    DateTime adjust(DateTime dt, String key) {
+      final offset = offsets[key] ?? 0;
+      return dt.add(Duration(minutes: offset));
+    }
+
     return [
       PrayerTimeModel(
         name: PrayerNames.displayName(PrayerName.fajr),
-        dateTime: times.fajr,
+        dateTime: adjust(times.fajr, 'fajr'),
         prayerType: PrayerName.fajr,
       ),
       PrayerTimeModel(
         name: PrayerNames.displayName(PrayerName.sunrise),
-        dateTime: times.sunrise,
+        dateTime: adjust(times.sunrise, 'sunrise'),
         prayerType: PrayerName.sunrise,
         isNotificationEnabled: false,
       ),
       PrayerTimeModel(
         name: PrayerNames.displayName(PrayerName.dhuhr),
-        dateTime: times.dhuhr,
+        dateTime: adjust(times.dhuhr, 'dhuhr'),
         prayerType: PrayerName.dhuhr,
       ),
       PrayerTimeModel(
         name: PrayerNames.displayName(PrayerName.asr),
-        dateTime: times.asr,
+        dateTime: adjust(times.asr, 'asr'),
         prayerType: PrayerName.asr,
       ),
       PrayerTimeModel(
         name: PrayerNames.displayName(PrayerName.maghrib),
-        dateTime: times.maghrib,
+        dateTime: adjust(times.maghrib, 'maghrib'),
         prayerType: PrayerName.maghrib,
       ),
       PrayerTimeModel(
         name: PrayerNames.displayName(PrayerName.isha),
-        dateTime: times.isha,
+        dateTime: adjust(times.isha, 'isha'),
         prayerType: PrayerName.isha,
       ),
     ];
@@ -343,6 +360,22 @@ class PrayerTimeService extends GetxService {
     }
   }
 
+  /// Called when location/timezone changes — recalculates and reschedules.
+  Future<void> onLocationChanged() async {
+    // Invalidate caches
+    _cachedTodayList = null;
+    _tomorrowFajr = null;
+    prayerTimes.value = null;
+
+    // Recalculate
+    await calculatePrayerTimes();
+
+    // Reschedule notifications with new prayer times
+    if (Get.isRegistered<NotificationService>()) {
+      Get.find<NotificationService>().rescheduleAllForToday();
+    }
+  }
+
   /// Next prayer after [afterTime]; includes tomorrow's Fajr when after Isha.
   PrayerTimeModel? getNextPrayer([DateTime? afterTime]) {
     final prayers = getTodayPrayers()
@@ -354,6 +387,33 @@ class PrayerTimeService extends GetxService {
     } catch (_) {
       return null;
     }
+  }
+
+  /// Current prayer (the one whose time has passed but next hasn't started);
+  Rx<PrayerTimeModel?> get currentPrayer {
+    final now = DateTime.now();
+    final today = getTodayPrayers();
+    final prayers = today
+        .where((p) => p.prayerType != PrayerName.sunrise)
+        .toList();
+
+    // Sort by time
+    prayers.sort((a, b) => a.dateTime.compareTo(b.dateTime));
+
+    PrayerTimeModel? current;
+    for (var i = 0; i < prayers.length; i++) {
+      if (prayers[i].dateTime.isBefore(now)) {
+        current = prayers[i];
+      } else {
+        break;
+      }
+    }
+    return Rx<PrayerTimeModel?>(current);
+  }
+
+  /// Next prayer (the same as getNextPrayer but as a reactive property);
+  Rx<PrayerTimeModel?> get nextPrayer {
+    return Rx<PrayerTimeModel?>(getNextPrayer());
   }
 }
 

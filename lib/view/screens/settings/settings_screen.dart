@@ -9,6 +9,9 @@ import 'package:salah/core/services/localization_service.dart';
 import 'package:salah/core/theme/app_colors.dart';
 import 'package:salah/core/theme/app_fonts.dart';
 import 'package:salah/view/widgets/app_dialogs.dart';
+import 'package:salah/view/screens/settings/privacy_settings_screen.dart';
+import 'package:salah/view/screens/settings/prayer_adjustment_screen.dart';
+import 'package:salah/core/constants/storage_keys.dart';
 
 /// Settings screen for app preferences
 ///
@@ -40,8 +43,17 @@ class SettingsScreen extends GetView<SettingsController> {
             _buildCalculationMethodTile(context),
             Divider(indent: 56, height: 1, color: AppColors.divider),
             _buildMadhabTile(context),
+            const Divider(indent: 16),
+             _buildTile(
+              context,
+              icon: Icons.tune_rounded,
+              title: 'adjust_prayer_times'.tr,
+              onTap: () => Get.to(() => const PrayerAdjustmentScreen()),
+            ),
           ]),
 
+          const SizedBox(height: AppDimensions.paddingMD),
+          _buildProfileHeader(context),
           const SizedBox(height: AppDimensions.paddingLG),
 
           // --- Personalization ---
@@ -50,15 +62,6 @@ class SettingsScreen extends GetView<SettingsController> {
             _buildLanguageTile(context),
             Divider(indent: 56, height: 1, color: AppColors.divider),
             _buildThemeTile(context),
-            Divider(indent: 56, height: 1, color: AppColors.divider),
-            _buildTile(
-              context,
-              icon: Icons.palette_outlined,
-              title: 'app_appearance'.tr,
-              onTap: () {
-                Get.snackbar('info'.tr, 'coming_soon'.tr);
-              },
-            ),
           ]),
 
           const SizedBox(height: AppDimensions.paddingLG),
@@ -128,15 +131,27 @@ class SettingsScreen extends GetView<SettingsController> {
 
           // --- Support & Feedback ---
           _buildHeader('sound_vibration'.tr),
-          _buildCard([
-            _buildSoundModeSelector(),
-          ]),
+          _buildCard([_buildSoundModeSelector()]),
 
           const SizedBox(height: AppDimensions.paddingLG),
 
           // --- Account Actions ---
           _buildHeader('account'.tr),
           _buildCard([
+             _buildTile(
+              context,
+              icon: Icons.privacy_tip_outlined,
+              title: 'privacy_settings'.tr,
+              onTap: () => Get.to(() => const PrivacySettingsScreen()),
+            ),
+            Divider(indent: 56, height: 1, color: AppColors.divider),
+            _buildTile(
+              context,
+              icon: Icons.file_download_outlined,
+              title: 'export_data'.tr,
+              onTap: () => controller.exportPrayerData(),
+            ),
+            Divider(indent: 56, height: 1, color: AppColors.divider),
             _buildTile(
               context,
               icon: Icons.logout_rounded,
@@ -259,7 +274,6 @@ class SettingsScreen extends GetView<SettingsController> {
         title: 'language'.tr,
         subtitle: current.name,
         onTap: () {
-          Get.back();
           _showLanguagePicker(context);
         },
       );
@@ -321,15 +335,17 @@ class SettingsScreen extends GetView<SettingsController> {
   }
 
   Widget _buildNotificationTile(BuildContext context) {
-    return _buildTile(
-      context,
-      icon: Icons.notifications_active_rounded,
-      title: 'notifications'.tr,
-      subtitle: controller.notificationsEnabled.value
-          ? 'enabled'.tr
-          : 'disabled'.tr,
-      onTap: () => _navigateToNotifications(context),
-    );
+    return Obx(() {
+      return _buildTile(
+        context,
+        icon: Icons.notifications_active_rounded,
+        title: 'notifications'.tr,
+        subtitle: controller.notificationsEnabled.value
+            ? 'enabled'.tr
+            : 'disabled'.tr,
+        onTap: () => _navigateToNotifications(context),
+      );
+    });
   }
 
   Widget _buildCalculationMethodTile(BuildContext context) {
@@ -631,8 +647,9 @@ class SettingsScreen extends GetView<SettingsController> {
                         label,
                         style: AppFonts.labelSmall.copyWith(
                           color: isSelected ? AppColors.primary : Colors.grey,
-                          fontWeight:
-                              isSelected ? FontWeight.bold : FontWeight.normal,
+                          fontWeight: isSelected
+                              ? FontWeight.bold
+                              : FontWeight.normal,
                         ),
                       ),
                     ],
@@ -642,6 +659,150 @@ class SettingsScreen extends GetView<SettingsController> {
             );
           }).toList(),
         ),
+      ),
+    );
+  }
+
+  Widget _buildProfileHeader(BuildContext context) {
+    return Obx(() {
+      final user = controller.userModel.value;
+      final authUser = controller.currentUser.value;
+      
+      if (user == null && authUser == null) return const SizedBox();
+
+      final displayName = user?.name ?? authUser?.displayName ?? 'guest'.tr;
+      final photoUrl = user?.photoUrl ?? authUser?.photoURL;
+      final email = user?.email ?? authUser?.email;
+
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Stack(
+              children: [
+                GestureDetector(
+                  onTap: controller.updateProfilePhoto,
+                  child: CircleAvatar(
+                    radius: 32,
+                    backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                    backgroundImage: photoUrl != null
+                        ? NetworkImage(photoUrl)
+                        : null,
+                    child: photoUrl == null
+                        ? const Icon(
+                            Icons.person,
+                            size: 32,
+                            color: AppColors.primary,
+                          )
+                        : null,
+                  ),
+                ),
+                Positioned(
+                  right: 0,
+                  bottom: 0,
+                  child: GestureDetector(
+                    onTap: controller.updateProfilePhoto,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(
+                        color: AppColors.primary,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.camera_alt,
+                        size: 14,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          displayName,
+                          style: AppFonts.titleMedium.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.edit_outlined, size: 18),
+                        onPressed: () =>
+                            _showEditNameDialog(context, displayName),
+                        splashRadius: 20,
+                        constraints: const BoxConstraints(),
+                        padding: const EdgeInsets.all(8),
+                      ),
+                    ],
+                  ),
+                  if (email != null)
+                    Text(
+                      email,
+                      style: AppFonts.bodySmall.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
+  void _showEditNameDialog(BuildContext context, String? currentName) {
+    final nameController = TextEditingController(text: currentName);
+    Get.dialog(
+      AlertDialog(
+        title: Text('edit_profile'.tr),
+        content: TextField(
+          controller: nameController,
+          decoration: InputDecoration(
+            labelText: 'name'.tr,
+            hintText: 'enter_your_name'.tr,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+          textCapitalization: TextCapitalization.words,
+        ),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: Text('cancel'.tr)),
+          ElevatedButton(
+            onPressed: () {
+              if (nameController.text.trim().isNotEmpty) {
+                controller.updateDisplayName(nameController.text.trim());
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+            ),
+            child: Text('save'.tr),
+          ),
+        ],
       ),
     );
   }
@@ -687,31 +848,38 @@ class _NotificationSettingsView extends StatelessWidget {
                   value: controller.adhanEnabled.value,
                   onChanged: (v) => controller.setAdhanEnabled(v),
                 ),
-                const Divider(indent: 16),
-                _buildSwitchTile(
-                  title: 'reminder_notification'.tr,
-                  subtitle: 'reminder_notification_desc'.tr,
-                  value: controller.reminderEnabled.value,
-                  onChanged: (v) => controller.setReminderEnabled(v),
-                ),
-                const Divider(indent: 16),
-                _buildSwitchTile(
-                  title: 'family_notification_label'.tr,
-                  subtitle: 'family_notification_desc'.tr,
-                  value: controller.familyNotificationsEnabled.value,
-                  onChanged: (v) => controller.setFamilyNotificationsEnabled(v),
-                ),
-              ]),
-
-              const SizedBox(height: 24),
-              _buildHeader('notification_types'.tr.toUpperCase()),
-              _buildCard([
-                _buildSwitchTile(
-                  title: 'adhan_notification'.tr,
-                  subtitle: 'adhan_notification_desc'.tr,
-                  value: controller.adhanEnabled.value,
-                  onChanged: (v) => controller.setAdhanEnabled(v),
-                ),
+                if (controller.adhanEnabled.value) ...[
+                  _buildPrayerToggle(
+                    title: 'fajr'.tr,
+                    value: controller.fajrNotif.value,
+                    onChanged: (v) =>
+                        controller.setPrayerNotif(StorageKeys.fajrNotification, v),
+                  ),
+                  _buildPrayerToggle(
+                    title: 'dhuhr'.tr,
+                    value: controller.dhuhrNotif.value,
+                    onChanged: (v) =>
+                        controller.setPrayerNotif(StorageKeys.dhuhrNotification, v),
+                  ),
+                  _buildPrayerToggle(
+                    title: 'asr'.tr,
+                    value: controller.asrNotif.value,
+                    onChanged: (v) =>
+                        controller.setPrayerNotif(StorageKeys.asrNotification, v),
+                  ),
+                  _buildPrayerToggle(
+                    title: 'maghrib'.tr,
+                    value: controller.maghribNotif.value,
+                    onChanged: (v) => controller.setPrayerNotif(
+                        StorageKeys.maghribNotification, v),
+                  ),
+                  _buildPrayerToggle(
+                    title: 'isha'.tr,
+                    value: controller.ishaNotif.value,
+                    onChanged: (v) =>
+                        controller.setPrayerNotif(StorageKeys.ishaNotification, v),
+                  ),
+                ],
                 const Divider(indent: 16),
                 _buildSwitchTile(
                   title: 'reminder_notification'.tr,
@@ -769,6 +937,23 @@ class _NotificationSettingsView extends StatelessWidget {
       value: value,
       onChanged: onChanged,
       activeThumbColor: AppColors.primary,
+    );
+  }
+
+  Widget _buildPrayerToggle({
+    required String title,
+    required bool value,
+    required Function(bool) onChanged,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 32),
+      child: SwitchListTile(
+        title: Text(title, style: AppFonts.bodyMedium),
+        value: value,
+        onChanged: onChanged,
+        activeThumbColor: AppColors.primary,
+        dense: true,
+      ),
     );
   }
 }

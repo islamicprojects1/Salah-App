@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
 import 'package:salah/core/constants/enums.dart';
+import 'package:salah/core/constants/storage_keys.dart';
 import 'package:timezone/timezone.dart' as tz;
 
 import '../../data/models/notification_models.dart';
@@ -76,6 +77,15 @@ class SmartNotificationService extends GetxService {
     required DateTime prayerTime,
     String language = 'ar',
   }) async {
+    final notificationsEnabled =
+        _storageService.read<bool>(StorageKeys.notificationsEnabled) ?? true;
+    if (!notificationsEnabled) return;
+
+    final adhanMasterEnabled =
+        _storageService.read<bool>(StorageKeys.adhanNotificationsEnabled) ??
+        true;
+    if (!adhanMasterEnabled) return;
+
     final isArabic = language == 'ar';
 
     final title = isArabic
@@ -149,6 +159,14 @@ class SmartNotificationService extends GetxService {
     required DateTime prayerTime,
     String language = 'ar',
   }) async {
+    final notificationsEnabled =
+        _storageService.read<bool>(StorageKeys.notificationsEnabled) ?? true;
+    if (!notificationsEnabled) return;
+
+    final reminderEnabled =
+        _storageService.read<bool>(StorageKeys.reminderNotification) ?? true;
+    if (!reminderEnabled) return;
+
     final isArabic = language == 'ar';
 
     final title = isArabic
@@ -271,6 +289,14 @@ class SmartNotificationService extends GetxService {
     required String prayerNameEn,
     String language = 'ar',
   }) async {
+    final notificationsEnabled =
+        _storageService.read<bool>(StorageKeys.notificationsEnabled) ?? true;
+    if (!notificationsEnabled) return;
+
+    final familyEnabled =
+        _storageService.read<bool>(StorageKeys.familyNotification) ?? true;
+    if (!familyEnabled) return;
+
     final isArabic = language == 'ar';
 
     final title = isArabic

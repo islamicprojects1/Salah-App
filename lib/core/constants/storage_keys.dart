@@ -49,6 +49,9 @@ class StorageKeys {
   
   /// Key for storing notification preferences
   static const String notificationsEnabled = 'notifications_enabled';
+
+  /// Key for storing if all adhan notifications are enabled
+  static const String adhanNotificationsEnabled = 'adhan_notifications_enabled';
   
   /// Key for storing Fajr notification preference
   static const String fajrNotification = 'fajr_notification';

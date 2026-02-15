@@ -14,6 +14,8 @@ class MissedPrayerCard extends StatefulWidget {
   final Function(PrayerCardStatus) onStatusChanged;
   final Function(PrayerTimingQuality) onTimingChanged;
   final VoidCallback? onDismissed;
+  /// Optional: if set, this card represents a past day's prayer (qada)
+  final DateTime? pastDate;
 
   const MissedPrayerCard({
     super.key,
@@ -23,6 +25,7 @@ class MissedPrayerCard extends StatefulWidget {
     required this.onStatusChanged,
     required this.onTimingChanged,
     this.onDismissed,
+    this.pastDate,
   });
 
   @override
@@ -265,24 +268,45 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
                       ),
                     ),
                     const SizedBox(width: 12),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _getTimeAgoColor().withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        _getTimeAgo(),
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: _getTimeAgoColor(),
-                          fontWeight: FontWeight.w600,
+                    // Show date label for past days, or time-ago badge for today
+                    if (widget.pastDate != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.warning.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          _formatDateLabel(widget.pastDate!),
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: AppColors.warning,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      )
+                    else
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _getTimeAgoColor().withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          _getTimeAgo(),
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: _getTimeAgoColor(),
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
-                    ),
                   ],
                 ),
               ],
@@ -595,5 +619,15 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
     final minute = time.minute.toString().padLeft(2, '0');
     final period = time.hour >= 12 ? 'PM' : 'AM';
     return '$hour:$minute $period';
+  }
+
+  String _formatDateLabel(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final target = DateTime(date.year, date.month, date.day);
+    final diff = today.difference(target).inDays;
+    if (diff == 1) return 'yesterday'.tr;
+    if (diff < 7) return '${'ago'.tr} $diff ${'days'.tr}';
+    return '${date.day}/${date.month}';
   }
 }

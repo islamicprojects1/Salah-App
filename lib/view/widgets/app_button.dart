@@ -13,6 +13,8 @@ class AppButton extends StatelessWidget {
   final double? width;
   final double? height;
   final EdgeInsetsGeometry? padding;
+  final Color? backgroundColor;
+  final Color? textColor;
 
   const AppButton({
     super.key,
@@ -25,6 +27,8 @@ class AppButton extends StatelessWidget {
     this.width,
     this.height,
     this.padding,
+    this.backgroundColor,
+    this.textColor,
   });
 
   @override
@@ -73,6 +77,8 @@ class AppButton extends StatelessWidget {
           child: ElevatedButton(
             onPressed: isEnabled ? onPressed : null,
             style: ElevatedButton.styleFrom(
+              backgroundColor: backgroundColor,
+              foregroundColor: textColor,
               padding:
                   padding ??
                   const EdgeInsets.symmetric(

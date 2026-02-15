@@ -12,6 +12,7 @@ import 'package:salah/core/services/location_service.dart';
 import 'package:salah/core/services/notification_service.dart';
 import 'package:salah/core/services/prayer_time_service.dart';
 import 'package:salah/core/services/live_context_service.dart';
+import 'package:salah/core/services/qada_detection_service.dart';
 import 'package:salah/core/services/firestore_service.dart';
 import 'package:salah/data/models/prayer_log_model.dart';
 import 'package:salah/data/models/prayer_time_model.dart';
@@ -32,6 +33,7 @@ class DashboardController extends GetxController with WidgetsBindingObserver {
   final PrayerRepository _prayerRepo;
   final NotificationService _notificationService;
   final LiveContextService _liveContextService;
+  final QadaDetectionService _qadaService;
 
   DashboardController({
     required PrayerTimeService prayerService,
@@ -41,13 +43,15 @@ class DashboardController extends GetxController with WidgetsBindingObserver {
     required PrayerRepository prayerRepo,
     required NotificationService notificationService,
     required LiveContextService liveContextService,
+    required QadaDetectionService qadaService,
   }) : _prayerService = prayerService,
        _locationService = locationService,
        _authService = authService,
        _userRepo = userRepo,
        _prayerRepo = prayerRepo,
        _notificationService = notificationService,
-       _liveContextService = liveContextService;
+       _liveContextService = liveContextService,
+       _qadaService = qadaService;
 
   final isLoading = true.obs;
   final currentPrayer = Rxn<PrayerTimeModel>();
@@ -65,6 +69,7 @@ class DashboardController extends GetxController with WidgetsBindingObserver {
   void changeTabIndex(int index) => currentTabIndex.value = index;
 
   Timer? _timer;
+  Timer? _midnightTimer;
   StreamSubscription<List<PrayerLogModel>>? _logsSubscription;
   StreamSubscription<dynamic>? _notificationsSubscription;
 
@@ -81,6 +86,13 @@ class DashboardController extends GetxController with WidgetsBindingObserver {
       nextPrayer.value = ctx.nextPrayer;
       timeUntilNextPrayer.value = ctx.formattedCountdown;
     });
+
+    // React to prayer times being recalculated (e.g. after city/method change)
+    ever(_prayerService.isLoading, (loading) {
+      if (!loading && !isLoading.value) {
+        _loadPrayerTimes();
+      }
+    });
   }
 
   @override
@@ -88,6 +100,12 @@ class DashboardController extends GetxController with WidgetsBindingObserver {
     if (state == AppLifecycleState.resumed) {
       _processPendingPrayerLogFromNotification();
       _loadPrayerLogs();
+      // Check for missed prayers on app resume
+      _qadaService.checkForUnloggedPrayers();
+      // Detect midnight rollover on resume
+      if (_qadaService.hasMidnightPassed()) {
+        _handleMidnightRollover();
+      }
     }
   }
 
@@ -112,6 +130,8 @@ class DashboardController extends GetxController with WidgetsBindingObserver {
       _processPendingPrayerLogFromNotification();
       _listenForEncouragements();
       _startTimer();
+      _scheduleMidnightRollover();
+      _qadaService.checkForUnloggedPrayers();
 
       // 4. Heavy/External operations (Deferred)
       // Load heatmap data
@@ -372,7 +392,7 @@ class DashboardController extends GetxController with WidgetsBindingObserver {
   void _startTimer() {
     _timer?.cancel();
     _timer = Timer.periodic(
-      const Duration(seconds: 1),
+      const Duration(seconds: 2),
       (_) => _updateTimeUntilNext(),
     );
   }
@@ -415,11 +435,12 @@ class DashboardController extends GetxController with WidgetsBindingObserver {
       );
       await _prayerRepo.addPrayerLog(userId: userId, log: log);
       _addPulseIfFamily(prayer.name);
-      final baseId = _notificationIdForPrayer(
-        prayer.prayerType ?? PrayerName.fajr,
-      );
+      final prayerType = prayer.prayerType ?? PrayerName.fajr;
+      final baseId = _notificationIdForPrayer(prayerType);
       await _notificationService.cancelNotification(baseId);
       await _notificationService.cancelNotification(baseId + 100);
+      _qadaService.resetSnoozeCount(prayerType);
+      _qadaService.onPrayerLogged();
       await Get.find<FirestoreService>().addAnalyticsEvent(
         userId: userId,
         event: 'prayer_logged',
@@ -430,6 +451,7 @@ class DashboardController extends GetxController with WidgetsBindingObserver {
       );
       if (todayLogs.length + 1 >= 5) {
         currentStreak.value = await _prayerRepo.updateStreak(userId);
+        _celebrateAllPrayersDone();
       }
       AppFeedback.showSuccess('success_done'.tr, 'prayer_accepted'.tr);
     } catch (e) {
@@ -464,14 +486,16 @@ class DashboardController extends GetxController with WidgetsBindingObserver {
       _addPulseIfFamily(prayer.name);
 
       // Cancel any pending notification for this prayer
-      final baseId = _notificationIdForPrayer(
-        prayer.prayerType ?? PrayerName.fajr,
-      );
+      final prayerType = prayer.prayerType ?? PrayerName.fajr;
+      final baseId = _notificationIdForPrayer(prayerType);
       await _notificationService.cancelNotification(baseId);
       await _notificationService.cancelNotification(baseId + 100);
+      _qadaService.resetSnoozeCount(prayerType);
+      _qadaService.onPrayerLogged();
 
       if (todayLogs.length + 1 >= 5) {
         currentStreak.value = await _prayerRepo.updateStreak(userId);
+        _celebrateAllPrayersDone();
       }
       AppFeedback.showSuccess('prayer_logged_success'.tr, 'prayer_accepted'.tr);
     } catch (e) {
@@ -525,9 +549,45 @@ class DashboardController extends GetxController with WidgetsBindingObserver {
     await _loadStreak();
   }
 
+  // ============================================================
+  // MIDNIGHT ROLLOVER & CELEBRATION
+  // ============================================================
+
+  /// Schedule a timer that fires at midnight to handle day rollover.
+  void _scheduleMidnightRollover() {
+    _midnightTimer?.cancel();
+    final now = DateTime.now();
+    final tomorrow = DateTime(now.year, now.month, now.day + 1, 0, 0, 5);
+    final delay = tomorrow.difference(now);
+    _midnightTimer = Timer(delay, _handleMidnightRollover);
+  }
+
+  /// Called when day changes: reload everything, check yesterday's qada.
+  void _handleMidnightRollover() {
+    _qadaService.resetAllSnoozeCounts();
+    _loadPrayerTimes();
+    _loadPrayerLogs();
+    _loadStreak();
+    _loadHeatmapData();
+    _qadaService.checkForUnloggedPrayers();
+    // Schedule next midnight rollover
+    _scheduleMidnightRollover();
+  }
+
+  /// Celebrate when all 5 obligatory prayers are logged today.
+  void _celebrateAllPrayersDone() {
+    AppFeedback.showSuccess(
+      'all_prayers_complete'.tr,
+      'god_accept_prayers'.tr,
+    );
+    // Notify family if applicable
+    _addPulseIfFamily('all_prayers_complete'.tr);
+  }
+
   @override
   void onClose() {
     _timer?.cancel();
+    _midnightTimer?.cancel();
     _logsSubscription?.cancel();
     _notificationsSubscription?.cancel();
     WidgetsBinding.instance.removeObserver(this);

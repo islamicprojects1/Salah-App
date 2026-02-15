@@ -48,4 +48,7 @@ class AppRoutes {
 
   /// About screen - app information
   static const String about = '/about';
+
+  /// Notifications screen
+  static const String notifications = '/notifications';
 }

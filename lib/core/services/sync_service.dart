@@ -3,6 +3,7 @@ import 'package:salah/core/constants/storage_keys.dart';
 import 'package:salah/core/feedback/sync_status.dart';
 import 'package:salah/core/services/connectivity_service.dart';
 import 'package:salah/core/services/database_helper.dart';
+import 'package:salah/core/services/notification_service.dart';
 import 'package:salah/core/services/storage_service.dart';
 import 'package:salah/data/repositories/prayer_repository.dart';
 
@@ -47,8 +48,15 @@ class SyncService extends GetxService {
   /// Call after [PrayerRepository] is registered. GetX Worker: when connectivity is restored, trigger sync.
   void startConnectivityWorker() {
     ever(_connectivity.isConnected, (connected) {
-      if (connected && Get.isRegistered<PrayerRepository>()) {
-        Get.find<PrayerRepository>().syncAllPending();
+      if (connected) {
+        // Sync pending items
+        if (Get.isRegistered<PrayerRepository>()) {
+          Get.find<PrayerRepository>().syncAllPending();
+        }
+        // Reschedule notifications (prayer times may differ after offline)
+        if (Get.isRegistered<NotificationService>()) {
+          Get.find<NotificationService>().rescheduleAllForToday();
+        }
       }
     });
   }

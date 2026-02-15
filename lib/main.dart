@@ -11,6 +11,7 @@ import 'package:salah/core/services/firestore_service.dart';
 import 'package:salah/core/services/location_service.dart';
 import 'package:salah/core/services/notification_service.dart';
 import 'package:salah/core/services/storage_service.dart';
+import 'package:salah/core/services/fcm_service.dart';
 import 'package:salah/data/repositories/prayer_repository.dart';
 import 'firebase_options.dart';
 
@@ -23,6 +24,7 @@ import 'package:salah/data/repositories/user_repository.dart';
 import 'package:salah/core/services/prayer_time_service.dart';
 import 'package:salah/core/services/audio_service.dart';
 import 'package:salah/core/services/shake_service.dart';
+import 'package:salah/core/services/qada_detection_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -100,7 +102,14 @@ Future<void> initServices() async {
 
   // 6. Controllers & Workers
   Get.put(AuthController(), permanent: true);
-  
+
+  // 7. Critical Domain Services (Added here to avoid race conditions in bindings)
+  await Future.wait([
+    PrayerTimeService().init().then((s) => Get.put(s, permanent: true)),
+    NotificationService().init().then((s) => Get.put(s, permanent: true)),
+    FcmService().init().then((s) => Get.put(s, permanent: true)),
+  ]);
+
   // Start background workers
   syncService.startConnectivityWorker();
 }
@@ -110,11 +119,28 @@ Future<void> initLateServices() async {
   // but should be ready shortly after.
   await Future.wait([
     AudioService().init().then((s) => Get.put(s, permanent: true)),
-    PrayerTimeService().init().then((s) => Get.put(s, permanent: true)),
-    NotificationService().init().then((s) => Get.put(s, permanent: true)),
     // ShakeService is sync or doesn't have an init() that needs awaiting
     Future.sync(() => Get.put(ShakeService(), permanent: true)),
   ]);
+
+  // Cold start recovery: register QadaDetectionService and trigger initial check
+  if (!Get.isRegistered<QadaDetectionService>() &&
+      Get.isRegistered<PrayerTimeService>() &&
+      Get.isRegistered<PrayerRepository>() &&
+      Get.isRegistered<AuthService>() &&
+      Get.isRegistered<StorageService>()) {
+    final qadaService = QadaDetectionService(
+      prayerTimeService: Get.find<PrayerTimeService>(),
+      prayerRepo: Get.find<PrayerRepository>(),
+      authService: Get.find<AuthService>(),
+      storageService: Get.find<StorageService>(),
+    );
+    Get.put(qadaService, permanent: true);
+    // Defer the initial check to avoid blocking late init
+    Future.delayed(const Duration(seconds: 2), () {
+      qadaService.checkForUnloggedPrayers();
+    });
+  }
 }
 
 /// Main app widget

@@ -84,6 +84,9 @@ class ThemeService extends GetxService {
   /// Apply the current theme
   void _applyTheme() {
     Get.changeThemeMode(themeMode);
+    // Force all widgets to rebuild so AppColors dynamic getters
+    // (which use Get.isDarkMode) reflect the new theme immediately.
+    Future.microtask(() => Get.forceAppUpdate());
   }
   
   /// Toggle between light and dark theme

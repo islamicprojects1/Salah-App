@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
 import 'package:salah/core/constants/enums.dart';
+import 'package:salah/core/feedback/app_feedback.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:salah/core/theme/app_colors.dart';
 import 'package:salah/core/theme/app_fonts.dart';
@@ -17,6 +18,9 @@ import 'package:salah/data/models/family_model.dart';
 import 'package:salah/core/helpers/date_time_helper.dart';
 import 'package:salah/view/widgets/app_button.dart';
 import 'package:salah/view/widgets/app_loading.dart';
+import 'package:salah/view/widgets/family_vitality_orb.dart';
+import 'package:salah/view/widgets/synchronicity_avatar.dart';
+import 'package:salah/view/widgets/family_flame_widget.dart';
 
 class FamilyDashboardScreen extends StatefulWidget {
   const FamilyDashboardScreen({super.key});
@@ -41,14 +45,19 @@ class _FamilyDashboardScreenState extends State<FamilyDashboardScreen>
       }
 
       if (!controller.hasFamily) {
-        return _buildNoFamilyView();
+        return _buildNoFamilyView(context);
       }
 
       return _buildFamilyView(context, controller);
     });
   }
 
-  Widget _buildNoFamilyView() {
+  // ─── No Family View ──────────────────────────────────────────────
+
+  Widget _buildNoFamilyView(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Padding(
       padding: const EdgeInsets.all(AppDimensions.paddingLG),
       child: Column(
@@ -64,7 +73,7 @@ class _FamilyDashboardScreenState extends State<FamilyDashboardScreen>
           Text(
             'no_family_yet'.tr,
             style: AppFonts.headlineMedium.copyWith(
-              color: AppColors.textPrimary,
+              color: colorScheme.onSurface,
               fontWeight: FontWeight.bold,
             ),
             textAlign: TextAlign.center,
@@ -72,7 +81,9 @@ class _FamilyDashboardScreenState extends State<FamilyDashboardScreen>
           const SizedBox(height: AppDimensions.paddingMD),
           Text(
             'create_or_join_family_desc'.tr,
-            style: AppFonts.bodyMedium.copyWith(color: AppColors.textSecondary),
+            style: AppFonts.bodyMedium.copyWith(
+              color: theme.textTheme.bodySmall?.color,
+            ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppDimensions.paddingXL * 2),
@@ -94,7 +105,11 @@ class _FamilyDashboardScreenState extends State<FamilyDashboardScreen>
     );
   }
 
+  // ─── Family View ─────────────────────────────────────────────────
+
   Widget _buildFamilyView(BuildContext context, FamilyController controller) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final family = controller.currentFamily!;
 
     return SingleChildScrollView(
@@ -102,293 +117,598 @@ class _FamilyDashboardScreenState extends State<FamilyDashboardScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Header Card
-          Card(
-            elevation: AppDimensions.cardElevation,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
-            ),
-            color: AppColors.primary,
-            child: Padding(
-              padding: const EdgeInsets.all(AppDimensions.paddingLG),
-              child: Column(
-                children: [
-                  GestureDetector(
-                    onTap: () => _showFamilySwitcher(context, controller),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Flexible(
-                          child: Text(
-                            family.name,
-                            style: AppFonts.headlineMedium.copyWith(
-                              color: AppColors.white,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                        if (controller.myFamilies.length > 1) ...[
-                          const SizedBox(width: 8),
-                          const Icon(
-                            Icons.keyboard_arrow_down,
-                            color: AppColors.white70,
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: AppDimensions.paddingMD),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppDimensions.paddingMD,
-                      vertical: AppDimensions.paddingXS,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.white10,
-                      borderRadius: BorderRadius.circular(
-                        AppDimensions.radiusMD,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          '${'invite_code_label'.tr}: ${family.inviteCode}',
-                          style: AppFonts.bodyLarge.copyWith(
-                            color: AppColors.white,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 2,
-                          ),
-                        ),
-                        const SizedBox(width: AppDimensions.paddingMD),
-                        IconButton(
-                          icon: const Icon(
-                            Icons.share,
-                            color: AppColors.white,
-                            size: 20,
-                          ),
-                          onPressed: () {
-                            SharePlus.instance.share(
-                              ShareParams(
-                                text: 'share_family_invite'.tr.replaceAll(
-                                  '@code',
-                                  family.inviteCode,
-                                ),
-                              ),
-                            );
-                          },
-                          constraints: const BoxConstraints(),
-                          padding: EdgeInsets.zero,
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (family.isAdmin(Get.find<AuthService>().userId ?? '')) ...[
-                    const SizedBox(height: AppDimensions.paddingMD),
-                    TextButton.icon(
-                      onPressed: () => _showAddChildDialog(context, controller),
-                      icon: const Icon(
-                        Icons.person_add_alt_1,
-                        color: AppColors.white,
-                      ),
-                      label: Text(
-                        'add_child_no_phone_btn'.tr,
-                        style: AppFonts.bodyMedium.copyWith(
-                          color: AppColors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      style: TextButton.styleFrom(
-                        backgroundColor: AppColors.white10,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                            AppDimensions.radiusMD,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
+          // ── Header: Family Name + Switcher ──
+          _buildFamilyHeader(context, family, controller),
 
-          // ----- Family Daily Summary -----
-          _buildFamilySummaryCard(family, controller),
+          const SizedBox(height: AppDimensions.paddingLG),
 
-          const SizedBox(height: AppDimensions.paddingMD),
+          // ── Vitality Orb (Centerpiece) ──
+          const Center(child: FamilyVitalityOrb()),
 
-          _buildPulseSection(controller),
+          const SizedBox(height: AppDimensions.paddingLG),
+
+          // ── Family Flame ──
+          const Center(child: FamilyFlameWidget()),
+
+          const SizedBox(height: AppDimensions.paddingLG),
+
+          // ── Family Daily Summary ──
+          _buildFamilySummaryCard(context, family, controller),
 
           const SizedBox(height: AppDimensions.paddingXL),
 
+          // ── Members ──
           Text(
             'family_members_count'.tr.replaceAll(
               '@count',
               '${family.members.length}',
             ),
-            style: AppFonts.titleLarge.copyWith(color: AppColors.textPrimary),
+            style: AppFonts.titleLarge.copyWith(color: colorScheme.onSurface),
           ),
 
           const SizedBox(height: AppDimensions.paddingMD),
 
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: family.members.length,
-            separatorBuilder: (_, _) =>
-                const SizedBox(height: AppDimensions.paddingMD),
-            itemBuilder: (context, index) {
-              final member = family.members[index];
-              return Obx(() {
-                final progress = controller.memberProgress[member.userId] ?? 0;
-                final streak = controller.memberStreaks[member.userId] ?? 0;
-                final isMe = member.userId == Get.find<AuthService>().userId;
+          _buildMembersList(context, family, controller),
+        ],
+      ),
+    );
+  }
 
-                return Card(
-                  elevation: AppDimensions.cardElevationLow,
-                  margin: EdgeInsets.zero,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppDimensions.paddingMD),
-                    child: Column(
+  // ─── Family Header ──────────────────────────────────────────────
+
+  Widget _buildFamilyHeader(
+    BuildContext context,
+    FamilyModel family,
+    FamilyController controller,
+  ) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Card(
+      elevation: AppDimensions.cardElevation,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
+      ),
+      color: colorScheme.primary,
+      child: Padding(
+        padding: const EdgeInsets.all(AppDimensions.paddingLG),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => _showFamilySwitcher(context, controller),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Row(
-                          children: [
-                            CircleAvatar(
-                              radius: 20,
-                              backgroundImage: member.photoUrl != null
-                                  ? NetworkImage(member.photoUrl!)
-                                  : null,
-                              backgroundColor: AppColors.secondary.withValues(
-                                alpha: 0.1,
-                              ),
-                              child: member.photoUrl == null
-                                  ? Text(
-                                      (member.name ?? "member_role".tr)[0].toUpperCase(),
-                                      style: TextStyle(
-                                        color: AppColors.secondary,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    )
-                                  : null,
+                        Flexible(
+                          child: Text(
+                            family.name,
+                            style: AppFonts.headlineMedium.copyWith(
+                              color: colorScheme.onPrimary,
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (controller.myFamilies.length > 1) ...[
+                          const SizedBox(width: 8),
+                          Icon(
+                            Icons.keyboard_arrow_down_rounded,
+                            color: colorScheme.onPrimary.withValues(alpha: 0.8),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+                Obx(() {
+                  final hasUnread = controller.pulseEvents.isNotEmpty;
+                  return Stack(
+                    children: [
+                      IconButton(
+                        icon: Icon(
+                          Icons.notifications_outlined,
+                          color: colorScheme.onPrimary,
+                        ),
+                        onPressed: () => Get.toNamed(AppRoutes.notifications),
+                      ),
+                      if (hasUnread)
+                        Positioned(
+                          right: 8,
+                          top: 8,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(
+                              color: AppColors.error,
+                              shape: BoxShape.circle,
+                            ),
+                            constraints: const BoxConstraints(
+                              minWidth: 8,
+                              minHeight: 8,
+                            ),
+                          ),
+                        ),
+                    ],
+                  );
+                }),
+              ],
+            ),
+            const SizedBox(height: AppDimensions.paddingMD),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppDimensions.paddingMD,
+                vertical: AppDimensions.paddingXS,
+              ),
+              decoration: BoxDecoration(
+                color: colorScheme.onPrimary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '${'invite_code_label'.tr}: ${family.inviteCode}',
+                    style: AppFonts.bodyLarge.copyWith(
+                      color: colorScheme.onPrimary,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 2,
+                    ),
+                  ),
+                  const SizedBox(width: AppDimensions.paddingMD),
+                  IconButton(
+                    icon: Icon(
+                      Icons.share,
+                      color: colorScheme.onPrimary,
+                      size: 20,
+                    ),
+                    onPressed: () {
+                      Share.share(
+                        'share_family_invite'.tr.replaceAll(
+                          '@code',
+                          family.inviteCode,
+                        ),
+                      );
+                    },
+                    constraints: const BoxConstraints(),
+                    padding: EdgeInsets.zero,
+                  ),
+                ],
+              ),
+            ),
+            if (family.isAdmin(Get.find<AuthService>().userId ?? '')) ...[
+              const SizedBox(height: AppDimensions.paddingMD),
+              TextButton.icon(
+                onPressed: () => _showAddChildDialog(context, controller),
+                icon: Icon(
+                  Icons.person_add_alt_1,
+                  color: colorScheme.onPrimary,
+                ),
+                label: Text(
+                  'add_child_no_phone_btn'.tr,
+                  style: AppFonts.bodyMedium.copyWith(
+                    color: colorScheme.onPrimary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                style: TextButton.styleFrom(
+                  backgroundColor:
+                      colorScheme.onPrimary.withValues(alpha: 0.1),
+                  shape: RoundedRectangleBorder(
+                    borderRadius:
+                        BorderRadius.circular(AppDimensions.radiusMD),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─── Members List with Synchronicity Avatars ─────────────────────
+
+  Widget _buildMembersList(
+    BuildContext context,
+    FamilyModel family,
+    FamilyController controller,
+  ) {
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: family.members.length,
+      separatorBuilder: (_, __) =>
+          const SizedBox(height: AppDimensions.paddingMD),
+      itemBuilder: (context, index) {
+        final member = family.members[index];
+        return Obx(() {
+          final isMe = member.userId == Get.find<AuthService>().userId;
+          final dailyLogs = controller.memberDailyLogs[member.userId] ?? {};
+          final statusInfo = _getMemberStatusInfo(
+            memberId: member.userId,
+            dailyLogs: dailyLogs,
+          );
+          final lastPrayerAt = controller.memberLastPrayer[member.userId];
+          final lastQuality = controller.memberLastPrayerQuality[member.userId];
+
+          final theme = Theme.of(context);
+          final colorScheme = theme.colorScheme;
+
+          return Card(
+            elevation: AppDimensions.cardElevationLow,
+            margin: EdgeInsets.zero,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
+            ),
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(AppDimensions.paddingLG),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Daily Progress Pulse (Top Left)
+                      _buildPrayerProgressDots(
+                        context,
+                        member.userId,
+                        controller,
+                        statusInfo,
+                      ),
+                      const Spacer(),
+                      // Name & Avatar (Top Right)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Row(
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
                                   Text(
                                     member.name ?? 'member_role'.tr,
-                                    style: AppFonts.titleMedium,
-                                    overflow: TextOverflow.ellipsis,
+                                    style: AppFonts.titleMedium.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                   Row(
                                     children: [
-                                      Text(
-                                        member.role.name == 'parent'
-                                            ? 'family_admin'.tr
-                                            : 'member_role'.tr,
-                                        style: AppFonts.bodySmall.copyWith(
-                                          color: AppColors.textSecondary,
-                                        ),
-                                      ),
-                                      if (streak > 0) ...[
-                                        const SizedBox(width: 8),
-                                        const Icon(
-                                          Icons.local_fire_department,
-                                          color: AppColors.orange,
+                                      if (statusInfo.subtitle != null) ...[
+                                        Icon(
+                                          statusInfo.icon,
                                           size: 14,
+                                          color: statusInfo.color,
                                         ),
+                                        const SizedBox(width: 4),
                                         Text(
-                                          '$streak',
+                                          statusInfo.subtitle!,
                                           style: AppFonts.bodySmall.copyWith(
-                                            color: AppColors.orange,
-                                            fontWeight: FontWeight.bold,
+                                            color: statusInfo.color,
                                           ),
+                                        ),
+                                      ],
+                                      if (statusInfo.subtitle == null &&
+                                          lastPrayerAt != null) ...[
+                                        Icon(
+                                          Icons.schedule,
+                                          size: 12,
+                                          color: theme
+                                              .textTheme.bodySmall?.color,
+                                        ),
+                                        const SizedBox(width: 2),
+                                        Text(
+                                          _relativeTime(lastPrayerAt),
+                                          style: AppFonts.bodySmall,
                                         ),
                                       ],
                                     ],
                                   ),
                                 ],
                               ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: AppDimensions.paddingSM,
-                                vertical: 4,
+                              const SizedBox(width: 12),
+                              // Synchronicity Avatar with Status Overlay
+                              SynchronicityAvatar(
+                                photoUrl: member.photoUrl,
+                                initial: (member.name ?? 'M')[0].toUpperCase(),
+                                isInPrayerWindow: statusInfo.isPending,
+                                statusColor: statusInfo.ringColor,
+                                showXBadge: statusInfo.showXBadge,
+                                radius: 28,
                               ),
-                              decoration: BoxDecoration(
-                                color: _getMemberProgressColor(
-                                  progress,
-                                ).withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(
-                                  AppDimensions.radiusSM,
-                                ),
-                              ),
-                              child: Text(
-                                '$progress/5',
-                                style: AppFonts.bodySmall.copyWith(
-                                  color: _getMemberProgressColor(progress),
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        if (!isMe &&
-                            (family.isAdmin(
-                                      Get.find<AuthService>().userId ?? '',
-                                    ) &&
-                                    member.role == MemberRole.child ||
-                                progress < 5)) ...[
-                          const Divider(height: 24),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              if (family.isAdmin(
-                                    Get.find<AuthService>().userId ?? '',
-                                  ) &&
-                                  member.role == MemberRole.child) ...[
-                                AppButton.small(
-                                  text: 'log_for_him'.tr,
-                                  onPressed: () => _showLogForMemberDialog(
-                                    context,
-                                    controller,
-                                    member.userId,
-                                    member.name ?? 'member_role'.tr,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                              ],
-                              if (progress < 5)
-                                AppButton.small(
-                                  text: 'encourage'.tr,
-                                  onPressed: () => controller.pokeMember(
-                                    member.userId,
-                                    member.name ?? '',
-                                  ),
-                                ),
                             ],
                           ),
                         ],
-                      ],
+                      ),
+                    ],
+                  ),
+                ),
+                // Footer: Actions
+                if (!isMe) ...[
+                  const Divider(height: 1),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppDimensions.paddingLG,
+                      vertical: AppDimensions.paddingMD,
+                    ),
+                    child: _buildMemberActions(
+                      context,
+                      member,
+                      statusInfo,
+                      controller,
+                      family,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          );
+        });
+      },
+    );
+  }
+
+  // ─── Status Logic Helper ──────────────────────────────────────────
+
+  _MemberStatusInfo _getMemberStatusInfo({
+    required String memberId,
+    required Map<String, String> dailyLogs,
+  }) {
+    final pts = Get.find<PrayerTimeService>();
+    final currentPrayer = pts.currentPrayer.value;
+    final todayPrayers = pts.getTodayPrayers();
+    final now = DateTime.now();
+
+    // 1. Check CURRENT PRAYER first (The "Fresh Start" Logic)
+    if (currentPrayer != null) {
+      final cpName = currentPrayer.prayerType?.name.toLowerCase();
+      final currentLog = dailyLogs[cpName];
+
+      if (currentLog != null) {
+        // Already prayed CURRENT prayer
+        bool isLate = currentLog.toLowerCase().contains('late');
+        return _MemberStatusInfo(
+          label: isLate ? 'status_prayed_late'.tr : 'status_prayed_on_time'.tr,
+          color: isLate ? AppColors.warning : AppColors.success,
+          icon: isLate ? Icons.history : Icons.check_circle_outline,
+          badgeIcon: Icons.check,
+          isPending: false,
+          ringColor: isLate ? AppColors.warning : AppColors.success,
+        );
+      } else {
+        // NOT YET PRAYED current prayer -> Pulsing Orange (FRESH START)
+        return _MemberStatusInfo(
+          label: 'status_not_prayed_yet'.tr,
+          color: AppColors.orange,
+          icon: Icons.pending_actions,
+          badgeIcon: Icons.hourglass_empty,
+          isPending: true,
+          ringColor: AppColors.orange,
+        );
+      }
+    }
+
+    // 2. If no current prayer (rare), check if ANY previous prayer was missed today
+    bool anyMissed = false;
+    for (final tp in todayPrayers) {
+      if (tp.dateTime.isBefore(now)) {
+        final pName = tp.prayerType?.name.toLowerCase();
+        if (pName != null && !dailyLogs.containsKey(pName)) {
+          anyMissed = true;
+          break;
+        }
+      }
+    }
+
+    if (anyMissed) {
+      return _MemberStatusInfo(
+        label: 'status_not_prayed_yet'.tr,
+        color: AppColors.error,
+        icon: Icons.cancel_outlined,
+        badgeIcon: Icons.close,
+        isPending: false,
+        ringColor: AppColors.error,
+        showXBadge: true,
+      );
+    }
+
+    return _MemberStatusInfo(
+      label: 'status_not_prayed_yet'.tr,
+      color: AppColors.textSecondary,
+      icon: Icons.remove_circle_outline,
+      badgeIcon: Icons.remove,
+      isPending: false,
+    );
+  }
+
+  // ─── Status Dots Widget ──────────────────────────────────────────
+
+  Widget _buildPrayerProgressDots(
+    BuildContext context,
+    String userId,
+    FamilyController controller,
+    _MemberStatusInfo status,
+  ) {
+    final dailyLogs = controller.memberDailyLogs[userId] ?? {};
+    final order = [
+      PrayerName.fajr,
+      PrayerName.dhuhr,
+      PrayerName.asr,
+      PrayerName.maghrib,
+      PrayerName.isha,
+    ];
+
+    final pts = Get.find<PrayerTimeService>();
+    final currentPrayerType = pts.currentPrayer.value?.prayerType;
+    final todayPrayers = pts.getTodayPrayers();
+    final now = DateTime.now();
+
+    return Row(
+      children: order.map((p) {
+        final logQuality = dailyLogs[p.name.toLowerCase()];
+        final isCurrent = p == currentPrayerType;
+        
+        // Find the adhan time for this prayer to check if it's "Missed"
+        final prayerTimeData = todayPrayers.firstWhereOrNull((tp) => tp.prayerType == p);
+        final bool hasPassed = prayerTimeData != null && prayerTimeData.dateTime.isBefore(now);
+
+        Color dotColor;
+        IconData dotIcon;
+        bool shouldGlow = false;
+
+        if (logQuality != null) {
+          // 1. ALREADY PRAYED
+          bool isLate = logQuality.toLowerCase().contains('late');
+          dotColor = isLate ? AppColors.warning : AppColors.success;
+          dotIcon = Icons.check_circle_rounded;
+        } else if (isCurrent) {
+          // 2. CURRENT ACTIVE WINDOW
+          dotColor = AppColors.orange;
+          dotIcon = Icons.radio_button_checked_rounded;
+          shouldGlow = true;
+        } else if (hasPassed) {
+          // 3. MISSED (Time passed, no log)
+          dotColor = AppColors.error.withValues(alpha: 0.6);
+          dotIcon = Icons.cancel_rounded;
+        } else {
+          // 4. FUTURE (Time hasn't come yet)
+          dotColor = Theme.of(context).disabledColor.withValues(alpha: 0.3);
+          dotIcon = Icons.circle;
+        }
+
+        return Container(
+          margin: const EdgeInsets.only(right: 6),
+          child: Tooltip(
+            message: '${PrayerNames.displayName(p)}: ${logQuality ?? (hasPassed ? 'status_missed'.tr : 'status_future'.tr)}',
+            child: TweenAnimationBuilder<double>(
+              duration: const Duration(seconds: 1),
+              tween: Tween(begin: 0.8, end: 1.0),
+              curve: Curves.easeInOut,
+              onEnd: () {}, 
+              builder: (context, value, child) {
+                return Transform.scale(
+                  scale: (shouldGlow && status.isPending) ? value : 1.0,
+                  child: Opacity(
+                    opacity: (dotColor == AppColors.success || dotColor == AppColors.warning || shouldGlow) ? 1.0 : 0.6,
+                    child: Icon(
+                      dotIcon,
+                      size: 18,
+                      color: dotColor,
                     ),
                   ),
                 );
-              });
-            },
+              },
+            ),
           ),
+        );
+      }).toList(),
+    );
+  }
+
+  // ─── Member Actions (Popup Menu) ──────────────────────────────────
+
+  Widget _buildMemberActions(
+    BuildContext context,
+    MemberModel member,
+    _MemberStatusInfo status,
+    FamilyController controller,
+    FamilyModel family,
+  ) {
+    if (status.badgeIcon == Icons.check) {
+      // Already prayed -> Show "Praise" or "Dua" button
+      return AppButton(
+        text: 'encourage_dua_done'.tr,
+        icon: Icons.favorite,
+        backgroundColor: AppColors.success.withValues(alpha: 0.1),
+        textColor: AppColors.success,
+        onPressed: () => controller.pokeMember(
+          member.userId,
+          member.name ?? '',
+          customMessage: 'encourage_dua_done'.tr,
+        ),
+        width: double.infinity,
+      );
+    }
+
+    // Not prayed -> Show "Encourage" with popup menu
+    return Row(
+      children: [
+        if (family.isAdmin(Get.find<AuthService>().userId ?? '') &&
+            member.role == MemberRole.child) ...[
+          Expanded(
+            child: AppButton(
+              text: 'log_for_him'.tr,
+              type: AppButtonType.outlined,
+              icon: Icons.edit_note,
+              onPressed: () => _showLogForMemberDialog(
+                context,
+                controller,
+                member.userId,
+                member.name ?? '',
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+        ],
+        Expanded(
+          child: _buildEncourageMenu(context, member, controller),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEncourageMenu(
+    BuildContext context,
+    MemberModel member,
+    FamilyController controller,
+  ) {
+    return PopupMenuButton<String>(
+      offset: const Offset(0, -200),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
+      ),
+      onSelected: (msg) {
+        controller.pokeMember(member.userId, member.name ?? '',
+            customMessage: msg);
+        AppFeedback.hapticSuccess();
+      },
+      itemBuilder: (context) => [
+        _buildPopupItem('encourage_jazakallah'.tr, Icons.volunteer_activism),
+        _buildPopupItem('encourage_may_allah_open'.tr, Icons.wb_sunny_outlined),
+        _buildPopupItem('encourage_may_allah_help'.tr, Icons.mosque_outlined),
+        _buildPopupItem('early_bird'.tr, Icons.campaign_outlined),
+        _buildPopupItem('gentle_reminder'.tr, Icons.notifications_active_outlined),
+      ],
+      child: AppButton(
+        text: 'encourage'.tr,
+        icon: Icons.celebration_outlined,
+        onPressed: null, // Let PopupMenu handle it
+        width: double.infinity,
+      ),
+    );
+  }
+
+  PopupMenuItem<String> _buildPopupItem(String text, IconData icon) {
+    return PopupMenuItem<String>(
+      value: text,
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: AppColors.primary),
+          const SizedBox(width: 12),
+          Text(text, style: AppFonts.bodyMedium),
         ],
       ),
     );
   }
 
-  Widget _buildPulseSection(FamilyController controller) {
+  // ─── Pulse Feed ──────────────────────────────────────────────────
+
+  Widget _buildPulseSection(
+    BuildContext context,
+    FamilyController controller,
+  ) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Obx(() {
       final events = controller.pulseEvents;
       if (events.isEmpty) return const SizedBox.shrink();
@@ -404,53 +724,83 @@ class _FamilyDashboardScreenState extends State<FamilyDashboardScreen>
             children: [
               Row(
                 children: [
-                  Icon(Icons.favorite, color: AppColors.primary, size: 20),
+                  Icon(Icons.favorite, color: colorScheme.primary, size: 20),
                   const SizedBox(width: AppDimensions.paddingSM),
                   Text(
                     'family_pulse'.tr,
                     style: AppFonts.titleMedium.copyWith(
-                      color: AppColors.textPrimary,
+                      color: colorScheme.onSurface,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: AppDimensions.paddingMD),
-              ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: events.length > 15 ? 15 : events.length,
-                separatorBuilder: (_, _) =>
-                    const SizedBox(height: AppDimensions.paddingXS),
-                itemBuilder: (context, index) {
-                  final e = events[index];
-                  return Row(
-                    children: [
-                      Icon(
-                        e.type == PulseEventType.encouragement
-                            ? Icons.thumb_up
-                            : Icons.mosque,
-                        size: 18,
-                        color: AppColors.primary.withValues(alpha: 0.8),
+              AnimatedSize(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: events.length > 5 ? 5 : events.length,
+                  separatorBuilder: (_, __) =>
+                      const SizedBox(height: AppDimensions.paddingXS),
+                  itemBuilder: (context, index) {
+                    final e = events[index];
+                    final isCelebration = e.type == PulseEventType.familyCelebration;
+                    return AnimatedContainer(
+                      duration: Duration(milliseconds: 300 + index * 50),
+                      curve: Curves.easeOut,
+                      padding: EdgeInsets.symmetric(
+                        vertical: isCelebration ? 8 : 4,
+                        horizontal: isCelebration ? 8 : 0,
                       ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          e.displayText,
-                          style: AppFonts.bodyMedium.copyWith(
-                            color: AppColors.textPrimary,
+                      decoration: isCelebration
+                          ? BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  AppColors.success.withValues(alpha: 0.1),
+                                  AppColors.amber.withValues(alpha: 0.05),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                            )
+                          : null,
+                      child: Row(
+                        children: [
+                          Icon(
+                            isCelebration
+                                ? Icons.celebration
+                                : e.type == PulseEventType.encouragement
+                                    ? Icons.thumb_up
+                                    : Icons.mosque,
+                            size: isCelebration ? 22 : 18,
+                            color: isCelebration
+                                ? AppColors.amber
+                                : colorScheme.primary.withValues(alpha: 0.8),
                           ),
-                        ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              e.displayText,
+                              style: AppFonts.bodyMedium.copyWith(
+                                color: colorScheme.onSurface,
+                                fontWeight:
+                                    isCelebration ? FontWeight.bold : null,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            _relativeTime(e.timestamp),
+                            style: AppFonts.bodySmall.copyWith(
+                              color: theme.textTheme.bodySmall?.color,
+                            ),
+                          ),
+                        ],
                       ),
-                      Text(
-                        _relativeTime(e.timestamp),
-                        style: AppFonts.bodySmall.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  );
-                },
+                    );
+                  },
+                ),
               ),
             ],
           ),
@@ -459,11 +809,16 @@ class _FamilyDashboardScreenState extends State<FamilyDashboardScreen>
     });
   }
 
-  /// Family daily summary card – total prayers logged across all members
+  // ─── Family Summary Card ──────────────────────────────────────────
+
   Widget _buildFamilySummaryCard(
+    BuildContext context,
     FamilyModel family,
     FamilyController controller,
   ) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Obx(() {
       final totalMembers = family.members.length;
       final totalPossible = totalMembers * 5;
@@ -488,14 +843,14 @@ class _FamilyDashboardScreenState extends State<FamilyDashboardScreen>
                 children: [
                   Icon(
                     Icons.bar_chart_rounded,
-                    color: AppColors.primary,
+                    color: colorScheme.primary,
                     size: 20,
                   ),
                   const SizedBox(width: AppDimensions.paddingSM),
                   Text(
                     'family_daily_summary'.tr,
                     style: AppFonts.titleMedium.copyWith(
-                      color: AppColors.textPrimary,
+                      color: colorScheme.onSurface,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -504,7 +859,8 @@ class _FamilyDashboardScreenState extends State<FamilyDashboardScreen>
                     '$totalLogged/$totalPossible',
                     style: AppFonts.titleLarge.copyWith(
                       color: _getMemberProgressColor(
-                        totalLogged ~/ (totalMembers > 0 ? totalMembers : 1),
+                        totalLogged ~/
+                            (totalMembers > 0 ? totalMembers : 1),
                       ),
                       fontWeight: FontWeight.bold,
                     ),
@@ -517,10 +873,12 @@ class _FamilyDashboardScreenState extends State<FamilyDashboardScreen>
                 child: LinearProgressIndicator(
                   value: progress,
                   minHeight: 8,
-                  backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                  backgroundColor:
+                      colorScheme.primary.withValues(alpha: 0.1),
                   valueColor: AlwaysStoppedAnimation<Color>(
                     _getMemberProgressColor(
-                      totalLogged ~/ (totalMembers > 0 ? totalMembers : 1),
+                      totalLogged ~/
+                          (totalMembers > 0 ? totalMembers : 1),
                     ),
                   ),
                 ),
@@ -532,10 +890,13 @@ class _FamilyDashboardScreenState extends State<FamilyDashboardScreen>
     });
   }
 
-  /// Map member prayer count (0-5) to a descriptive color
+  // ─── Helpers ──────────────────────────────────────────────────────
+
   Color _getMemberProgressColor(int count) {
     if (count >= 5) {
-      return PrayerTimingHelper.getQualityColor(PrayerTimingQuality.veryEarly);
+      return PrayerTimingHelper.getQualityColor(
+        PrayerTimingQuality.veryEarly,
+      );
     }
     if (count >= 3) return AppColors.amber;
     if (count >= 1) return AppColors.orange;
@@ -550,16 +911,26 @@ class _FamilyDashboardScreenState extends State<FamilyDashboardScreen>
     return DateTimeHelper.formatTime12(time);
   }
 
+  // ─── Dialogs ──────────────────────────────────────────────────────
+
   void _showLogForMemberDialog(
     BuildContext context,
     FamilyController controller,
     String memberId,
     String memberName,
   ) {
+    final now = DateTime.now();
+    // Only show prayers whose adhan time has passed (can't log future prayers)
     final prayers = Get.find<PrayerTimeService>()
         .getTodayPrayers()
-        .where((p) => p.prayerType != PrayerName.sunrise)
+        .where((p) => p.prayerType != PrayerName.sunrise && p.dateTime.isBefore(now))
         .toList();
+
+    if (prayers.isEmpty) {
+      AppFeedback.showSnackbar('alert'.tr, 'no_past_prayers_yet'.tr);
+      return;
+    }
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -571,7 +942,9 @@ class _FamilyDashboardScreenState extends State<FamilyDashboardScreen>
                 .map(
                   (p) => ListTile(
                     title: Text(
-                      PrayerNames.displayName(p.prayerType ?? PrayerName.fajr),
+                      PrayerNames.displayName(
+                        p.prayerType ?? PrayerName.fajr,
+                      ),
                     ),
                     subtitle: Text(
                       DateTimeHelper.formatTime12(p.dateTime),
@@ -591,13 +964,19 @@ class _FamilyDashboardScreenState extends State<FamilyDashboardScreen>
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Get.back(), child: Text('cancel'.tr)),
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text('cancel'.tr),
+          ),
         ],
       ),
     );
   }
 
-  void _showAddChildDialog(BuildContext context, FamilyController controller) {
+  void _showAddChildDialog(
+    BuildContext context,
+    FamilyController controller,
+  ) {
     final nameController = TextEditingController();
     String gender = 'male';
     DateTime birthDate = DateTime(2015);
@@ -618,7 +997,10 @@ class _FamilyDashboardScreenState extends State<FamilyDashboardScreen>
               initialValue: gender,
               items: [
                 DropdownMenuItem(value: 'male', child: Text('male'.tr)),
-                DropdownMenuItem(value: 'female', child: Text('female'.tr)),
+                DropdownMenuItem(
+                  value: 'female',
+                  child: Text('female'.tr),
+                ),
               ],
               onChanged: (v) => gender = v ?? 'male',
               decoration: InputDecoration(labelText: 'gender'.tr),
@@ -626,10 +1008,16 @@ class _FamilyDashboardScreenState extends State<FamilyDashboardScreen>
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Get.back(), child: Text('cancel'.tr)),
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text('cancel'.tr),
+          ),
           ElevatedButton(
-            onPressed: () =>
-                controller.addChild(nameController.text, birthDate, gender),
+            onPressed: () => controller.addChild(
+              nameController.text,
+              birthDate,
+              gender,
+            ),
             child: Text('add'.tr),
           ),
         ],
@@ -637,13 +1025,20 @@ class _FamilyDashboardScreenState extends State<FamilyDashboardScreen>
     );
   }
 
-  void _showFamilySwitcher(BuildContext context, FamilyController controller) {
+  void _showFamilySwitcher(
+    BuildContext context,
+    FamilyController controller,
+  ) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     Get.bottomSheet(
       Container(
         padding: const EdgeInsets.all(AppDimensions.paddingLG),
         decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          color: colorScheme.surface,
+          borderRadius:
+              const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -651,7 +1046,9 @@ class _FamilyDashboardScreenState extends State<FamilyDashboardScreen>
           children: [
             Text(
               'switch_family'.tr,
-              style: AppFonts.titleLarge.copyWith(fontWeight: FontWeight.bold),
+              style: AppFonts.titleLarge.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppDimensions.paddingLG),
@@ -660,7 +1057,8 @@ class _FamilyDashboardScreenState extends State<FamilyDashboardScreen>
                 () => ListView.separated(
                   shrinkWrap: true,
                   itemCount: controller.myFamilies.length,
-                  separatorBuilder: (context, index) => const Divider(),
+                  separatorBuilder: (context, index) =>
+                      const Divider(),
                   itemBuilder: (context, index) {
                     final family = controller.myFamilies[index];
                     final isSelected =
@@ -668,13 +1066,13 @@ class _FamilyDashboardScreenState extends State<FamilyDashboardScreen>
                     return ListTile(
                       leading: CircleAvatar(
                         backgroundColor: isSelected
-                            ? AppColors.primary
-                            : AppColors.secondary.withValues(alpha: 0.1),
+                            ? colorScheme.primary
+                            : colorScheme.secondaryContainer,
                         child: Icon(
                           Icons.group,
                           color: isSelected
-                              ? AppColors.white
-                              : AppColors.secondary,
+                              ? colorScheme.onPrimary
+                              : colorScheme.onSecondaryContainer,
                         ),
                       ),
                       title: Text(
@@ -684,12 +1082,15 @@ class _FamilyDashboardScreenState extends State<FamilyDashboardScreen>
                               ? FontWeight.bold
                               : FontWeight.normal,
                           color: isSelected
-                              ? AppColors.primary
-                              : AppColors.textPrimary,
+                              ? colorScheme.primary
+                              : colorScheme.onSurface,
                         ),
                       ),
                       trailing: isSelected
-                          ? Icon(Icons.check, color: AppColors.primary)
+                          ? Icon(
+                              Icons.check,
+                              color: colorScheme.primary,
+                            )
                           : null,
                       onTap: () {
                         controller.selectFamily(family);
@@ -730,8 +1131,30 @@ class _FamilyDashboardScreenState extends State<FamilyDashboardScreen>
           ],
         ),
       ),
-      backgroundColor: AppColors.transparent,
+      backgroundColor: Colors.transparent,
       isScrollControlled: true,
     );
   }
+}
+
+class _MemberStatusInfo {
+  final String label;
+  final String? subtitle;
+  final Color color;
+  final IconData icon;
+  final IconData badgeIcon;
+  final bool isPending;
+  final Color? ringColor;
+  final bool showXBadge;
+
+  _MemberStatusInfo({
+    required this.label,
+    this.subtitle,
+    required this.color,
+    required this.icon,
+    required this.badgeIcon,
+    this.isPending = false,
+    this.ringColor,
+    this.showXBadge = false,
+  });
 }

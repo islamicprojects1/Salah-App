@@ -13,6 +13,8 @@ import 'package:salah/core/helpers/prayer_names.dart';
 import 'package:salah/data/models/prayer_log_model.dart';
 import 'package:salah/data/repositories/prayer_repository.dart';
 import 'package:salah/core/services/live_context_service.dart';
+import 'package:salah/core/services/prayer_time_service.dart';
+import 'package:salah/core/services/qada_detection_service.dart';
 import '../constants/api_constants.dart';
 
 /// Service for managing local notifications
@@ -22,6 +24,7 @@ class NotificationService extends GetxService {
   // ============================================================
 
   late final FlutterLocalNotificationsPlugin _notifications;
+  late final StorageService _storage;
 
   // ============================================================
   // INITIALIZATION
@@ -34,6 +37,7 @@ class NotificationService extends GetxService {
     if (_isInitialized) return this;
     _isInitialized = true;
     _notifications = FlutterLocalNotificationsPlugin();
+    _storage = Get.find<StorageService>();
 
     // Initialize timezone
     tz_data.initializeTimeZones();
@@ -142,6 +146,18 @@ class NotificationService extends GetxService {
           importance: Importance.high,
         ),
       );
+
+      // 3. Family Notifications
+      await androidPlugin.createNotificationChannel(
+        const AndroidNotificationChannel(
+          'family_channel',
+          'Family Pulse',
+          description: 'Notifications when family members pray or achieve goals',
+          importance: Importance.high,
+          playSound: true,
+          enableVibration: true,
+        ),
+      );
     }
   }
 
@@ -159,12 +175,18 @@ class NotificationService extends GetxService {
         final adhanIso = parts[3];
         final notifId = int.tryParse(idStr);
 
-        if (actionId == 'prayed' && notifId != null) {
+        if ((actionId == 'prayed' || actionId == 'confirmPrayed') &&
+            notifId != null) {
           _handlePrayedAction(type, notifId, prayerKey, adhanIso);
           return;
         }
         if (actionId == 'snooze' && notifId != null) {
           _handleSnoozeAction(prayerKey, adhanIso, type, notifId);
+          return;
+        }
+        if (actionId == 'willPrayNow') {
+          // Just acknowledge
+          Get.toNamed(AppRoutes.dashboard);
           return;
         }
       }
@@ -247,13 +269,30 @@ class NotificationService extends GetxService {
   ) {
     final baseId = type == 'adhan' ? notifId : notifId - 100;
     final reminderId = baseId + 100;
-    final prayerName = PrayerNames.displayName(PrayerNames.fromKey(prayerKey));
-    final in10 = DateTime.now().add(const Duration(minutes: 10));
+    final prayer = PrayerNames.fromKey(prayerKey);
+    final prayerName = PrayerNames.displayName(prayer);
+
+    // Escalating snooze: 5min → 15min → 30min → stop
+    Duration? delay;
+    if (Get.isRegistered<QadaDetectionService>()) {
+      delay = Get.find<QadaDetectionService>().incrementSnoozeAndGetDelay(
+        prayer,
+      );
+    } else {
+      delay = const Duration(minutes: 10);
+    }
+
+    if (delay == null) {
+      // Max snoozes reached — don't schedule another reminder
+      return;
+    }
+
+    final snoozeTime = DateTime.now().add(delay);
     scheduleNotificationWithActions(
       id: reminderId,
       title: 'notification_prayer_title'.trParams({'prayer': prayerName}),
       body: 'notification_prayer_body'.tr,
-      scheduledTime: in10,
+      scheduledTime: snoozeTime,
       payload: 'reminder|$reminderId|$prayerKey|$adhanIso',
       channelId: ApiConstants.reminderNotificationChannelId,
     );
@@ -302,6 +341,40 @@ class NotificationService extends GetxService {
     }
   }
 
+  String _getNotifKeyForPrayer(PrayerName prayer) {
+    switch (prayer) {
+      case PrayerName.fajr:
+        return StorageKeys.fajrNotification;
+      case PrayerName.dhuhr:
+        return StorageKeys.dhuhrNotification;
+      case PrayerName.asr:
+        return StorageKeys.asrNotification;
+      case PrayerName.maghrib:
+        return StorageKeys.maghribNotification;
+      case PrayerName.isha:
+        return StorageKeys.ishaNotification;
+      default:
+        return '';
+    }
+  }
+
+  int _prayerToNotificationId(PrayerName prayer) {
+    switch (prayer) {
+      case PrayerName.fajr:
+        return 1;
+      case PrayerName.dhuhr:
+        return 2;
+      case PrayerName.asr:
+        return 3;
+      case PrayerName.maghrib:
+        return 4;
+      case PrayerName.isha:
+        return 5;
+      default:
+        return 0;
+    }
+  }
+
   /// Notification details with action buttons (صليت / لاحقاً) for Android
   NotificationDetails _getNotificationDetailsWithActions(String channelId) {
     final storage = Get.find<StorageService>();
@@ -310,6 +383,8 @@ class NotificationService extends GetxService {
     if (channelId == ApiConstants.prayerNotificationChannelId) {
       finalChannelId = _getPrayerChannelId(soundMode);
     }
+    final isReminder = channelId == ApiConstants.reminderNotificationChannelId;
+
     final androidDetails = AndroidNotificationDetails(
       finalChannelId,
       finalChannelId.contains('prayer')
@@ -318,18 +393,33 @@ class NotificationService extends GetxService {
       importance: Importance.high,
       priority: Priority.high,
       actions: <AndroidNotificationAction>[
-        AndroidNotificationAction(
-          'prayed',
-          'notification_i_prayed'.tr,
-          showsUserInterface: false,
-          cancelNotification: true,
-        ),
-        AndroidNotificationAction(
-          'snooze',
-          'notification_later'.tr,
-          showsUserInterface: false,
-          cancelNotification: true,
-        ),
+        if (isReminder) ...[
+          AndroidNotificationAction(
+            'confirmPrayed',
+            'yes'.tr,
+            showsUserInterface: false,
+            cancelNotification: true,
+          ),
+          AndroidNotificationAction(
+            'willPrayNow',
+            'will_pray_now'.tr,
+            showsUserInterface: false,
+            cancelNotification: true,
+          ),
+        ] else ...[
+          AndroidNotificationAction(
+            'prayed',
+            'notification_i_prayed'.tr,
+            showsUserInterface: false,
+            cancelNotification: true,
+          ),
+          AndroidNotificationAction(
+            'snooze',
+            'notification_later'.tr,
+            showsUserInterface: false,
+            cancelNotification: true,
+          ),
+        ],
       ],
     );
     const iosDetails = DarwinNotificationDetails(
@@ -524,6 +614,117 @@ class NotificationService extends GetxService {
   /// Cancel specific notification
   Future<void> cancelNotification(int notificationId) async {
     await _notifications.cancel(id: notificationId);
+  }
+
+  /// Cancel both adhan and reminder notifications for a specific prayer.
+  Future<void> cancelPrayerReminder(PrayerName prayer) async {
+    final baseId = _prayerToNotificationId(prayer);
+    await cancelNotification(baseId);
+    await cancelNotification(baseId + 100);
+  }
+
+  /// Reschedule all prayer notifications for today, skipping already-logged prayers.
+  ///
+  /// Called after location/timezone change, reconnect, or midnight rollover.
+  Future<void> rescheduleAllForToday() async {
+    try {
+      await cancelAllNotifications();
+
+      // Get today's prayer times
+      if (!Get.isRegistered<PrayerTimeService>()) return;
+      final prayerTimeService = Get.find<PrayerTimeService>();
+      final prayers = prayerTimeService.getTodayPrayers();
+      if (prayers.isEmpty) return;
+
+      // Get already-logged prayers to skip
+      final loggedPrayers = <PrayerName>{};
+      if (Get.isRegistered<QadaDetectionService>()) {
+        final qadaService = Get.find<QadaDetectionService>();
+        await qadaService.checkForUnloggedPrayers();
+        // All prayers NOT in unlogged are already logged
+        final unloggedNames = qadaService.todayUnlogged
+            .map((u) => u.prayer)
+            .toSet();
+        for (final p in PrayerName.values) {
+          if (p == PrayerName.sunrise) continue;
+          if (!unloggedNames.contains(p)) loggedPrayers.add(p);
+        }
+      }
+
+      // Get user's notification sound preference
+      final soundMode = _getSoundMode();
+      final now = DateTime.now();
+
+      final notificationsEnabled =
+          _storage.read<bool>(StorageKeys.notificationsEnabled) ?? true;
+      if (!notificationsEnabled) return;
+
+      final adhanMasterEnabled =
+          _storage.read<bool>(StorageKeys.adhanNotificationsEnabled) ?? true;
+      final reminderEnabled =
+          _storage.read<bool>(StorageKeys.reminderNotification) ?? true;
+
+      for (final prayer in prayers) {
+        final pType = prayer.prayerType;
+        if (pType == null || pType == PrayerName.sunrise) continue;
+        if (loggedPrayers.contains(pType)) continue;
+        if (prayer.dateTime.isBefore(now)) continue; // Already passed
+
+        final baseId = _prayerToNotificationId(pType);
+        final channelId = _getPrayerChannelId(soundMode);
+        final prayerKey = pType.name;
+
+        // Check if individual prayer notification is enabled
+        final individualPrayerEnabled =
+            _storage.read<bool>(_getNotifKeyForPrayer(pType)) ?? true;
+
+        // Schedule adhan notification
+        if (adhanMasterEnabled && individualPrayerEnabled) {
+          await scheduleNotificationWithActions(
+            id: baseId,
+            title: '${'prayer_time'.tr} - ${prayer.name}',
+            body: '${'prayer_time_body'.tr} ${prayer.name}',
+            scheduledTime: prayer.dateTime,
+            payload:
+                'adhan|$baseId|$prayerKey|${prayer.dateTime.toIso8601String()}',
+            channelId: channelId,
+          );
+        }
+
+        // Schedule reminder (30min later)
+        if (reminderEnabled) {
+          final reminderTime = prayer.dateTime.add(const Duration(minutes: 30));
+          if (reminderTime.isAfter(now)) {
+            await scheduleNotificationWithActions(
+              id: baseId + 100,
+              title: '${'prayer_reminder'.tr} - ${prayer.name}',
+              body: 'prayer_reminder_30'.trParams({'prayer': prayer.name}),
+              scheduledTime: reminderTime,
+              payload:
+                  'reminder|${baseId + 100}|$prayerKey|${prayer.dateTime.toIso8601String()}',
+              channelId: ApiConstants.reminderNotificationChannelId,
+            );
+          }
+        }
+      }
+    } catch (_) {
+      // Notification rescheduling failed — non-critical
+    }
+  }
+
+  /// Get user's notification sound preference.
+  NotificationSoundMode _getSoundMode() {
+    if (Get.isRegistered<StorageService>()) {
+      final storage = Get.find<StorageService>();
+      final mode = storage.read<String>(StorageKeys.notificationSoundMode);
+      if (mode != null) {
+        return NotificationSoundMode.values.firstWhere(
+          (e) => e.name == mode,
+          orElse: () => NotificationSoundMode.adhan,
+        );
+      }
+    }
+    return NotificationSoundMode.adhan;
   }
 
   /// Cancel all notifications

@@ -65,6 +65,9 @@ class UserModel {
   // Privacy settings
   final UserPrivacySettings privacySettings;
 
+  // Prayer offsets (minutes)
+  final Map<String, int> prayerOffsets;
+
   UserModel({
     required this.id,
     required this.name,
@@ -99,6 +102,7 @@ class UserModel {
     this.lastLongitude,
     this.lastCity,
     UserPrivacySettings? privacySettings,
+    this.prayerOffsets = const {},
   }) : privacySettings = privacySettings ?? UserPrivacySettings.defaultPublic();
 
   /// Calculate age from birth date
@@ -170,6 +174,7 @@ class UserModel {
       privacySettings: data['privacySettings'] != null
           ? UserPrivacySettings.fromMap(Map<String, dynamic>.from(data['privacySettings']))
           : UserPrivacySettings.defaultPublic(),
+      prayerOffsets: Map<String, int>.from(data['prayerOffsets'] ?? {}),
     );
   }
 
@@ -202,6 +207,7 @@ class UserModel {
       'lastLongitude': lastLongitude,
       'lastCity': lastCity,
       'privacySettings': privacySettings.toMap(),
+      'prayerOffsets': prayerOffsets,
     };
   }
 
@@ -231,6 +237,8 @@ class UserModel {
     double? lastLatitude,
     double? lastLongitude,
     String? lastCity,
+    UserPrivacySettings? privacySettings,
+    Map<String, int>? prayerOffsets,
   }) {
     return UserModel(
       id: id,
@@ -259,6 +267,8 @@ class UserModel {
       lastLatitude: lastLatitude ?? this.lastLatitude,
       lastLongitude: lastLongitude ?? this.lastLongitude,
       lastCity: lastCity ?? this.lastCity,
+      privacySettings: privacySettings ?? this.privacySettings,
+      prayerOffsets: prayerOffsets ?? this.prayerOffsets,
     );
   }
 
