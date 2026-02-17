@@ -1,6 +1,6 @@
-import 'package:get/get.dart';
-import 'ar_translations.dart';
-import 'en_translations.dart';
+﻿import 'package:get/get.dart';
+import 'package:salah/core/localization/ar_translations.dart';
+import 'package:salah/core/localization/en_translations.dart';
 
 /// App translations combining all supported languages
 /// 

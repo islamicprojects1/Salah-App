@@ -1,0 +1,360 @@
+# خطة إعادة الهيكلة الشاملة — Salah App Grand Refactoring Plan
+
+## ملخص المشكلة
+
+التطبيق يعاني من **4 مشاكل رئيسية**:
+
+| المشكلة | الأثر | الحجم |
+|---------|-------|-------|
+| **19 `Get.put` متزامنة** في [main.dart](file:///c:/development/Salah-App/lib/main.dart) | بطء التشغيل ~3-5 ثوان | [main.dart](file:///c:/development/Salah-App/lib/main.dart) (190 سطر) |
+| **44 ملف يستخدم `Get.find`** | تبعيات ضمنية، صعب الاختبار | كل الكود تقريباً |
+| **لا يوجد Result Pattern** | crashes عند انقطاع النت أو بيانات null | كل الـ repos و services |
+| **لا يوجد Feature-First** | ملفات ضخمة ومتكررة | 14 models، 20 services، 5 repos |
+
+---
+
+## الهيكلية المقترحة (Feature-First Clean Architecture)
+
+```
+lib/
+├── main.dart                          ← نقطة الدخول (خفيفة)
+├── app.dart                           ← SalahApp widget
+│
+├── core/                              ← أساسيات مشتركة
+│   ├── di/injection_container.dart     ← GetIt central (sl)
+│   ├── error/failures.dart            ← Failure classes
+│   ├── error/result.dart              ← Result<T> pattern
+│   ├── constants/                     ← enums, keys, api_constants
+│   ├── helpers/                       ← prayer_names, date helpers
+│   ├── theme/                         ← AppColors, AppFonts, ThemeService
+│   ├── localization/                  ← Languages, LocalizationService
+│   ├── routes/                        ← app_routes, app_pages
+│   └── services/                      ← infrastructure فقط
+│       ├── storage_service.dart
+│       ├── database_helper.dart
+│       ├── connectivity_service.dart
+│       ├── location_service.dart
+│       ├── cloudinary_service.dart
+│       └── permission_service.dart
+│
+├── features/
+│   ├── auth/
+│   │   ├── data/
+│   │   │   ├── sources/auth_remote_data_source.dart
+│   │   │   └── repositories/user_repository_impl.dart
+│   │   ├── domain/
+│   │   │   ├── entities/user_entity.dart
+│   │   │   └── repositories/user_repository.dart
+│   │   └── presentation/
+│   │       ├── controllers/auth_controller.dart
+│   │       ├── screens/  (login, register, profile_setup)
+│   │       └── widgets/
+│   │
+│   ├── prayer/
+│   │   ├── data/
+│   │   │   ├── models/  (prayer_log, prayer_time, live_context)
+│   │   │   ├── sources/prayer_remote_data_source.dart
+│   │   │   └── repositories/prayer_repository_impl.dart
+│   │   ├── domain/
+│   │   │   ├── entities/prayer_time_range.dart
+│   │   │   ├── repositories/prayer_repository.dart
+│   │   │   └── services/
+│   │   │       ├── prayer_time_service.dart
+│   │   │       ├── notification_service.dart
+│   │   │       ├── smart_notification_service.dart
+│   │   │       ├── qada_detection_service.dart
+│   │   │       └── live_context_service.dart
+│   │   └── presentation/
+│   │       ├── controllers/  (dashboard, missed_prayers, qibla)
+│   │       ├── screens/  (dashboard, missed_prayers, qibla)
+│   │       └── widgets/  (prayer_circle, heatmap, daily_review)
+│   │
+│   ├── family/
+│   │   ├── data/
+│   │   │   ├── models/  (family, pulse, activity, group, challenge)
+│   │   │   ├── sources/family_remote_data_source.dart
+│   │   │   └── repositories/family_repository_impl.dart
+│   │   ├── domain/
+│   │   │   └── repositories/family_repository.dart
+│   │   └── presentation/
+│   │       ├── controllers/family_controller.dart
+│   │       ├── screens/  (dashboard, create, join)
+│   │       └── widgets/  (vitality_orb, flame)
+│   │
+│   ├── settings/
+│   │   └── presentation/
+│   │       ├── controllers/settings_controller.dart
+│   │       ├── screens/  (settings, select_city)
+│   │       └── widgets/
+│   │
+│   ├── notifications/
+│   │   ├── data/
+│   │   │   ├── models/notification_models.dart
+│   │   │   └── sources/fcm_service.dart
+│   │   └── presentation/
+│   │       ├── controllers/notifications_controller.dart
+│   │       └── screens/notifications_screen.dart
+│   │
+│   ├── onboarding/
+│   │   └── presentation/
+│   │       ├── controllers/onboarding_controller.dart
+│   │       └── screens/  (onboarding screens)
+│   │
+│   └── admin/                         ← [NEW] ميزة الأدمن
+│       ├── data/
+│       │   ├── models/admin_models.dart
+│       │   └── sources/admin_remote_data_source.dart
+│       └── presentation/
+│           ├── controllers/admin_controller.dart
+│           └── screens/admin_dashboard_screen.dart
+```
+
+---
+
+## User Review Required
+
+> [!IMPORTANT]
+> **القرارات التي تحتاج موافقتك:**
+
+1. **هل نحتفظ بـ GetX للـ State Management ونستبدل فقط الـ DI بـ GetIt؟** (توصيتي: نعم، نحتفظ بـ GetX لإدارة الحالة والـ routing فقط، ونستخدم GetIt (`sl`) لحقن التبعيات)
+
+2. **ميزة الأدمن**: ما هي الوظائف المطلوبة بالضبط؟ اقتراحاتي:
+   - إدارة المستخدمين (حظر/تفعيل)
+   - عرض إحصائيات التطبيق
+   - إرسال إشعارات جماعية
+   - التحكم بالإعدادات العامة (طرق الحساب، اللغات المتاحة)
+   - مراقبة الأخطاء والأداء
+
+3. **هل تريد نقل الملفات فعلياً** (physical move) **أم نبدأ بتحديث الـ imports والـ DI أولاً ثم ننقل؟** (توصيتي: نبدأ بالـ DI لأنه الأهم لسرعة التشغيل)
+
+---
+
+## خطة التنفيذ (7 مراحل)
+
+### 🔴 المرحلة 1: Foundation — إصلاح البنية التحتية (الأولوية القصوى)
+
+**الهدف:** إزالة كل `Get.put` من [main.dart](file:///c:/development/Salah-App/lib/main.dart) وتحويلها لـ `GetIt` lazy loading.
+
+#### [MODIFY] [main.dart](file:///c:/development/Salah-App/lib/main.dart)
+- حذف كل `Get.put` calls (19 call)
+- استبدالها بـ `await initInjection()` (سطر واحد)
+- نقل [SalahApp](file:///c:/development/Salah-App/lib/main.dart#147-190) لملف `app.dart` منفصل
+
+#### [MODIFY] [injection_container.dart](file:///c:/development/Salah-App/lib/core/di/injection_container.dart)
+- تسجيل Foundation services كـ `registerSingleton` (eager, awaited)
+- تسجيل Feature services كـ `registerLazySingleton` (lazy, on-demand)
+- تسجيل Controllers كـ `registerFactory` (fresh instance per screen)
+
+```diff
+- Get.put(StorageService(), permanent: true);
+- Get.put(DatabaseHelper(), permanent: true);
+- Get.put(AuthService(), permanent: true);
++ sl.registerSingletonAsync<StorageService>(() => StorageService().init());
++ sl.registerSingletonAsync<DatabaseHelper>(() => DatabaseHelper().init());
++ sl.registerLazySingleton(() => AuthRemoteDataSource());
+```
+
+**التأثير:** تقليل وقت التشغيل من ~3-5 ثوان إلى ~1-2 ثانية.
+
+---
+
+### 🟠 المرحلة 2: DI Migration — استبدال Get.find بـ sl
+
+**الهدف:** استبدال كل `Get.find` (44 ملف) و `Get.isRegistered` (16 ملف) بـ `sl`.
+
+| الملف | عدد `Get.find` | الأولوية |
+|-------|----------------|----------|
+| [dashboard_controller.dart](file:///c:/development/Salah-App/lib/controller/dashboard_controller.dart) | ~15 | عالية |
+| [notification_service.dart](file:///c:/development/Salah-App/lib/core/services/notification_service.dart) | ~10 | عالية |
+| [family_service.dart](file:///c:/development/Salah-App/lib/core/services/family_service.dart) | ~8 | متوسطة |
+| [settings_controller.dart](file:///c:/development/Salah-App/lib/controller/settings/settings_controller.dart) | ~6 | عالية |
+| [auth_controller.dart](file:///c:/development/Salah-App/lib/controller/auth_controller.dart) | ~5 | عالية |
+| باقي الملفات (39 ملف) | ~50 | تدريجي |
+
+**القاعدة:**
+```diff
+- final auth = Get.find<AuthService>();
++ final auth = sl<AuthRemoteDataSource>();
+```
+
+---
+
+### 🟡 المرحلة 3: Result Pattern — معالجة كل الاحتمالات
+
+**الهدف:** تطبيق `Result<T>` في كل دوال الـ repos والـ services.
+
+#### الملفات المستهدفة:
+- [prayer_repository.dart](file:///c:/development/Salah-App/lib/data/repositories/prayer_repository.dart) (14KB — أكبر ملف!)
+- [user_repository.dart](file:///c:/development/Salah-App/lib/data/repositories/user_repository.dart) (4.6KB)
+- [family_repository.dart](file:///c:/development/Salah-App/lib/data/repositories/family_repository.dart) (4.2KB)
+- [achievement_repository.dart](file:///c:/development/Salah-App/lib/data/repositories/achievement_repository.dart) (7.2KB)
+- [auth_service.dart](file:///c:/development/Salah-App/lib/core/services/auth_service.dart) (10.7KB)
+- [family_service.dart](file:///c:/development/Salah-App/lib/core/services/family_service.dart) (23.7KB — أضخم ملف!)
+
+```dart
+// قبل (يفترض النجاح دائماً):
+Future<List<PrayerLog>> getPrayerLogs(String userId) async {
+  final docs = await firestore.collection('logs').get();
+  return docs.map((d) => PrayerLog.fromJson(d.data())).toList();
+}
+
+// بعد (يعالج كل الاحتمالات):
+Future<Result<List<PrayerLog>>> getPrayerLogs(String userId) async {
+  try {
+    if (!connectivity.isConnected) {
+      return Result.failure(NetworkFailure('لا يوجد اتصال'));
+    }
+    final docs = await firestore.collection('logs').get();
+    if (docs.docs.isEmpty) return Result.success([]);
+    return Result.success(
+      docs.docs.map((d) => PrayerLog.fromJson(d.data())).toList(),
+    );
+  } on FirebaseException catch (e) {
+    return Result.failure(ServerFailure(e.message ?? 'خطأ في الخادم'));
+  } catch (e) {
+    return Result.failure(UnexpectedFailure(e.toString()));
+  }
+}
+```
+
+---
+
+### 🟢 المرحلة 4: Feature-First Migration — نقل الملفات
+
+**الهدف:** نقل كل ملف لمكانه الصحيح في الهيكلية الجديدة.
+
+| Feature | Models | Repos | Services | Controllers | Screens | Widgets |
+|---------|--------|-------|----------|-------------|---------|---------|
+| **auth** | user_model, user_privacy | user_repo | auth_service | auth_controller | 3 | — |
+| **prayer** | prayer_log, prayer_time, live_context | prayer_repo | 5 services | dashboard, missed, qibla | 3 | 5 |
+| **family** | family, pulse, activity, group, challenge | family_repo | family_service | family_controller | 3 | 2 |
+| **settings** | — | — | — | settings_controller | 2 | — |
+| **notifications** | notification_models | — | fcm_service | notifications_controller | 1 | — |
+| **onboarding** | — | — | — | onboarding_controller | 5 | — |
+| **admin** | admin_models | — | — | admin_controller | 1 | — |
+
+---
+
+### 🔵 المرحلة 5: Documentation — توثيق شامل
+
+**الهدف:** كتابة documentation كامل لكل class وmethod.
+
+- **DartDoc** لكل public API
+- **README.md** لكل feature folder
+- **Architecture Decision Records (ADR)** للقرارات المعمارية
+- **API Documentation** (مولّد تلقائي بـ `dart doc`)
+
+```dart
+/// يحسب أوقات الصلاة بناءً على الموقع الجغرافي وطريقة الحساب المختارة.
+///
+/// يستخدم مكتبة [Adhan] للحسابات الفلكية الدقيقة.
+/// النتائج تُخزّن مؤقتاً في [DatabaseHelper] لتقليل الحسابات المتكررة.
+///
+/// ### Edge Cases:
+/// - إذا لم يتوفر موقع → يُرجع [Result.failure(LocationFailure)]
+/// - إذا فشل الحساب → يحاول تحميل النتائج المخزنة
+///
+/// ### مثال:
+/// ```dart
+/// final result = await prayerTimeService.calculatePrayerTimes();
+/// result.when(
+///   success: (times) => print('الفجر: ${times.fajr}'),
+///   failure: (error) => showError(error.message),
+/// );
+/// ```
+class PrayerTimeService extends GetxService { ... }
+```
+
+---
+
+### 🟣 المرحلة 6: Edge Cases — معالجة كل الاحتمالات
+
+**الهدف:** ضمان أن التطبيق لا يتعطل تحت أي ظرف.
+
+| الحالة | الحل |
+|--------|------|
+| **لا يوجد إنترنت** | Offline-first مع sync queue |
+| **بيانات null** | Null-safe models مع default values |
+| **خطأ Firebase** | Retry مع exponential backoff |
+| **المستخدم غير مسجل** | Guest mode مع local storage |
+| **الموقع مرفوض** | Fallback لإحداثيات مكة المكرمة |
+| **أول استخدام (بيانات فارغة)** | Empty state widgets مع onboarding |
+| **الذاكرة منخفضة** | Lazy loading + dispose patterns |
+
+---
+
+### ⚫ المرحلة 7: Admin Feature — لوحة تحكم
+
+#### [NEW] ميزة الأدمن
+
+```
+features/admin/
+├── data/
+│   ├── models/admin_models.dart          ← (موجود، ينقل)
+│   └── sources/admin_remote_data_source.dart  ← [NEW]
+└── presentation/
+    ├── controllers/admin_controller.dart  ← [NEW]
+    └── screens/
+        ├── admin_dashboard_screen.dart    ← [NEW]
+        ├── user_management_screen.dart    ← [NEW]
+        └── analytics_screen.dart          ← [NEW]
+```
+
+**الوظائف المقترحة:**
+- 📊 عرض إحصائيات (عدد المستخدمين، الصلوات المسجلة، العائلات)
+- 👥 إدارة المستخدمين (بحث، حظر، تفعيل)
+- 📢 إرسال إشعارات جماعية
+- ⚙️ التحكم بإعدادات التطبيق العامة
+- 🔍 سجل الأخطاء والأداء
+
+---
+
+## Verification Plan
+
+### Automated Tests
+```bash
+# بعد كل مرحلة:
+flutter analyze          # التحقق من الأخطاء
+flutter test             # تشغيل الاختبارات
+flutter build apk        # التحقق من البناء
+```
+
+### Manual Verification
+- تشغيل التطبيق بعد كل مرحلة والتحقق من عمل كل الشاشات
+- قياس وقت التشغيل قبل وبعد (target: < 2 ثانية)
+- اختبار بدون إنترنت
+
+---
+
+## ترتيب الأولويات (Roadmap)
+
+```mermaid
+gantt
+    title Salah App Refactoring Roadmap
+    dateFormat X
+    axisFormat %s
+
+    section المرحلة 1
+    إصلاح main.dart + DI     :a1, 0, 2
+    
+    section المرحلة 2
+    استبدال Get.find (44 ملف) :a2, 2, 5
+    
+    section المرحلة 3
+    Result Pattern (6 repos)   :a3, 5, 8
+    
+    section المرحلة 4
+    نقل الملفات Feature-First  :a4, 8, 12
+    
+    section المرحلة 5
+    Documentation              :a5, 12, 14
+    
+    section المرحلة 6
+    Edge Cases                 :a6, 14, 16
+    
+    section المرحلة 7
+    Admin Feature              :a7, 16, 20
+```
+
+> [!TIP]
+> **توصيتي:** نبدأ بالمرحلة 1 و 2 (DI fix) لأنهما يحلان **مشكلة البطء فوراً** بدون كسر أي وظيفة. باقي المراحل تتم تدريجياً.

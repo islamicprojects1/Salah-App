@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:salah/core/routes/app_routes.dart';
 import 'package:salah/core/services/storage_service.dart';
+import 'package:salah/core/di/injection_container.dart';
 
 /// Middleware to handle onboarding navigation logic.
 ///
@@ -12,11 +13,11 @@ class OnboardingMiddleware extends GetMiddleware {
   @override
   RouteSettings? redirect(String? route) {
     // Ensure StorageService is initialized
-    if (!Get.isRegistered<StorageService>()) {
+    if (!sl.isRegistered<StorageService>()) {
       return null;
     }
 
-    final storage = Get.find<StorageService>();
+    final storage = sl<StorageService>();
     final isCompleted = storage.isOnboardingCompleted();
 
     // Case 1: Trying to access Onboarding but already completed -> Redirect to Dashboard

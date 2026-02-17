@@ -1,30 +1,32 @@
 import 'package:get/get.dart';
-import 'package:salah/controller/bindings/settings/selected_city_binding.dart';
+import 'package:salah/features/settings/presentation/bindings/selected_city_binding.dart';
 import 'package:salah/core/middleware/onboarding_middleware.dart';
-import 'package:salah/view/screens/settings/select_city_screen.dart';
-import 'app_routes.dart';
-import '../../view/screens/splash/splash_screen.dart';
-import '../../view/screens/home/home_screen.dart';
-import '../../view/screens/settings/settings_screen.dart';
-import '../../view/screens/onboarding/onboarding_screen.dart';
-import '../../view/screens/auth/login_screen.dart';
-import '../../view/screens/auth/register_screen.dart';
-import '../../view/screens/auth/profile_setup_screen.dart';
-import '../../view/screens/dashboard/dashboard_screen.dart';
-import '../../controller/bindings/settings/settings_binding.dart';
-import '../../controller/bindings/auth_binding.dart';
-import '../../controller/bindings/dashboard_binding.dart';
-import '../../controller/bindings/family_binding.dart';
-import '../../view/screens/family/create_family_screen.dart';
-import '../../view/screens/family/join_family_screen.dart';
-import '../../view/screens/family/family_dashboard_screen.dart';
-import '../../view/screens/missed_prayers/missed_prayers_screen.dart';
-import '../../controller/missed_prayers_controller.dart';
-import '../../view/screens/profile/profile_screen.dart';
-import '../../controller/profile_controller.dart';
-import '../../view/screens/qibla/qibla_screen.dart';
-import '../../view/screens/notifications/notifications_screen.dart';
-import '../../controller/notifications_controller.dart';
+import 'package:salah/features/settings/presentation/screens/select_city_screen.dart';
+import 'package:salah/core/routes/app_routes.dart';
+import 'package:salah/features/splash/presentation/screens/splash_screen.dart';
+import 'package:salah/features/prayer/presentation/screens/home_screen.dart';
+import 'package:salah/features/settings/presentation/screens/settings_screen.dart';
+import 'package:salah/features/onboarding/presentation/screens/onboarding_screen.dart';
+import 'package:salah/features/auth/presentation/screens/login_screen.dart';
+import 'package:salah/features/auth/presentation/screens/register_screen.dart';
+import 'package:salah/features/auth/presentation/screens/profile_setup_screen.dart';
+import 'package:salah/features/prayer/presentation/screens/dashboard_screen.dart';
+import 'package:salah/features/settings/presentation/bindings/settings_binding.dart';
+import 'package:salah/features/auth/presentation/bindings/auth_binding.dart';
+import 'package:salah/features/prayer/presentation/bindings/dashboard_binding.dart';
+import 'package:salah/features/family/presentation/bindings/family_binding.dart';
+import 'package:salah/features/family/presentation/screens/create_family_screen.dart';
+import 'package:salah/features/family/presentation/screens/join_family_screen.dart';
+import 'package:salah/features/family/presentation/screens/family_dashboard_screen.dart';
+import 'package:salah/features/prayer/presentation/screens/missed_prayers_screen.dart';
+import 'package:salah/features/prayer/controller/missed_prayers_controller.dart';
+import 'package:salah/features/profile/presentation/screens/profile_screen.dart';
+import 'package:salah/features/stats/presentation/screens/stats_screen.dart';
+import 'package:salah/features/stats/presentation/bindings/stats_binding.dart';
+import 'package:salah/features/profile/controller/profile_controller.dart';
+import 'package:salah/features/prayer/presentation/screens/qibla_screen.dart';
+import 'package:salah/features/notifications/presentation/screens/notifications_screen.dart';
+import 'package:salah/features/notifications/controller/notifications_controller.dart';
 
 /// App pages configuration for GetX routing
 ///
@@ -143,7 +145,14 @@ class AppPages {
       }),
       transition: Transition.downToUp,
     ),
-    
+
+    GetPage(
+      name: AppRoutes.stats,
+      page: () => const StatsScreen(),
+      binding: StatsBinding(),
+      transition: Transition.cupertino,
+    ),
+
     // Qibla
     GetPage(
       name: AppRoutes.qibla,

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:salah/core/constants/enums.dart';
-import 'package:salah/core/services/prayer_time_service.dart';
 import 'package:salah/core/theme/app_colors.dart';
+import 'package:salah/features/prayer/data/services/prayer_time_service.dart';
 
 /// Helper class for prayer timing quality related UI functions
 class PrayerTimingHelper {

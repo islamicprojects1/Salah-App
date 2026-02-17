@@ -507,6 +507,7 @@ class DatabaseHelper extends GetxService {
     await database.delete('cached_prayer_times');
     await database.delete('cached_user_profile');
     await database.delete('user_achievements');
+    await database.delete('cached_family');
   }
 
   /// Get database stats

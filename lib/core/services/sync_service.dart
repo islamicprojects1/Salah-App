@@ -3,9 +3,10 @@ import 'package:salah/core/constants/storage_keys.dart';
 import 'package:salah/core/feedback/sync_status.dart';
 import 'package:salah/core/services/connectivity_service.dart';
 import 'package:salah/core/services/database_helper.dart';
-import 'package:salah/core/services/notification_service.dart';
 import 'package:salah/core/services/storage_service.dart';
-import 'package:salah/data/repositories/prayer_repository.dart';
+import 'package:salah/core/di/injection_container.dart';
+import 'package:salah/features/prayer/data/repositories/prayer_repository.dart';
+import 'package:salah/features/prayer/data/services/notification_service.dart';
 
 /// GetX service that holds reactive sync state and triggers sync on reconnect.
 ///
@@ -35,9 +36,9 @@ class SyncService extends GetxService {
   Future<SyncService> init() async {
     if (_isInitialized) return this;
     _isInitialized = true;
-    _connectivity = Get.find<ConnectivityService>();
-    _database = Get.find<DatabaseHelper>();
-    _storage = Get.find<StorageService>();
+    _connectivity = sl<ConnectivityService>();
+    _database = sl<DatabaseHelper>();
+    _storage = sl<StorageService>();
 
     await refreshPendingCount();
     _loadLastSyncTime();
@@ -50,12 +51,12 @@ class SyncService extends GetxService {
     ever(_connectivity.isConnected, (connected) {
       if (connected) {
         // Sync pending items
-        if (Get.isRegistered<PrayerRepository>()) {
-          Get.find<PrayerRepository>().syncAllPending();
+        if (sl.isRegistered<PrayerRepository>()) {
+          sl<PrayerRepository>().syncAllPending();
         }
         // Reschedule notifications (prayer times may differ after offline)
-        if (Get.isRegistered<NotificationService>()) {
-          Get.find<NotificationService>().rescheduleAllForToday();
+        if (sl.isRegistered<NotificationService>()) {
+          sl<NotificationService>().rescheduleAllForToday();
         }
       }
     });
@@ -76,10 +77,7 @@ class SyncService extends GetxService {
   /// Called by [PrayerRepository] after a successful sync.
   Future<void> setLastSyncTime(DateTime time) async {
     state.lastSyncTime.value = time;
-    await _storage.write(
-      StorageKeys.lastSyncTimestamp,
-      time.toIso8601String(),
-    );
+    await _storage.write(StorageKeys.lastSyncTimestamp, time.toIso8601String());
   }
 
   /// Optional: set progress 0.0..1.0 during sync (for UI).

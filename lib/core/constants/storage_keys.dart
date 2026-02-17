@@ -77,6 +77,12 @@ class StorageKeys {
   /// Key for notification sound mode ('adhan', 'vibrate', 'silent')
   static const String notificationSoundMode = 'notification_sound_mode';
 
+  /// Once we've shown the "enable notifications in app settings" hint, don't repeat
+  static const String notificationPermissionHintShown = 'notification_permission_hint_shown';
+
+  /// Last date (YYYY-MM-DD) we showed the qada hint so we show at most once per day
+  static const String lastQadaHintDate = 'last_qada_hint_date';
+
   // ============================================================
   // PENDING ACTIONS (for notification quick actions)
   // ============================================================

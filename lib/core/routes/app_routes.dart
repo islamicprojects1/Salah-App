@@ -46,6 +46,9 @@ class AppRoutes {
   /// Missed prayers screen - batch logging of unlogged prayers
   static const String missedPrayers = '/missed-prayers';
 
+  /// Stats screen - personal prayer stats and heatmap
+  static const String stats = '/stats';
+
   /// About screen - app information
   static const String about = '/about';
 

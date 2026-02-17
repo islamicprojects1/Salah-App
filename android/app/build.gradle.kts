@@ -59,3 +59,8 @@ dependencies {
 flutter {
     source = "../.."
 }
+
+// Suppress "source value 8 is obsolete" from some Android dependencies
+tasks.withType<JavaCompile>().configureEach {
+    options.compilerArgs.add("-Xlint:-options")
+}

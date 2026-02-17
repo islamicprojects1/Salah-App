@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:salah/core/feedback/toast_service.dart';
 import 'package:salah/core/theme/app_colors.dart';
 
-/// Global user feedback using GetX.
+/// Single entry point for user feedback: toasts and dialogs.
 ///
-/// Centralizes Get.snackbar and Get.dialog for consistent UX and easy
-/// replacement. All controllers and repositories should use this instead
-/// of raw Get.snackbar/Get.dialog to respect app theme and i18n.
+/// Use this everywhere instead of Get.snackbar / Get.dialog.
+/// - Success/error/info/warning → modern overlay toasts via [ToastService].
+/// - Loading and confirmation → dialogs.
 class AppFeedback {
   AppFeedback._();
 
@@ -16,52 +17,27 @@ class AppFeedback {
     HapticFeedback.lightImpact();
   }
 
-  /// Show an error message via GetX snackbar.
-  /// Use for validation errors, network errors, or any user-facing failure.
+  /// Show an error toast (overlay-based, theme-aware).
   static void showError(String title, [String? message]) {
-    Get.snackbar(
-      title,
-      message ?? '',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: AppColors.error.withValues(alpha: 0.95),
-      colorText: AppColors.white,
-      icon: Icon(Icons.error_outline, color: AppColors.white, size: 28),
-      margin: const EdgeInsets.fromLTRB(16, 16, 16, 80),
-      duration: const Duration(seconds: 4),
-    );
+    ToastService.error(title, message);
   }
 
-  /// Show a success message via GetX snackbar.
+  /// Show a success toast.
   static void showSuccess(String title, [String? message]) {
-    Get.snackbar(
-      title,
-      message ?? '',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: AppColors.primary.withValues(alpha: 0.95),
-      colorText: AppColors.white,
-      icon: Icon(Icons.check_circle_outline, color: AppColors.white, size: 28),
-      margin: const EdgeInsets.fromLTRB(16, 16, 16, 80),
-      duration: const Duration(seconds: 3),
-    );
+    ToastService.success(title, message);
   }
 
-  /// Show a neutral snackbar (info/warning).
+  /// Show info or warning toast. [isWarning] true → warning style.
   static void showSnackbar(
     String title, [
     String? message,
     bool isWarning = false,
   ]) {
-    Get.snackbar(
-      title,
-      message ?? '',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: isWarning
-          ? AppColors.orange.withValues(alpha: 0.95)
-          : AppColors.textSecondary.withValues(alpha: 0.95),
-      colorText: AppColors.white,
-      margin: const EdgeInsets.fromLTRB(16, 16, 16, 80),
-      duration: const Duration(seconds: 3),
-    );
+    if (isWarning) {
+      ToastService.warning(title, message);
+    } else {
+      ToastService.info(title, message);
+    }
   }
 
   /// Show a loading dialog. Call [hideLoading] to close.

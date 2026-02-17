@@ -2,21 +2,23 @@ import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
-import 'package:salah/core/services/prayer_time_service.dart';
+import 'package:salah/features/prayer/data/services/prayer_time_service.dart';
 
 /// Service for managing location
 class LocationService extends GetxService {
   // ============================================================
   // OBSERVABLE STATE
   // ============================================================
-  
+
   final currentPosition = Rxn<Position>();
   final cityName = ''.obs;
   final countryName = ''.obs;
   final isLoading = false.obs;
   final errorMessage = ''.obs;
+
   /// True when GPS failed and we're using Mecca as fallback (don't show "Makkah" as user's city).
   final isUsingDefaultLocation = false.obs;
+
   /// True when permission is denied and "Don't ask again" was selected.
   final isPermanentlyDenied = false.obs;
 
@@ -25,7 +27,7 @@ class LocationService extends GetxService {
   // ============================================================
   // INITIALIZATION
   // ============================================================
-  
+
   /// Initialize the service
   Future<LocationService> init() async {
     if (_isInitialized) return this;
@@ -37,42 +39,46 @@ class LocationService extends GetxService {
   // ============================================================
   // GETTERS
   // ============================================================
-  
+
   /// Get current latitude
   double? get latitude => currentPosition.value?.latitude;
-  
+
   /// Get current longitude
   double? get longitude => currentPosition.value?.longitude;
-  
+
   /// Check if location is available
   bool get hasLocation => currentPosition.value != null;
 
   /// Display string for UI: real city when GPS worked, or clear fallback message.
-  String get currentCity => cityName.value.isNotEmpty ? cityName.value : 'not_specified'.tr;
+  String get currentCity =>
+      cityName.value.isNotEmpty ? cityName.value : 'not_specified'.tr;
+
   /// When using default (Mecca), show this so user knows it's not their actual location.
   String get locationDisplayLabel => isUsingDefaultLocation.value
       ? 'makkah_fallback_label'.tr
       : (cityName.value.isNotEmpty
-          ? (countryName.value.isNotEmpty ? '${cityName.value}, ${countryName.value}' : cityName.value)
-          : 'not_specified'.tr);
+            ? (countryName.value.isNotEmpty
+                  ? '${cityName.value}, ${countryName.value}'
+                  : cityName.value)
+            : 'not_specified'.tr);
 
   // ============================================================
   // LOCATION METHODS
   // ============================================================
-  
+
   /// Get current location
   Future<Position?> getCurrentLocation() async {
     try {
       isLoading.value = true;
       errorMessage.value = '';
-      
+
       // Check if location services are enabled
       final serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         errorMessage.value = 'location_services_disabled';
         return _getDefaultLocation();
       }
-      
+
       // Check permission
       var permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
@@ -82,15 +88,15 @@ class LocationService extends GetxService {
           return _getDefaultLocation();
         }
       }
-      
+
       if (permission == LocationPermission.deniedForever) {
         isPermanentlyDenied.value = true;
         errorMessage.value = 'location_permission_permanently_denied';
         return _getDefaultLocation();
       }
-      
+
       isPermanentlyDenied.value = false;
-      
+
       // Get position
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
@@ -98,7 +104,7 @@ class LocationService extends GetxService {
           timeLimit: Duration(seconds: 15),
         ),
       );
-      
+
       currentPosition.value = position;
       isUsingDefaultLocation.value = false;
       await _reverseGeocode(position.latitude, position.longitude);
@@ -121,7 +127,7 @@ class LocationService extends GetxService {
     try {
       isLoading.value = true;
       errorMessage.value = '';
-      
+
       final position = Position(
         latitude: latitude,
         longitude: longitude,
@@ -134,7 +140,7 @@ class LocationService extends GetxService {
         altitudeAccuracy: 0,
         headingAccuracy: 0,
       );
-      
+
       currentPosition.value = position;
       cityName.value = city;
       countryName.value = country;
@@ -228,7 +234,7 @@ class LocationService extends GetxService {
   // ============================================================
   // HELPER METHODS
   // ============================================================
-  
+
   /// Open location settings
   Future<bool> openLocationSettings() async {
     return await Geolocator.openLocationSettings();
@@ -247,38 +253,39 @@ class LocationService extends GetxService {
   // ============================================================
   // REVERSE GEOCODING
   // ============================================================
-  
+
   /// Get city name from coordinates using OpenStreetMap Nominatim API
   Future<void> _reverseGeocode(double lat, double lng) async {
     try {
       // Use user's current language preference
       final language = Get.locale?.languageCode ?? 'ar';
-      
+
       final url = Uri.parse(
         'https://nominatim.openstreetmap.org/reverse?format=json&lat=$lat&lon=$lng&accept-language=$language',
       );
-      
+
       final response = await http.get(
         url,
         headers: {'User-Agent': 'SalahApp/1.0'},
       );
-      
+
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final address = data['address'] as Map<String, dynamic>?;
-        
+
         if (address != null) {
           // Try to get city name in order of preference
           // Prioritize 'city' > 'town' > 'village' > 'state'
           // Avoid 'county' or 'suburb' which often return districts (e.g. Marka)
-          
-          cityName.value = address['city'] ?? 
-                           address['town'] ?? 
-                           address['village'] ?? 
-                           address['state'] ?? // "Amman" is often state too
-                           address['county'] ?? // Fallback
-                           '';
-          
+
+          cityName.value =
+              address['city'] ??
+              address['town'] ??
+              address['village'] ??
+              address['state'] ?? // "Amman" is often state too
+              address['county'] ?? // Fallback
+              '';
+
           countryName.value = address['country'] ?? '';
         }
       }

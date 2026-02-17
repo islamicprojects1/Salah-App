@@ -4,6 +4,9 @@
 const Map<String, String> arTranslations = {
   // ==================== General ====================
   'app_name': 'صلاة',
+  'app_title': 'قُرب',
+  'prayer_times_subtitle': 'تتبّع صلاتك وتقرّب إلى الله',
+  'loading_msg': 'جاري التحميل...',
   'ok': 'موافق',
   'cancel': 'إلغاء',
   'save': 'حفظ',
@@ -45,6 +48,7 @@ const Map<String, String> arTranslations = {
   // ==================== Navigation ====================
   'home': 'الرئيسية',
   'settings': 'الإعدادات',
+  'drawer_settings_subtitle': 'الموقع، الإشعارات، الحساب',
   'prayer_times': 'أوقات الصلاة',
   'qibla': 'القبلة',
   'quran': 'القرآن',
@@ -192,6 +196,8 @@ const Map<String, String> arTranslations = {
   'notification_prayer_body': 'هل صليت؟ اضغط للتسجيل',
   'notification_i_prayed': '✅ صليت',
   'notification_later': '⏰ لاحقاً',
+  'prayer_logged_toast': 'تم تسجيل الصلاة',
+  'snooze_toast_minutes': 'سيصلك تذكير بعد @minutes دقائق',
   'prayer_logged_from_notif': 'تم تسجيل صلاة @prayer من التنبيه',
   'success_done': 'تم بنجاح',
 
@@ -222,7 +228,7 @@ const Map<String, String> arTranslations = {
   'add_child': 'إضافة طفل',
   'child_name': 'اسم الطفل',
   'add_child_no_phone': 'إضافة طفل بدون جوال',
-  'add_child_no_phone_btn': 'إضافة طفل (بدون هاتف)',
+  'add_child_no_phone_btn': 'إضافة ابن لا يملك هاتف',
   'leave_family': 'مغادرة العائلة',
   'encourage': 'شجّع',
   'log_for_him': 'سجّل عنه',
@@ -256,6 +262,12 @@ const Map<String, String> arTranslations = {
   'streak': 'السلسلة',
   'days': 'أيام',
   'day_unit': 'يوم',
+  'my_stats': 'إحصائياتي',
+  'stats_streak_days': 'أيام متتالية',
+  'stats_completion': 'الالتزام',
+  'stats_this_month': '@count من @total يوم كامل',
+  'stats_longest_streak': 'أفضل سلسلة هذا الشهر',
+  'stats_heatmap_title': 'هذا الشهر',
   'prayers_completed': 'صلوات مكتملة',
   'god_accept_prayers': 'تقبل الله',
   'already_logged': 'تنبيه',
@@ -263,6 +275,8 @@ const Map<String, String> arTranslations = {
   'no_past_prayers_yet': 'لم يحن وقت أي صلاة بعد',
   'already_logged_snackbar': 'لقد قمت بتسجيل هذه الصلاة مسبقاً',
   'prayer_logged_success': 'سُجّلت صلاة @prayer',
+  'saved_will_sync_later': 'تم الحفظ. سيتم المزامنة عند عودة الاتصال.',
+  'sync_failed_retry': 'فشل المزامنة. سيتم إعادة المحاولة تلقائياً.',
   'prayer_log_failed': 'فشل تسجيل الصلاة',
   'prayers_logged_count': 'صلوات تم تسجيلها',
   'log_all_prayers': 'سجّل الكل ✅',
@@ -278,6 +292,7 @@ const Map<String, String> arTranslations = {
   'missed_prayers': 'الصلوات غير المسجلة',
   'missed_prayers_title': 'لم تسجل صلواتك 💙',
   'missed_prayers_desc': 'يبدو أنك لم تسجل بعض صلواتك اليوم',
+  'missed_prayers_load_failed': 'فشل تحميل الصلوات الفائتة',
   'quick_log': 'تسجيل سريع',
   'i_prayed': 'صليت',
   'i_missed': 'فاتتني',
@@ -350,8 +365,11 @@ const Map<String, String> arTranslations = {
   'onboarding_subtitle_3': 'أوقات الصلاة والقبلة حسب موقعك',
   'location_permission': 'الموقع',
   'location_permission_desc': 'لمعرفة أوقات الصلاة واتجاه القبلة',
+  'location_denied_hint': 'يمكنك اختيار المدينة يدوياً من الإعدادات لاحقاً.',
   'notification_permission': 'الإشعارات',
   'notification_permission_desc': 'للتذكير بأوقات الصلاة',
+  'notification_permission_hint':
+      'لتفعيل تذكير الصلاة، يرجى السماح بالإشعارات من إعدادات التطبيق',
   'grant': 'منح',
   'grant_permissions': 'منح الأذونات',
   'onboarding_subtitle_welcome':
@@ -463,6 +481,9 @@ const Map<String, String> arTranslations = {
   // ==================== Qada & Smart Reminders ====================
   'qada_review_title': 'مراجعة الصلوات 🔔',
   'qada_review_body': 'لم تسجل @count صلوات اليوم: @prayers',
+  'qada_hint_title': 'صلوات لم تُسجّل',
+  'qada_hint_message': 'لديك صلوات لم تُسجّل. هل تريد تعويضها الآن؟',
+  'qada_review_action': 'تعويض',
   'qada_yesterday_title': 'صلوات أمس ⏪',
   'qada_yesterday_body': 'لم تسجل بعض صلوات الأمس. هل صليتها؟',
   'qada_sheet_title': 'صلوات لم تُسجَّل',
@@ -470,6 +491,8 @@ const Map<String, String> arTranslations = {
   'qada_i_prayed': 'صليتها ✅',
   'qada_i_missed': 'فاتتني 😔',
   'qada_log_all': 'صليت الكل ✅',
+  'qada_confirm_log_all_day': 'تسجيل @count صلوات لـ @day كصلاة مؤدّاة؟',
+  'qada_logged_day_toast': 'تم تسجيل كل صلوات ذلك اليوم.',
   'qada_yesterday': 'أمس',
   'qada_today': 'اليوم',
   'snooze_escalation_1': 'تذكير بعد 5 دقائق',

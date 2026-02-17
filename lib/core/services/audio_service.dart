@@ -1,12 +1,13 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:get/get.dart';
+import 'package:salah/core/di/injection_container.dart';
 import 'package:salah/core/services/storage_service.dart';
 import 'package:salah/core/constants/storage_keys.dart';
 
 /// Service to handle Adhan and other app sounds
 class AudioService extends GetxService {
   late final AudioPlayer _player;
-  final _storage = Get.find<StorageService>();
+  final _storage = sl<StorageService>();
 
   bool _isInitialized = false;
 

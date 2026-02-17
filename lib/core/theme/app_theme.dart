@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:salah/core/di/injection_container.dart';
 import 'package:salah/core/constants/enums.dart';
-import 'app_colors.dart';
-import '../services/localization_service.dart';
+import 'package:salah/features/settings/data/services/localization_service.dart';
+import 'package:salah/core/theme/app_colors.dart';
 
 /// App font families
 class AppFonts {
@@ -17,7 +17,7 @@ class AppFonts {
   /// Get font family based on current locale
   static String get current {
     try {
-      final localizationService = Get.find<LocalizationService>();
+      final localizationService = sl<LocalizationService>();
       return localizationService.currentLanguage.value == AppLanguage.arabic
           ? arabic
           : english;
@@ -119,6 +119,8 @@ class AppTheme {
         onSecondary: Colors.black,
         onSurface: AppColors.lightText,
         onError: Colors.white,
+        shadow: Color(0xFF000000),
+        outline: AppColors.lightDivider,
       ),
       scaffoldBackgroundColor: AppColors.lightBackground,
 
@@ -278,6 +280,8 @@ class AppTheme {
         onSecondary: Colors.black,
         onSurface: AppColors.darkText,
         onError: Colors.black,
+        shadow: Color(0xFF000000),
+        outline: AppColors.darkDivider,
       ),
       scaffoldBackgroundColor: AppColors.darkBackground,
 

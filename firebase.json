@@ -1,25 +1,28 @@
 {
-    "flutter": {
-        "platforms": {
-            "android": {
-                "default": {
-                    "projectId": "salah-app-2026",
-                    "appId": "1:621474644009:android:4d6fa1d5bf3b9697699c38",
-                    "fileOutput": "android/app/google-services.json"
-                }
-            },
-            "dart": {
-                "lib/firebase_options.dart": {
-                    "projectId": "salah-app-2026",
-                    "configurations": {
-                        "android": "1:621474644009:android:4d6fa1d5bf3b9697699c38",
-                        "ios": "1:621474644009:ios:27558fdd1102e571699c38",
-                        "macos": "1:621474644009:ios:27558fdd1102e571699c38",
-                        "web": "1:621474644009:web:d41d9f1c15a9470b699c38",
-                        "windows": "1:621474644009:web:5271808b56d29d5d699c38"
-                    }
-                }
-            }
+  "functions": {
+    "source": "functions"
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "salah-app-2026",
+          "appId": "1:621474644009:android:4d6fa1d5bf3b9697699c38",
+          "fileOutput": "android/app/google-services.json"
         }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "salah-app-2026",
+          "configurations": {
+            "android": "1:621474644009:android:4d6fa1d5bf3b9697699c38",
+            "ios": "1:621474644009:ios:27558fdd1102e571699c38",
+            "macos": "1:621474644009:ios:27558fdd1102e571699c38",
+            "web": "1:621474644009:web:d41d9f1c15a9470b699c38",
+            "windows": "1:621474644009:web:5271808b56d29d5d699c38"
+          }
+        }
+      }
     }
+  }
 }

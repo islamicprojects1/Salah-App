@@ -1,6 +1,6 @@
 import 'package:get/get_utils/src/extensions/internacionalization.dart';
 import 'package:salah/core/constants/enums.dart';
-import 'package:salah/data/models/prayer_log_model.dart';
+import 'package:salah/features/prayer/data/models/prayer_log_model.dart';
 
 /// Single source of truth for prayer name ↔ enum mapping and "is logged" logic.
 /// Use everywhere instead of duplicated switches and string literals.
@@ -25,8 +25,9 @@ class PrayerNames {
   static PrayerName fromDisplayName(String name) {
     final trimmed = name.trim().toLowerCase();
     for (final e in _arNames.entries) {
-      if (e.value == name.trim() || e.value.toLowerCase() == trimmed)
+      if (e.value == name.trim() || e.value.toLowerCase() == trimmed) {
         return e.key;
+      }
     }
     for (final p in PrayerName.values) {
       if (p.name == trimmed) return p;
