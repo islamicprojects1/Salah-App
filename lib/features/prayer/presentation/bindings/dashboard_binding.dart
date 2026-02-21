@@ -4,7 +4,6 @@ import 'package:salah/core/di/injection_container.dart';
 import 'package:salah/core/services/location_service.dart';
 import 'package:salah/features/auth/data/repositories/user_repository.dart';
 import 'package:salah/features/auth/data/services/auth_service.dart';
-import 'package:salah/features/family/controller/family_controller.dart';
 import 'package:salah/features/prayer/controller/dashboard_controller.dart';
 import 'package:salah/features/prayer/controller/qibla_controller.dart';
 import 'package:salah/features/prayer/data/repositories/prayer_repository.dart';
@@ -38,7 +37,6 @@ class DashboardBinding extends Bindings {
     );
 
     // Feature controllers — lazy with fenix for recreation on re-navigation
-    Get.lazyPut<FamilyController>(() => FamilyController(), fenix: true);
     Get.lazyPut<QiblaController>(() => QiblaController(), fenix: true);
     Get.lazyPut<SettingsController>(() => SettingsController(), fenix: true);
   }

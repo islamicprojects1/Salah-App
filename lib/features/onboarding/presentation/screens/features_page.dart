@@ -1,229 +1,283 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:lottie/lottie.dart';
-import 'package:salah/core/constants/enums.dart';
+import 'package:salah/core/constants/app_dimensions.dart';
 import 'package:salah/core/theme/app_colors.dart';
+import 'package:salah/core/theme/app_fonts.dart';
 import 'package:salah/features/onboarding/controller/onboarding_controller.dart';
+import 'package:salah/features/onboarding/presentation/widgets/onboarding_widgets.dart';
 
-/// Features showcase page with swipeable feature cards
+// ─────────────────────────────────────────────
+// Features Page
+// ─────────────────────────────────────────────
 class FeaturesPage extends GetView<OnboardingController> {
   const FeaturesPage({super.key});
 
+  static const _features = [
+    _FeatureData(
+      icon: Icons.touch_app_rounded,
+      titleKey: 'feature_one_tap_title',
+      subtitleKey: 'feature_one_tap_desc',
+      colorKey: 'feature1',
+    ),
+    _FeatureData(
+      icon: Icons.analytics_rounded,
+      titleKey: 'feature_stats_title',
+      subtitleKey: 'feature_stats_desc',
+      colorKey: 'feature2',
+    ),
+    _FeatureData(
+      icon: Icons.celebration_rounded,
+      titleKey: 'feature_achievements_title',
+      subtitleKey: 'feature_motivation_desc',
+      colorKey: 'feature3',
+    ),
+  ];
+
   @override
   Widget build(BuildContext context) {
-    final pageData = controller.getPageData(OnboardingStep.features);
+    final data = controller.pageData;
 
-    return SafeArea(
-      child: Column(
-        children: [
-          const Spacer(flex: 1),
-
-          // Animation
-          SizedBox(
-            height: 220,
-            child: Lottie.asset(
-              pageData.lottieAsset,
-              fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) {
-                return Icon(
-                  Icons.check_circle_outline,
-                  size: 120,
-                  color: AppColors.primary,
-                );
-              },
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          // Title
-          Text(
-            pageData.titleKey.tr,
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
-          ),
-
-          const SizedBox(height: 8),
-
-          Text(
-            pageData.subtitleKey.tr,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 16,
-              color: AppColors.textSecondary,
-              height: 1.5,
-            ),
-          ),
-
-          const Spacer(flex: 1),
-
-          // Feature highlights
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Column(
-              children: [
-                _buildFeatureRow(
-                  icon: Icons.touch_app_rounded,
-                  title: 'feature_one_tap_title'.tr,
-                  subtitle: 'feature_one_tap_desc'.tr,
-                  color: AppColors.feature1,
+    return OnboardingPageLayout(
+      scrollable: true,
+      lottieAsset: data.lottieAsset,
+      title: data.localizedTitle,
+      subtitle: data.localizedSubtitle,
+      navigationRow: _NavRow(controller: controller),
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Column(
+            children: _features.asMap().entries.map((e) {
+              final index = e.key;
+              final feat = e.value;
+              final color = _colorForKey(feat.colorKey);
+              return StaggeredFeatureItem(
+                index: index,
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    bottom: index < _features.length - 1 ? 12 : 0,
+                  ),
+                  child: _FeatureCard(
+                    icon: feat.icon,
+                    title: feat.titleKey.tr,
+                    subtitle: feat.subtitleKey.tr,
+                    color: color,
+                  ),
                 ),
-                const SizedBox(height: 12),
-                _buildFeatureRow(
-                  icon: Icons.analytics_rounded,
-                  title: 'feature_stats_title'.tr,
-                  subtitle: 'feature_stats_desc'.tr,
-                  color: AppColors.feature2,
-                ),
-                const SizedBox(height: 12),
-                _buildFeatureRow(
-                  icon: Icons.celebration_rounded,
-                  title: 'feature_achievements_title'.tr,
-                  subtitle: 'feature_motivation_desc'.tr,
-                  color: AppColors.feature3,
-                ),
-              ],
-            ),
+              );
+            }).toList(),
           ),
-
-          const Spacer(flex: 2),
-
-          // Navigation
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: _buildNavigationRow(),
-          ),
-
-          const SizedBox(height: 40),
-        ],
-      ),
+        ),
+        const SizedBox(height: 16),
+      ],
     );
   }
 
-  Widget _buildFeatureRow({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required Color color,
-  }) {
+  Color _colorForKey(String key) {
+    switch (key) {
+      case 'feature1':
+        return AppColors.feature1;
+      case 'feature2':
+        return AppColors.feature2;
+      case 'feature3':
+        return AppColors.feature3;
+      default:
+        return AppColors.primary;
+    }
+  }
+}
+
+class _FeatureData {
+  final IconData icon;
+  final String titleKey;
+  final String subtitleKey;
+  final String colorKey;
+
+  const _FeatureData({
+    required this.icon,
+    required this.titleKey,
+    required this.subtitleKey,
+    required this.colorKey,
+  });
+}
+
+class _FeatureCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color color;
+
+  const _FeatureCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.12),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        border: Border.all(color: color.withValues(alpha: 0.15)),
       ),
       child: Row(
         children: [
           Container(
-            width: 48,
-            height: 48,
+            width: 52,
+            height: 52,
             decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(12),
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(icon, color: AppColors.white, size: 24),
+            child: Icon(icon, color: color, size: 26),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                  style: AppFonts.bodyLarge.copyWith(
+                    fontWeight: FontWeight.w700,
                     color: AppColors.textPrimary,
                   ),
                 ),
+                const SizedBox(height: 3),
                 Text(
                   subtitle,
-                  style: TextStyle(
-                    fontSize: 13,
+                  style: AppFonts.bodySmall.copyWith(
                     color: AppColors.textSecondary,
+                    height: 1.4,
                   ),
                 ),
               ],
             ),
           ),
-          Icon(Icons.check_circle, color: color, size: 24),
+          const SizedBox(width: 8),
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.check_rounded, color: color, size: 16),
+          ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildNavigationRow() {
-    return Row(
+// ─────────────────────────────────────────────
+// Family Page
+// ─────────────────────────────────────────────
+class FamilyPage extends GetView<OnboardingController> {
+  const FamilyPage({super.key});
+
+  static const _familyFeatures = [
+    _FamilyItem(emoji: '👀', key: 'feature_family_track'),
+    _FamilyItem(emoji: '💚', key: 'feature_family_encourage'),
+    _FamilyItem(emoji: '🔔', key: 'feature_family_reminders'),
+    _FamilyItem(emoji: '🔒', key: 'feature_family_privacy'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final data = controller.pageData;
+
+    return OnboardingPageLayout(
+      scrollable: true,
+      lottieAsset: data.lottieAsset,
+      iconData: data.iconData,
+      title: data.localizedTitle,
+      subtitle: data.localizedSubtitle,
+      emoji: data.emoji,
+      navigationRow: _NavRow(controller: controller),
       children: [
-        // Back button
-        IconButton(
-          onPressed: () {
-            HapticFeedback.lightImpact();
-            controller.previousStep();
-          },
-          icon: Container(
-            padding: const EdgeInsets.all(12),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Container(
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: AppColors.textSecondary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.secondary.withValues(alpha: 0.12),
+                  blurRadius: 24,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+              border: Border.all(
+                color: AppColors.secondary.withValues(alpha: 0.2),
+              ),
             ),
-            child: Icon(
-              Icons.arrow_back_rounded,
-              color: AppColors.textSecondary,
+            child: Column(
+              children: _familyFeatures.asMap().entries.map((e) {
+                return StaggeredFeatureItem(
+                  index: e.key,
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      bottom: e.key < _familyFeatures.length - 1 ? 16 : 0,
+                    ),
+                    child: _FamilyFeatureRow(item: e.value),
+                  ),
+                );
+              }).toList(),
             ),
           ),
         ),
-        const Spacer(),
-        // Next button
-        Material(
-          color: AppColors.transparent,
-          child: InkWell(
-            onTap: () {
-              HapticFeedback.mediumImpact();
-              controller.nextStep();
-            },
-            borderRadius: BorderRadius.circular(14),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    AppColors.primary,
-                    AppColors.primary.withValues(alpha: 0.8),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.3),
-                    blurRadius: 16,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Text(
-                    controller.getButtonText(),
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.white,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  const Icon(
-                    Icons.arrow_forward_rounded,
-                    color: Colors.white,
-                    size: 18,
-                  ),
-                ],
-              ),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+}
+
+class _FamilyItem {
+  final String emoji;
+  final String key;
+  const _FamilyItem({required this.emoji, required this.key});
+}
+
+class _FamilyFeatureRow extends StatelessWidget {
+  final _FamilyItem item;
+  const _FamilyFeatureRow({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: AppColors.secondary.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Center(
+            child: Text(item.emoji, style: const TextStyle(fontSize: 22)),
+          ),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Text(
+            item.key.tr,
+            style: AppFonts.bodyMedium.copyWith(
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+              height: 1.4,
             ),
           ),
         ),
@@ -232,216 +286,27 @@ class FeaturesPage extends GetView<OnboardingController> {
   }
 }
 
-/// Family intro page
-class FamilyPage extends GetView<OnboardingController> {
-  const FamilyPage({super.key});
+// ─────────────────────────────────────────────
+// Shared navigation row
+// ─────────────────────────────────────────────
+class _NavRow extends StatelessWidget {
+  final OnboardingController controller;
+  const _NavRow({required this.controller});
 
   @override
   Widget build(BuildContext context) {
-    final pageData = controller.getPageData(OnboardingStep.family);
-
-    return SafeArea(
-      child: Column(
-        children: [
-          const Spacer(flex: 1),
-
-          // Animation
-          SizedBox(
-            height: 220,
-            child: Lottie.asset(
-              pageData.lottieAsset,
-              fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) {
-                return Icon(
-                  Icons.family_restroom_rounded,
-                  size: 120,
-                  color: AppColors.primary,
-                );
-              },
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          // Title with emoji
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(pageData.emoji, style: const TextStyle(fontSize: 32)),
-              const SizedBox(width: 12),
-              Text(
-                pageData.titleKey.tr,
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 8),
-
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 40),
-            child: Text(
-              pageData.subtitleKey.tr,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16,
-                color: AppColors.textSecondary,
-                height: 1.5,
-              ),
-            ),
-          ),
-
-          const Spacer(flex: 1),
-
-          // Family features
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    AppColors.secondary.withValues(alpha: 0.1),
-                    AppColors.primary.withValues(alpha: 0.05),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: AppColors.primary.withValues(alpha: 0.2),
-                ),
-              ),
-              child: Column(
-                children: [
-                  _buildFamilyFeature(
-                    emoji: '👀',
-                    text: 'feature_family_track'.tr,
-                  ),
-                  const SizedBox(height: 12),
-                  _buildFamilyFeature(
-                    emoji: '💚',
-                    text: 'feature_family_encourage'.tr,
-                  ),
-                  const SizedBox(height: 12),
-                  _buildFamilyFeature(
-                    emoji: '🔔',
-                    text: 'feature_family_reminders'.tr,
-                  ),
-                  const SizedBox(height: 12),
-                  _buildFamilyFeature(
-                    emoji: '🔒',
-                    text: 'feature_family_privacy'.tr,
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          const Spacer(flex: 2),
-
-          // Navigation
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: _buildNavigationRow(),
-          ),
-
-          const SizedBox(height: 40),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFamilyFeature({required String emoji, required String text}) {
     return Row(
       children: [
-        Text(emoji, style: const TextStyle(fontSize: 24)),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            text,
-            style: TextStyle(
-              fontSize: 15,
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildNavigationRow() {
-    return Row(
-      children: [
-        IconButton(
-          onPressed: () {
-            HapticFeedback.lightImpact();
-            controller.previousStep();
-          },
-          icon: Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.textSecondary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              Icons.arrow_back_rounded,
-              color: AppColors.textSecondary,
-            ),
-          ),
+        OnboardingSecondaryButton(
+          icon: Icons.arrow_back_rounded,
+          onTap: controller.previousStep,
         ),
         const Spacer(),
-        Material(
-          color: AppColors.transparent,
-          child: InkWell(
-            onTap: () {
-              HapticFeedback.mediumImpact();
-              controller.nextStep();
-            },
-            borderRadius: BorderRadius.circular(14),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    AppColors.primary,
-                    AppColors.primary.withValues(alpha: 0.8),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.3),
-                    blurRadius: 16,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Text(
-                    controller.getButtonText(),
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.white,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  const Icon(
-                    Icons.arrow_forward_rounded,
-                    color: Colors.white,
-                    size: 18,
-                  ),
-                ],
-              ),
-            ),
-          ),
+        OnboardingButton(
+          fullWidth: false,
+          text: controller.buttonText,
+          onTap: controller.nextStep,
+          icon: Icons.arrow_forward_rounded,
         ),
       ],
     );

@@ -1,151 +1,105 @@
 import 'package:flutter/material.dart';
 
-/// App dimensions and responsive sizing helper
-/// Supports all screen sizes from small phones to laptops/tablets
+/// App-wide layout constants and responsive sizing helpers.
+///
+/// Supports screens from small phones (< 360 px) to desktops (> 1024 px).
+/// Use the [AppDimensionsExtension] on [BuildContext] for the most ergonomic API.
 class AppDimensions {
-  AppDimensions._();
+  const AppDimensions._();
 
   // ============================================================
-  // BREAKPOINTS
+  // BREAKPOINTS (logical pixels)
   // ============================================================
 
-  /// Extra small phones (< 360)
   static const double breakpointXS = 360;
-
-  /// Small phones (360 - 480)
   static const double breakpointSM = 480;
-
-  /// Medium phones / Large phones (480 - 600)
   static const double breakpointMD = 600;
-
-  /// Small tablets (600 - 768)
   static const double breakpointLG = 768;
-
-  /// Large tablets (768 - 1024)
   static const double breakpointXL = 1024;
-
-  /// Laptops / Desktops (> 1024)
   static const double breakpointXXL = 1200;
 
   // ============================================================
   // SCREEN SIZE DETECTION
   // ============================================================
 
-  /// Check if screen is extra small phone
-  static bool isXSmall(BuildContext context) =>
-      MediaQuery.of(context).size.width < breakpointXS;
+  static bool isXSmall(BuildContext context) => _width(context) < breakpointXS;
 
-  /// Check if screen is small phone
   static bool isSmall(BuildContext context) =>
-      MediaQuery.of(context).size.width >= breakpointXS &&
-      MediaQuery.of(context).size.width < breakpointSM;
+      _width(context) >= breakpointXS && _width(context) < breakpointSM;
 
-  /// Check if screen is medium/large phone
   static bool isMedium(BuildContext context) =>
-      MediaQuery.of(context).size.width >= breakpointSM &&
-      MediaQuery.of(context).size.width < breakpointMD;
+      _width(context) >= breakpointSM && _width(context) < breakpointMD;
 
-  /// Check if screen is small tablet
   static bool isLarge(BuildContext context) =>
-      MediaQuery.of(context).size.width >= breakpointMD &&
-      MediaQuery.of(context).size.width < breakpointLG;
+      _width(context) >= breakpointMD && _width(context) < breakpointLG;
 
-  /// Check if screen is large tablet
   static bool isXLarge(BuildContext context) =>
-      MediaQuery.of(context).size.width >= breakpointLG &&
-      MediaQuery.of(context).size.width < breakpointXL;
+      _width(context) >= breakpointLG && _width(context) < breakpointXL;
 
-  /// Check if screen is laptop/desktop
   static bool isXXLarge(BuildContext context) =>
-      MediaQuery.of(context).size.width >= breakpointXL;
+      _width(context) >= breakpointXL;
 
-  /// Check if screen is mobile (phone)
-  static bool isMobile(BuildContext context) =>
-      MediaQuery.of(context).size.width < breakpointMD;
+  static bool isMobile(BuildContext context) => _width(context) < breakpointMD;
 
-  /// Check if screen is tablet
   static bool isTablet(BuildContext context) =>
-      MediaQuery.of(context).size.width >= breakpointMD &&
-      MediaQuery.of(context).size.width < breakpointXL;
+      _width(context) >= breakpointMD && _width(context) < breakpointXL;
 
-  /// Check if screen is desktop/laptop
   static bool isDesktop(BuildContext context) =>
-      MediaQuery.of(context).size.width >= breakpointXL;
+      _width(context) >= breakpointXL;
 
   // ============================================================
   // SCREEN DIMENSIONS
   // ============================================================
 
-  /// Get screen width
   static double screenWidth(BuildContext context) =>
-      MediaQuery.of(context).size.width;
+      MediaQuery.sizeOf(context).width;
 
-  /// Get screen height
   static double screenHeight(BuildContext context) =>
-      MediaQuery.of(context).size.height;
+      MediaQuery.sizeOf(context).height;
 
-  /// Get safe area padding
   static EdgeInsets safeArea(BuildContext context) =>
-      MediaQuery.of(context).padding;
+      MediaQuery.paddingOf(context);
 
   // ============================================================
-  // FIXED PADDING & MARGIN
+  // FIXED SPACING & PADDING
   // ============================================================
 
-  /// 2.0
   static const double paddingXXS = 2.0;
-
-  /// 4.0
   static const double paddingXS = 4.0;
-
-  /// 8.0
   static const double paddingSM = 8.0;
-
-  /// 12.0
   static const double paddingMD = 12.0;
-
-  /// 16.0
   static const double paddingLG = 16.0;
 
-  /// 20.0
+  /// Named XL but value is 18 — kept for backward compatibility.
   static const double paddingXL = 18.0;
-
-  /// 24.0
   static const double paddingXXL = 24.0;
-
-  /// 32.0
   static const double paddingXXXL = 32.0;
-
-  /// 48.0
   static const double paddingHuge = 48.0;
 
   // ============================================================
-  // RESPONSIVE PADDING (Based on screen size)
+  // RESPONSIVE PADDING
   // ============================================================
 
-  /// Get responsive horizontal padding for screen edges
   static double screenPaddingH(BuildContext context) {
-    final width = screenWidth(context);
-    if (width < breakpointXS) return 12.0;
-    if (width < breakpointSM) return 16.0;
-    if (width < breakpointMD) return 20.0;
-    if (width < breakpointLG) return 24.0;
-    if (width < breakpointXL) return 32.0;
+    final w = _width(context);
+    if (w < breakpointXS) return 12.0;
+    if (w < breakpointSM) return 16.0;
+    if (w < breakpointMD) return 20.0;
+    if (w < breakpointLG) return 24.0;
+    if (w < breakpointXL) return 32.0;
     return 48.0;
   }
 
-  /// Get responsive vertical padding
   static double screenPaddingV(BuildContext context) {
-    final width = screenWidth(context);
-    if (width < breakpointXS) return 8.0;
-    if (width < breakpointSM) return 12.0;
-    if (width < breakpointMD) return 16.0;
-    if (width < breakpointLG) return 20.0;
-    if (width < breakpointXL) return 24.0;
+    final w = _width(context);
+    if (w < breakpointXS) return 8.0;
+    if (w < breakpointSM) return 12.0;
+    if (w < breakpointMD) return 16.0;
+    if (w < breakpointLG) return 20.0;
+    if (w < breakpointXL) return 24.0;
     return 32.0;
   }
 
-  /// Get responsive EdgeInsets for screen padding
   static EdgeInsets screenPadding(BuildContext context) => EdgeInsets.symmetric(
     horizontal: screenPaddingH(context),
     vertical: screenPaddingV(context),
@@ -155,31 +109,15 @@ class AppDimensions {
   // BORDER RADIUS
   // ============================================================
 
-  /// 4.0
   static const double radiusXS = 4.0;
-
-  /// 8.0
   static const double radiusSM = 8.0;
-
-  /// 12.0
   static const double radiusMD = 12.0;
-
-  /// 16.0
   static const double radiusLG = 16.0;
-
-  /// 20.0
   static const double radiusXL = 20.0;
-
-  /// 24.0
   static const double radiusXXL = 24.0;
-
-  /// 32.0
   static const double radiusRound = 32.0;
-
-  /// Full circle
   static const double radiusCircle = 999.0;
 
-  /// Pre-built BorderRadius objects
   static BorderRadius get borderRadiusXS => BorderRadius.circular(radiusXS);
   static BorderRadius get borderRadiusSM => BorderRadius.circular(radiusSM);
   static BorderRadius get borderRadiusMD => BorderRadius.circular(radiusMD);
@@ -193,98 +131,55 @@ class AppDimensions {
   // ICON SIZES
   // ============================================================
 
-  /// 12.0 - Very small icons
   static const double iconXS = 12.0;
-
-  /// 16.0 - Small icons
   static const double iconSM = 16.0;
-
-  /// 20.0 - Default small icons
   static const double iconMD = 20.0;
-
-  /// 24.0 - Default icons
   static const double iconLG = 24.0;
-
-  /// 28.0 - Large icons
   static const double iconXL = 28.0;
-
-  /// 32.0 - Extra large icons
   static const double iconXXL = 32.0;
-
-  /// 48.0 - Huge icons
   static const double iconHuge = 48.0;
-
-  /// 64.0 - Hero icons
   static const double iconHero = 64.0;
 
-  /// Responsive icon size
   static double iconResponsive(BuildContext context, {double base = iconLG}) {
-    final width = screenWidth(context);
-    if (width < breakpointXS) return base * 0.8;
-    if (width < breakpointSM) return base * 0.9;
-    if (width < breakpointMD) return base;
-    if (width < breakpointLG) return base * 1.1;
-    if (width < breakpointXL) return base * 1.2;
-    return base * 1.3;
+    final w = _width(context);
+    if (w < breakpointXS) return base * 0.80;
+    if (w < breakpointSM) return base * 0.90;
+    if (w < breakpointMD) return base;
+    if (w < breakpointLG) return base * 1.10;
+    if (w < breakpointXL) return base * 1.20;
+    return base * 1.30;
   }
 
   // ============================================================
   // SPECIFIC UI ELEMENTS
   // ============================================================
 
-  /// Onboarding image size
   static const double imageOnboarding = 280.0;
-
-  /// Onboarding icon place holder
   static const double iconOnboardingPlaceholder = 120.0;
-
-  /// Login Logo size
   static const double sizeLogo = 100.0;
-
-  /// Login Logo icon size
   static const double iconLogo = 50.0;
-
-  /// Dot indicator size
   static const double dotSize = 8.0;
   static const double dotWidthActive = 24.0;
-
-  /// Profile Avatar Radius (Large)
   static const double radiusProfileAvatarLarge = 50.0;
-
-  /// Profile Camera Badge Radius
   static const double radiusProfileCameraBadge = 18.0;
-
-  /// Gender selection icon size
   static const double iconGender = 32.0;
-
-  /// Selected border width
   static const double borderWidthSelected = 2.0;
 
   // ============================================================
   // BUTTON DIMENSIONS
   // ============================================================
 
-  /// 32.0 - Extra small button
   static const double buttonHeightXS = 32.0;
-
-  /// 36.0 - Small button
   static const double buttonHeightSM = 36.0;
-
-  /// 44.0 - Medium button
   static const double buttonHeightMD = 44.0;
-
-  /// 48.0 - Default button
   static const double buttonHeightLG = 48.0;
-
-  /// 56.0 - Large button
   static const double buttonHeightXL = 56.0;
 
-  /// Responsive button height
   static double buttonHeightResponsive(BuildContext context) {
-    final width = screenWidth(context);
-    if (width < breakpointXS) return buttonHeightSM;
-    if (width < breakpointSM) return buttonHeightMD;
-    if (width < breakpointMD) return buttonHeightLG;
+    final w = _width(context);
+    if (w < breakpointXS) return buttonHeightSM;
+    if (w < breakpointSM) return buttonHeightMD;
+    if (w < breakpointMD) return buttonHeightLG;
     return buttonHeightXL;
   }
 
@@ -292,106 +187,77 @@ class AppDimensions {
   // INPUT FIELD DIMENSIONS
   // ============================================================
 
-  /// 44.0 - Small input field
   static const double inputHeightSM = 44.0;
-
-  /// 48.0 - Medium input field
   static const double inputHeightMD = 48.0;
-
-  /// 56.0 - Large input field
   static const double inputHeightLG = 56.0;
 
   // ============================================================
-  // CARD DIMENSIONS
+  // CARD ELEVATION
   // ============================================================
 
-  /// Card elevation
+  static const double cardElevationLow = 1.0;
   static const double cardElevation = 2.0;
   static const double cardElevationHigh = 4.0;
-  static const double cardElevationLow = 1.0;
 
   // ============================================================
-  // SPACING (Vertical gaps between elements)
+  // SPACING
   // ============================================================
 
-  /// 4.0
   static const double spaceXS = 4.0;
-
-  /// 8.0
   static const double spaceSM = 8.0;
-
-  /// 12.0
   static const double spaceMD = 12.0;
-
-  /// 16.0
   static const double spaceLG = 16.0;
-
-  /// 24.0
   static const double spaceXL = 24.0;
-
-  /// 32.0
   static const double spaceXXL = 32.0;
-
-  /// 48.0
   static const double spaceHuge = 48.0;
 
-  /// Responsive vertical spacing
   static double spaceResponsive(BuildContext context, {double base = spaceLG}) {
-    final width = screenWidth(context);
-    if (width < breakpointXS) return base * 0.75;
-    if (width < breakpointSM) return base * 0.85;
-    if (width < breakpointMD) return base;
-    if (width < breakpointLG) return base * 1.15;
-    if (width < breakpointXL) return base * 1.25;
-    return base * 1.5;
+    final w = _width(context);
+    if (w < breakpointXS) return base * 0.75;
+    if (w < breakpointSM) return base * 0.85;
+    if (w < breakpointMD) return base;
+    if (w < breakpointLG) return base * 1.15;
+    if (w < breakpointXL) return base * 1.25;
+    return base * 1.50;
   }
 
   // ============================================================
-  // COMMON WIDGETS
+  // COMMON WIDGET SIZES
   // ============================================================
 
-  /// App bar heights
   static const double appBarHeight = 56.0;
   static const double appBarHeightLarge = 64.0;
-
-  /// Bottom navigation bar height
   static const double bottomNavHeight = 56.0;
   static const double bottomNavHeightWithLabels = 72.0;
 
-  /// Drawer width
   static double drawerWidth(BuildContext context) {
-    final width = screenWidth(context);
-    if (isMobile(context)) return width * 0.8;
+    if (isMobile(context)) return _width(context) * 0.80;
     if (isTablet(context)) return 320;
     return 360;
   }
 
-  /// Dialog widths
   static const double dialogWidthSM = 280;
   static const double dialogWidthMD = 320;
   static const double dialogWidthLG = 400;
 
-  /// Maximum content width for large screens
   static const double maxContentWidth = 600;
   static const double maxContentWidthLarge = 800;
   static const double maxContentWidthXLarge = 1200;
 
   // ============================================================
-  // GRID LAYOUTS
+  // GRID
   // ============================================================
 
-  /// Get number of grid columns based on screen size
   static int gridColumns(BuildContext context) {
-    final width = screenWidth(context);
-    if (width < breakpointXS) return 1;
-    if (width < breakpointSM) return 2;
-    if (width < breakpointMD) return 2;
-    if (width < breakpointLG) return 3;
-    if (width < breakpointXL) return 4;
+    final w = _width(context);
+    if (w < breakpointXS) return 1;
+    if (w < breakpointSM) return 2;
+    if (w < breakpointMD) return 2;
+    if (w < breakpointLG) return 3;
+    if (w < breakpointXL) return 4;
     return 5;
   }
 
-  /// Get grid cross axis spacing
   static double gridSpacing(BuildContext context) {
     if (isMobile(context)) return paddingSM;
     if (isTablet(context)) return paddingMD;
@@ -399,10 +265,9 @@ class AppDimensions {
   }
 
   // ============================================================
-  // HELPER WIDGETS (SizedBox shortcuts)
+  // SIZEDBOX SHORTCUTS
   // ============================================================
 
-  /// Horizontal gaps
   static const Widget gapH4 = SizedBox(width: 4);
   static const Widget gapH8 = SizedBox(width: 8);
   static const Widget gapH12 = SizedBox(width: 12);
@@ -410,7 +275,6 @@ class AppDimensions {
   static const Widget gapH24 = SizedBox(width: 24);
   static const Widget gapH32 = SizedBox(width: 32);
 
-  /// Vertical gaps
   static const Widget gapV4 = SizedBox(height: 4);
   static const Widget gapV8 = SizedBox(height: 8);
   static const Widget gapV12 = SizedBox(height: 12);
@@ -423,22 +287,24 @@ class AppDimensions {
   // ANIMATION DURATIONS
   // ============================================================
 
-  /// 150ms - Fast animations
   static const Duration durationFast = Duration(milliseconds: 150);
-
-  /// 250ms - Normal animations
   static const Duration durationNormal = Duration(milliseconds: 250);
-
-  /// 350ms - Slow animations
   static const Duration durationSlow = Duration(milliseconds: 350);
-
-  /// 500ms - Very slow animations
   static const Duration durationVerySlow = Duration(milliseconds: 500);
+
+  // ============================================================
+  // PRIVATE HELPERS
+  // ============================================================
+
+  static double _width(BuildContext context) =>
+      MediaQuery.sizeOf(context).width;
 }
 
-/// Extension for easier access to responsive dimensions
+// ============================================================
+// EXTENSION — ergonomic BuildContext access
+// ============================================================
+
 extension AppDimensionsExtension on BuildContext {
-  /// Access AppDimensions helpers
   double get screenWidth => AppDimensions.screenWidth(this);
   double get screenHeight => AppDimensions.screenHeight(this);
   bool get isMobile => AppDimensions.isMobile(this);
@@ -447,4 +313,7 @@ extension AppDimensionsExtension on BuildContext {
   EdgeInsets get screenPadding => AppDimensions.screenPadding(this);
   double get responsiveIconSize => AppDimensions.iconResponsive(this);
   int get gridColumns => AppDimensions.gridColumns(this);
+  double get gridSpacing => AppDimensions.gridSpacing(this);
+  double get screenPaddingH => AppDimensions.screenPaddingH(this);
+  double get screenPaddingV => AppDimensions.screenPaddingV(this);
 }

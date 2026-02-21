@@ -4,102 +4,119 @@ import 'package:salah/core/constants/enums.dart';
 import 'package:salah/core/theme/app_colors.dart';
 import 'package:salah/features/prayer/data/services/prayer_time_service.dart';
 
-/// Helper class for prayer timing quality related UI functions
+/// UI helpers for [PrayerTimingQuality] and [PrayerName].
+///
+/// Provides colors, icons, labels, and gradients used across prayer-related widgets.
+/// Keep all quality → visual mapping here as the single source of truth.
 class PrayerTimingHelper {
-  /// Get color for a prayer timing quality
-  static Color getQualityColor(PrayerTimingQuality quality) {
-    switch (quality) {
-      case PrayerTimingQuality.veryEarly:
-        return AppColors.primary; // Dark Green
-      case PrayerTimingQuality.early:
-        return AppColors.success; // Light Green
-      case PrayerTimingQuality.onTime:
-        return AppColors.warning; // Yellow/Amber
-      case PrayerTimingQuality.late:
-        return AppColors.orange; // Orange
-      case PrayerTimingQuality.veryLate:
-        return AppColors.error.withValues(alpha: 0.6); // Light Red
-      case PrayerTimingQuality.missed:
-        return AppColors.googleRed; // Dark Red
-      case PrayerTimingQuality.notYet:
-        return AppColors.grey400; // Gray
-    }
+  const PrayerTimingHelper._();
+
+  // ============================================================
+  // QUALITY → COLOR
+  // ============================================================
+
+  static Color qualityColor(PrayerTimingQuality quality) => switch (quality) {
+    PrayerTimingQuality.veryEarly => AppColors.primary,
+    PrayerTimingQuality.early => AppColors.success,
+    PrayerTimingQuality.onTime => AppColors.warning,
+    PrayerTimingQuality.late => AppColors.orange,
+    PrayerTimingQuality.veryLate => AppColors.error.withValues(alpha: 0.6),
+    PrayerTimingQuality.missed => AppColors.googleRed,
+    PrayerTimingQuality.notYet => AppColors.grey400,
+  };
+
+  /// Gradient for fancy cards / progress indicators.
+  static List<Color> qualityGradient(PrayerTimingQuality quality) {
+    final c = qualityColor(quality);
+    return [c.withValues(alpha: 0.7), c, c.withValues(alpha: 0.9)];
   }
 
-  /// Get translated label for a prayer timing quality
-  static String getQualityLabel(PrayerTimingQuality quality) {
-    switch (quality) {
-      case PrayerTimingQuality.veryEarly:
-        return 'prayer_timing_very_early'.tr;
-      case PrayerTimingQuality.early:
-        return 'prayer_timing_early'.tr;
-      case PrayerTimingQuality.onTime:
-        return 'prayer_timing_on_time'.tr;
-      case PrayerTimingQuality.late:
-        return 'prayer_timing_late'.tr;
-      case PrayerTimingQuality.veryLate:
-        return 'prayer_timing_very_late'.tr;
-      case PrayerTimingQuality.missed:
-        return 'prayer_timing_missed'.tr;
-      case PrayerTimingQuality.notYet:
-        return 'prayer_timing_not_yet'.tr;
-    }
-  }
+  // ============================================================
+  // QUALITY → ICON
+  // ============================================================
 
-  /// Get icon for a prayer timing quality
-  static IconData getQualityIcon(PrayerTimingQuality quality) {
-    switch (quality) {
-      case PrayerTimingQuality.veryEarly:
-      case PrayerTimingQuality.early:
-        return Icons.check_circle;
-      case PrayerTimingQuality.onTime:
-        return Icons.check_circle_outline;
-      case PrayerTimingQuality.late:
-      case PrayerTimingQuality.veryLate:
-        return Icons.schedule;
-      case PrayerTimingQuality.missed:
-        return Icons.cancel;
-      case PrayerTimingQuality.notYet:
-        return Icons.circle_outlined;
-    }
-  }
+  static IconData qualityIcon(PrayerTimingQuality quality) => switch (quality) {
+    PrayerTimingQuality.veryEarly ||
+    PrayerTimingQuality.early => Icons.check_circle,
+    PrayerTimingQuality.onTime => Icons.check_circle_outline,
+    PrayerTimingQuality.late || PrayerTimingQuality.veryLate => Icons.schedule,
+    PrayerTimingQuality.missed => Icons.cancel,
+    PrayerTimingQuality.notYet => Icons.circle_outlined,
+  };
 
-  /// Get emoji for a prayer timing quality
-  static String getQualityEmoji(PrayerTimingQuality quality) {
-    switch (quality) {
-      case PrayerTimingQuality.veryEarly:
-        return '🟩'; // Dark Green square
-      case PrayerTimingQuality.early:
-        return '🟢'; // Green circle
-      case PrayerTimingQuality.onTime:
-        return '🟡'; // Yellow circle
-      case PrayerTimingQuality.late:
-        return '🟠'; // Orange circle
-      case PrayerTimingQuality.veryLate:
-        return '🔴'; // Red circle
-      case PrayerTimingQuality.missed:
-        return '⚫'; // Black circle
-      case PrayerTimingQuality.notYet:
-        return '⚪'; // White circle
-    }
-  }
+  // ============================================================
+  // QUALITY → EMOJI
+  // ============================================================
 
-  /// Get legacy PrayerQuality color (for backward compatibility)
-  static Color getLegacyQualityColor(PrayerQuality quality) {
-    switch (quality) {
-      case PrayerQuality.early:
-        return AppColors.success; // Green
-      case PrayerQuality.onTime:
-        return AppColors.warning; // Yellow
-      case PrayerQuality.late:
-        return AppColors.orange; // Orange
-      case PrayerQuality.missed:
-        return AppColors.googleRed; // Red
-    }
-  }
+  static String qualityEmoji(PrayerTimingQuality quality) => switch (quality) {
+    PrayerTimingQuality.veryEarly => '🟩',
+    PrayerTimingQuality.early => '🟢',
+    PrayerTimingQuality.onTime => '🟡',
+    PrayerTimingQuality.late => '🟠',
+    PrayerTimingQuality.veryLate => '🔴',
+    PrayerTimingQuality.missed => '⚫',
+    PrayerTimingQuality.notYet => '⚪',
+  };
 
-  /// Calculate and get quality with color for a prayer log
-  static PrayerTimingQuality? calculateQualityFromLog({
+  // ============================================================
+  // QUALITY → LABEL (localised)
+  // ============================================================
+
+  static String qualityLabel(PrayerTimingQuality quality) => switch (quality) {
+    PrayerTimingQuality.veryEarly => 'prayer_timing_very_early'.tr,
+    PrayerTimingQuality.early => 'prayer_timing_early'.tr,
+    PrayerTimingQuality.onTime => 'prayer_timing_on_time'.tr,
+    PrayerTimingQuality.late => 'prayer_timing_late'.tr,
+    PrayerTimingQuality.veryLate => 'prayer_timing_very_late'.tr,
+    PrayerTimingQuality.missed => 'prayer_timing_missed'.tr,
+    PrayerTimingQuality.notYet => 'prayer_timing_not_yet'.tr,
+  };
+
+  // ============================================================
+  // QUALITY PREDICATES
+  // ============================================================
+
+  /// True for veryEarly, early, or onTime.
+  static bool isGoodQuality(PrayerTimingQuality q) =>
+      q == PrayerTimingQuality.veryEarly ||
+      q == PrayerTimingQuality.early ||
+      q == PrayerTimingQuality.onTime;
+
+  /// True for late or veryLate.
+  static bool needsAttention(PrayerTimingQuality q) =>
+      q == PrayerTimingQuality.late || q == PrayerTimingQuality.veryLate;
+
+  // ============================================================
+  // PRAYER NAME → ICON
+  // ============================================================
+
+  static IconData prayerIcon(PrayerName prayer) => switch (prayer) {
+    PrayerName.fajr => Icons.wb_twilight_rounded,
+    PrayerName.sunrise => Icons.wb_sunny_outlined,
+    PrayerName.dhuhr => Icons.wb_sunny_rounded,
+    PrayerName.asr => Icons.wb_cloudy_rounded,
+    PrayerName.maghrib => Icons.nightlight_round,
+    PrayerName.isha => Icons.dark_mode_rounded,
+  };
+
+  // ============================================================
+  // LEGACY SUPPORT
+  // ============================================================
+
+  /// Color for the legacy [PrayerQuality] enum. Kept for backward compatibility.
+  static Color legacyQualityColor(PrayerQuality quality) => switch (quality) {
+    PrayerQuality.early => AppColors.success,
+    PrayerQuality.onTime => AppColors.warning,
+    PrayerQuality.late => AppColors.orange,
+    PrayerQuality.missed => AppColors.googleRed,
+  };
+
+  // ============================================================
+  // CALCULATION HELPER
+  // ============================================================
+
+  /// Convenience wrapper around [PrayerTimeRange.calculateQuality].
+  static PrayerTimingQuality? calculateQuality({
     required DateTime prayedAt,
     required DateTime adhanTime,
     required DateTime nextPrayerTime,
@@ -107,50 +124,41 @@ class PrayerTimingHelper {
     final range = PrayerTimeRange(
       adhanTime: adhanTime,
       nextPrayerTime: nextPrayerTime,
-      prayerName: PrayerName.fajr, // Placeholder, not used in calculation
+      prayerName: PrayerName.fajr, // name not used in quality calculation
     );
-
     return range.calculateQuality(prayedAt);
   }
 
-  /// Get a gradient color based on quality (for fancy UI)
-  static List<Color> getQualityGradient(PrayerTimingQuality quality) {
-    final baseColor = getQualityColor(quality);
-    return [
-      baseColor.withValues(alpha: 0.7),
-      baseColor,
-      baseColor.withValues(alpha: 0.9),
-    ];
-  }
+  // ============================================================
+  // DEPRECATED ALIASES (remove after refactor sweep)
+  // ============================================================
 
-  /// Check if quality is good (early or on time)
-  static bool isGoodQuality(PrayerTimingQuality quality) {
-    return quality == PrayerTimingQuality.veryEarly ||
-        quality == PrayerTimingQuality.early ||
-        quality == PrayerTimingQuality.onTime;
-  }
+  @Deprecated('Use qualityColor()')
+  static Color getQualityColor(PrayerTimingQuality q) => qualityColor(q);
 
-  /// Check if quality needs attention (late or very late)
-  static bool needsAttention(PrayerTimingQuality quality) {
-    return quality == PrayerTimingQuality.late ||
-        quality == PrayerTimingQuality.veryLate;
-  }
+  @Deprecated('Use qualityLabel()')
+  static String getQualityLabel(PrayerTimingQuality q) => qualityLabel(q);
 
-  /// Get unique icon for each prayer type
-  static IconData getPrayerIcon(PrayerName prayer) {
-    switch (prayer) {
-      case PrayerName.fajr:
-        return Icons.wb_twilight_rounded;
-      case PrayerName.sunrise:
-        return Icons.wb_sunny_outlined;
-      case PrayerName.dhuhr:
-        return Icons.wb_sunny_rounded;
-      case PrayerName.asr:
-        return Icons.wb_cloudy_rounded;
-      case PrayerName.maghrib:
-        return Icons.nightlight_round;
-      case PrayerName.isha:
-        return Icons.dark_mode_rounded;
-    }
-  }
+  @Deprecated('Use qualityIcon()')
+  static IconData getQualityIcon(PrayerTimingQuality q) => qualityIcon(q);
+
+  @Deprecated('Use qualityEmoji()')
+  static String getQualityEmoji(PrayerTimingQuality q) => qualityEmoji(q);
+
+  @Deprecated('Use prayerIcon()')
+  static IconData getPrayerIcon(PrayerName p) => prayerIcon(p);
+
+  @Deprecated('Use legacyQualityColor()')
+  static Color getLegacyQualityColor(PrayerQuality q) => legacyQualityColor(q);
+
+  @Deprecated('Use calculateQuality()')
+  static PrayerTimingQuality? calculateQualityFromLog({
+    required DateTime prayedAt,
+    required DateTime adhanTime,
+    required DateTime nextPrayerTime,
+  }) => calculateQuality(
+    prayedAt: prayedAt,
+    adhanTime: adhanTime,
+    nextPrayerTime: nextPrayerTime,
+  );
 }

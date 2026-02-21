@@ -18,12 +18,12 @@ class SalahApp extends StatelessWidget {
     final themeService = sl<ThemeService>();
     final localizationService = sl<LocalizationService>();
 
-    return GetMaterialApp(
+    return Obx(() => GetMaterialApp(
       // App info
       title: 'app_title'.tr,
       debugShowCheckedModeBanner: false,
 
-      // Theme
+      // Theme - reactive
       theme: themeService.lightTheme,
       darkTheme: themeService.darkTheme,
       themeMode: themeService.themeMode,
@@ -49,6 +49,6 @@ class SalahApp extends StatelessWidget {
               child: child ?? const SizedBox.shrink(),
             ));
       },
-    );
+    ));
   }
 }

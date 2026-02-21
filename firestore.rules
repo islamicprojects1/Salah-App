@@ -1,7 +1,7 @@
 rules_version = '2';
 // Salah App – Firestore Security Rules
 // Users can only read/write their own user doc, their prayer_logs and notifications,
-// and group data for groups they belong to. Reactions/achievements as needed.
+// and family data for families they belong to.
 
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -34,11 +34,42 @@ service cloud.firestore {
       allow read, write: if isOwner(userId);
     }
 
-    // Groups (families): create by any signed-in user; read/update/delete only if in memberIds
+    // Families: create by any signed-in user; read/update/delete only if member
+    // Backward compat: if memberIds empty/missing, allow adminId (creator) until migration
+    function isInFamily(familyData) {
+      let ids = familyData.get('memberIds', []);
+      if (ids.size() > 0) {
+        return request.auth.uid in ids;
+      }
+      return request.auth.uid == familyData.get('adminId', '');
+    }
+
+    match /families/{familyId} {
+      allow create: if isSignedIn();
+      allow read, update, delete: if isSignedIn() && isInFamily(resource.data);
+    }
+
+    match /families/{familyId}/pulse/{eventId} {
+      allow read, create: if isSignedIn() && isInFamily(get(/databases/$(database)/documents/families/$(familyId)).data);
+      allow delete: if false;
+    }
+
+    match /families/{familyId}/activities/{activityId} {
+      allow read, create: if isSignedIn() && isInFamily(get(/databases/$(database)/documents/families/$(familyId)).data);
+      allow delete: if false;
+    }
+
+    // Groups (legacy): create by any signed-in user; read/update/delete only if in memberIds
     match /groups/{groupId} {
       allow create: if isSignedIn();
       allow read, update, delete: if isSignedIn() &&
         request.auth.uid in resource.data.get('memberIds', []);
+    }
+
+    // Analytics: any authenticated user can create events (for app metrics)
+    match /analytics/{eventId} {
+      allow create: if isSignedIn();
+      allow read, update, delete: if false;
     }
 
     // Reactions: authenticated users can create; users can read reactions where they are receiver

@@ -1,32 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:salah/core/di/injection_container.dart';
-import 'package:salah/core/constants/enums.dart';
-import 'package:salah/features/settings/data/services/localization_service.dart';
 import 'package:salah/core/theme/app_colors.dart';
-
-/// App font families
-class AppFonts {
-  AppFonts._();
-
-  /// Arabic font family
-  static const String arabic = 'Tajawal';
-
-  /// English font family
-  static const String english = 'Poppins';
-
-  /// Get font family based on current locale
-  static String get current {
-    try {
-      final localizationService = sl<LocalizationService>();
-      return localizationService.currentLanguage.value == AppLanguage.arabic
-          ? arabic
-          : english;
-    } catch (_) {
-      // Default to Arabic if service not initialized yet
-      return arabic;
-    }
-  }
-}
+import 'package:salah/core/theme/app_fonts.dart';
 
 /// App theme configuration for light and dark modes
 ///
@@ -34,72 +8,33 @@ class AppFonts {
 class AppTheme {
   AppTheme._();
 
-  /// Get text theme with appropriate font
-  static TextTheme _getTextTheme(
-    Color textColor,
-    Color secondaryColor,
-    String fontFamily,
-  ) {
+  // ============================================================
+  // TEXT THEME
+  // ============================================================
+
+  static TextTheme _getTextTheme() {
     return TextTheme(
-      displayLarge: TextStyle(
-        fontFamily: fontFamily,
-        color: textColor,
-        fontWeight: FontWeight.bold,
-      ),
-      displayMedium: TextStyle(
-        fontFamily: fontFamily,
-        color: textColor,
-        fontWeight: FontWeight.bold,
-      ),
-      displaySmall: TextStyle(
-        fontFamily: fontFamily,
-        color: textColor,
-        fontWeight: FontWeight.bold,
-      ),
-      headlineLarge: TextStyle(
-        fontFamily: fontFamily,
-        color: textColor,
-        fontWeight: FontWeight.w600,
-      ),
-      headlineMedium: TextStyle(
-        fontFamily: fontFamily,
-        color: textColor,
-        fontWeight: FontWeight.w600,
-      ),
-      headlineSmall: TextStyle(
-        fontFamily: fontFamily,
-        color: textColor,
-        fontWeight: FontWeight.w600,
-      ),
-      titleLarge: TextStyle(
-        fontFamily: fontFamily,
-        color: textColor,
-        fontWeight: FontWeight.w600,
-      ),
-      titleMedium: TextStyle(
-        fontFamily: fontFamily,
-        color: textColor,
-        fontWeight: FontWeight.w500,
-      ),
-      titleSmall: TextStyle(
-        fontFamily: fontFamily,
-        color: textColor,
-        fontWeight: FontWeight.w500,
-      ),
-      bodyLarge: TextStyle(fontFamily: fontFamily, color: textColor),
-      bodyMedium: TextStyle(fontFamily: fontFamily, color: textColor),
-      bodySmall: TextStyle(fontFamily: fontFamily, color: secondaryColor),
-      labelLarge: TextStyle(
-        fontFamily: fontFamily,
-        color: textColor,
-        fontWeight: FontWeight.w600,
-      ),
-      labelMedium: TextStyle(fontFamily: fontFamily, color: secondaryColor),
-      labelSmall: TextStyle(fontFamily: fontFamily, color: secondaryColor),
+      displayLarge: AppFonts.displayLarge,
+      displayMedium: AppFonts.displayMedium,
+      displaySmall: AppFonts.displaySmall,
+      headlineLarge: AppFonts.headlineLarge,
+      headlineMedium: AppFonts.headlineMedium,
+      headlineSmall: AppFonts.headlineSmall,
+      titleLarge: AppFonts.titleLarge,
+      titleMedium: AppFonts.titleMedium,
+      titleSmall: AppFonts.titleSmall,
+      bodyLarge: AppFonts.bodyLarge,
+      bodyMedium: AppFonts.bodyMedium,
+      bodySmall: AppFonts.bodySmall,
+      labelLarge: AppFonts.labelLarge,
+      labelMedium: AppFonts.labelMedium,
+      labelSmall: AppFonts.labelSmall,
     );
   }
 
-  // ==================== Light Theme ====================
+  // ============================================================
+  // LIGHT THEME
+  // ============================================================
 
   static ThemeData get lightTheme {
     final fontFamily = AppFonts.current;
@@ -130,12 +65,7 @@ class AppTheme {
         centerTitle: true,
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
-        titleTextStyle: TextStyle(
-          fontFamily: fontFamily,
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
-        ),
+        titleTextStyle: AppFonts.headlineSmall.withColor(Colors.white),
       ),
 
       // Card Theme
@@ -155,11 +85,7 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          textStyle: TextStyle(
-            fontFamily: fontFamily,
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
+          textStyle: AppFonts.labelLarge.withColor(Colors.white),
         ),
       ),
 
@@ -167,11 +93,7 @@ class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: AppColors.primary,
-          textStyle: TextStyle(
-            fontFamily: fontFamily,
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-          ),
+          textStyle: AppFonts.labelLarge.withColor(AppColors.primary),
         ),
       ),
 
@@ -184,6 +106,7 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
+          textStyle: AppFonts.labelLarge.withColor(AppColors.primary),
         ),
       ),
 
@@ -191,6 +114,8 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.lightSurface,
+        hintStyle: AppFonts.bodyMedium.withColor(AppColors.lightTextSecondary),
+        labelStyle: AppFonts.bodyMedium.withColor(AppColors.lightTextSecondary),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 12,
@@ -238,9 +163,7 @@ class AppTheme {
       // Switch Theme
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) {
-            return AppColors.primary;
-          }
+          if (states.contains(WidgetState.selected)) return AppColors.primary;
           return AppColors.lightTextSecondary;
         }),
         trackColor: WidgetStateProperty.resolveWith((states) {
@@ -252,15 +175,13 @@ class AppTheme {
       ),
 
       // Text Theme
-      textTheme: _getTextTheme(
-        AppColors.lightText,
-        AppColors.lightTextSecondary,
-        fontFamily,
-      ),
+      textTheme: _getTextTheme(),
     );
   }
 
-  // ==================== Dark Theme ====================
+  // ============================================================
+  // DARK THEME
+  // ============================================================
 
   static ThemeData get darkTheme {
     final fontFamily = AppFonts.current;
@@ -291,12 +212,7 @@ class AppTheme {
         centerTitle: true,
         backgroundColor: AppColors.darkSurface,
         foregroundColor: AppColors.darkText,
-        titleTextStyle: TextStyle(
-          fontFamily: fontFamily,
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
-          color: AppColors.darkText,
-        ),
+        titleTextStyle: AppFonts.headlineSmall.withColor(AppColors.darkText),
       ),
 
       // Card Theme
@@ -316,11 +232,7 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          textStyle: TextStyle(
-            fontFamily: fontFamily,
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
+          textStyle: AppFonts.labelLarge.withColor(Colors.white),
         ),
       ),
 
@@ -328,11 +240,7 @@ class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: AppColors.primaryLight,
-          textStyle: TextStyle(
-            fontFamily: fontFamily,
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-          ),
+          textStyle: AppFonts.labelLarge.withColor(AppColors.primaryLight),
         ),
       ),
 
@@ -345,6 +253,7 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
+          textStyle: AppFonts.labelLarge.withColor(AppColors.primaryLight),
         ),
       ),
 
@@ -352,6 +261,8 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.darkCard,
+        hintStyle: AppFonts.bodyMedium.withColor(AppColors.darkTextSecondary),
+        labelStyle: AppFonts.bodyMedium.withColor(AppColors.darkTextSecondary),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 12,
@@ -405,19 +316,13 @@ class AppTheme {
           return AppColors.darkTextSecondary;
         }),
         trackColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) {
-            return AppColors.primary;
-          }
+          if (states.contains(WidgetState.selected)) return AppColors.primary;
           return AppColors.darkDivider;
         }),
       ),
 
       // Text Theme
-      textTheme: _getTextTheme(
-        AppColors.darkText,
-        AppColors.darkTextSecondary,
-        fontFamily,
-      ),
+      textTheme: _getTextTheme(),
     );
   }
 }

@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:salah/core/di/injection_container.dart';
 import 'package:salah/core/constants/enums.dart';
 import 'package:salah/core/constants/storage_keys.dart';
+import 'package:salah/core/di/injection_container.dart';
+import 'package:salah/core/feedback/toast_service.dart';
 import 'package:salah/core/helpers/input_validators.dart';
+import 'package:salah/core/routes/app_routes.dart';
 import 'package:salah/core/services/storage_service.dart';
+import 'package:salah/features/auth/data/helpers/auth_validation.dart';
 import 'package:salah/features/auth/data/models/user_model.dart';
 import 'package:salah/features/auth/data/services/auth_service.dart';
 import 'package:salah/features/prayer/data/services/firestore_service.dart';
@@ -24,12 +27,18 @@ class AuthController extends GetxController {
   // ============================================================
 
   final isLoading = false.obs;
+  final isGoogleLoading = false.obs;
   final errorMessage = ''.obs;
+
+  // Password visibility toggles
+  final isPasswordVisible = false.obs;
+  final isConfirmPasswordVisible = false.obs;
 
   // Form controllers
   final nameController = TextEditingController();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
+  final confirmPasswordController = TextEditingController();
   final birthDateController = TextEditingController();
 
   // Profile setup
@@ -56,25 +65,23 @@ class AuthController extends GetxController {
     errorMessage.value = '';
 
     try {
-      final (name, _) = InputValidators.validateDisplayName(
-        nameController.text,
-      );
       final birthDate = selectedBirthDate.value ?? DateTime(2000, 1, 1);
       final birthErr = InputValidators.validateBirthDate(birthDate);
       if (birthErr != null) {
         errorMessage.value = birthErr;
         return false;
       }
+
       final user = await _authService.registerWithEmail(
         email: emailController.text.trim(),
         password: passwordController.text,
-        displayName: name ?? '',
+        displayName: nameController.text.trim(),
       );
 
       if (user != null) {
         final userModel = UserModel(
           id: user.uid,
-          name: name ?? '',
+          name: nameController.text.trim(),
           birthDate: birthDate,
           gender: selectedGender.value == 'male' ? Gender.male : Gender.female,
           email: user.email,
@@ -85,41 +92,53 @@ class AuthController extends GetxController {
         await _firestore.setUser(user.uid, userModel.toFirestore());
         return true;
       } else {
-        errorMessage.value = _authService.errorMessage.value.isNotEmpty
+        final msg = _authService.errorMessage.value.isNotEmpty
             ? _authService.errorMessage.value
-            : 'فشل إنشاء الحساب';
+            : 'auth_error_default'.tr;
+        errorMessage.value = msg;
+        ToastService.error('error'.tr, msg);
         return false;
       }
-    } catch (e, _) {
-      errorMessage.value = 'خطأ في التسجيل: ${e.toString()}';
+    } catch (e) {
+      final msg = 'auth_error_default'.tr;
+      errorMessage.value = msg;
+      ToastService.error('error'.tr, msg);
       return false;
     } finally {
       isLoading.value = false;
     }
   }
 
-  /// Login with email and password. GetX-compatible validation via GetUtils.
+  /// Login with email and password
   Future<bool> loginWithEmail() async {
-    if (!GetUtils.isEmail(emailController.text.trim())) {
-      errorMessage.value = 'الرجاء إدخال بريد إلكتروني صحيح';
+    clearError();
+
+    final emailErr = AuthValidation.validateEmail(emailController.text.trim());
+    if (emailErr != null) {
+      errorMessage.value = emailErr;
       return false;
     }
-    if (passwordController.text.isEmpty) {
-      errorMessage.value = 'الرجاء إدخال كلمة المرور';
+    final passErr = AuthValidation.validatePassword(passwordController.text);
+    if (passErr != null) {
+      errorMessage.value = passErr;
       return false;
     }
+
     isLoading.value = true;
-    errorMessage.value = '';
     try {
       final user = await _authService.signInWithEmail(
         email: emailController.text.trim(),
         password: passwordController.text,
       );
       if (user != null) return true;
-      errorMessage.value = 'خطأ في البريد أو كلمة المرور';
+
+      final msg = _authService.errorMessage.value.isNotEmpty
+          ? _authService.errorMessage.value
+          : 'auth_error_default'.tr;
+      errorMessage.value = msg;
       return false;
     } catch (e) {
-      errorMessage.value = e.toString();
+      errorMessage.value = 'auth_error_default'.tr;
       return false;
     } finally {
       isLoading.value = false;
@@ -127,29 +146,80 @@ class AuthController extends GetxController {
   }
 
   Future<bool> loginWithGoogle() async {
-    isLoading.value = true;
-    errorMessage.value = '';
+    isGoogleLoading.value = true;
+    clearError();
     try {
       final user = await _authService.signInWithGoogle();
-      return user != null;
+      if (user != null) return true;
+
+      final msg = _authService.errorMessage.value.isNotEmpty
+          ? _authService.errorMessage.value
+          : 'auth_error_default'.tr;
+      errorMessage.value = msg;
+      return false;
     } catch (e) {
-      errorMessage.value = e.toString();
+      final msg = 'auth_error_default'.tr;
+      errorMessage.value = msg;
+      ToastService.error('error'.tr, msg);
       return false;
     } finally {
-      isLoading.value = false;
+      isGoogleLoading.value = false;
     }
+  }
+
+  void navigateToRegister() {
+    clearFormAndErrors();
+    Get.toNamed(AppRoutes.register);
+  }
+
+  void navigateToLogin() {
+    clearFormAndErrors();
+    Get.back();
+  }
+
+  void navigateToForgotPassword() {
+    if (emailController.text.trim().isEmpty) {
+      ToastService.info('forgot_password'.tr, 'enter_email_first'.tr);
+      return;
+    }
+    // TODO: implement forgot password flow
+    _authService.sendPasswordResetEmail(emailController.text.trim()).then((
+      success,
+    ) {
+      if (success) {
+        ToastService.success('forgot_password'.tr, 'password_reset_sent'.tr);
+      }
+    });
+  }
+
+  /// Toggle password visibility
+  void togglePasswordVisibility() =>
+      isPasswordVisible.value = !isPasswordVisible.value;
+
+  /// Toggle confirm password visibility
+  void toggleConfirmPasswordVisibility() =>
+      isConfirmPasswordVisible.value = !isConfirmPasswordVisible.value;
+
+  /// Clear error message
+  void clearError() => errorMessage.value = '';
+
+  /// Clear form fields and errors
+  void clearFormAndErrors() {
+    clearError();
+    isPasswordVisible.value = false;
+    isConfirmPasswordVisible.value = false;
   }
 
   /// Logout
   Future<void> logout() async {
     await _authService.signOut();
+    clearFormAndErrors();
   }
 
   // ============================================================
   // ONBOARDING
   // ============================================================
 
-  /// Mark onboarding as completed
   void completeOnboarding() {
     _storage.write(StorageKeys.onboardingCompleted, true);
   }
@@ -159,9 +229,7 @@ class AuthController extends GetxController {
   // ============================================================
 
   Future<bool> updateProfile() async {
-    final (name, nameErr) = InputValidators.validateDisplayName(
-      nameController.text,
-    );
+    final nameErr = AuthValidation.validateName(nameController.text);
     if (nameErr != null) {
       errorMessage.value = nameErr;
       return false;
@@ -176,7 +244,7 @@ class AuthController extends GetxController {
     }
 
     isLoading.value = true;
-    errorMessage.value = '';
+    clearError();
 
     try {
       final user = _authService.currentUser.value;
@@ -184,7 +252,7 @@ class AuthController extends GetxController {
 
       final userModel = UserModel(
         id: user.uid,
-        name: name!,
+        name: nameController.text.trim(),
         birthDate: selectedBirthDate.value ?? DateTime(2000),
         gender: selectedGender.value == 'male' ? Gender.male : Gender.female,
         email: user.email,
@@ -194,48 +262,46 @@ class AuthController extends GetxController {
       );
 
       await _firestore.setUser(user.uid, userModel.toFirestore());
-
-      // Update display name in Firebase Auth too
       await _authService.updateDisplayName(userModel.name);
 
       return true;
     } catch (e) {
-      errorMessage.value = e.toString();
+      errorMessage.value = 'auth_error_default'.tr;
       return false;
     } finally {
       isLoading.value = false;
     }
   }
 
-  /// Set birth date
   void setBirthDate(DateTime date) {
     selectedBirthDate.value = date;
     birthDateController.text = '${date.day}/${date.month}/${date.year}';
   }
 
-  /// Set gender
-  void setGender(String gender) {
-    selectedGender.value = gender;
-  }
+  void setGender(String gender) => selectedGender.value = gender;
 
   // ============================================================
   // HELPERS
   // ============================================================
 
   bool _validateForm() {
-    final (name, nameErr) = InputValidators.validateDisplayName(
-      nameController.text,
-    );
+    final nameErr = AuthValidation.validateName(nameController.text);
     if (nameErr != null) {
       errorMessage.value = nameErr;
       return false;
     }
-    if (!GetUtils.isEmail(emailController.text.trim())) {
-      errorMessage.value = 'الرجاء إدخال بريد إلكتروني صحيح';
+    final emailErr = AuthValidation.validateEmail(emailController.text.trim());
+    if (emailErr != null) {
+      errorMessage.value = emailErr;
       return false;
     }
-    if (!GetUtils.isLengthGreaterOrEqual(passwordController.text, 6)) {
-      errorMessage.value = 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
+    final passErr = AuthValidation.validatePassword(passwordController.text);
+    if (passErr != null) {
+      errorMessage.value = passErr;
+      return false;
+    }
+    if (passwordController.text != confirmPasswordController.text) {
+      errorMessage.value = 'passwords_dont_match'.tr;
       return false;
     }
     return true;
@@ -246,6 +312,7 @@ class AuthController extends GetxController {
     nameController.dispose();
     emailController.dispose();
     passwordController.dispose();
+    confirmPasswordController.dispose();
     birthDateController.dispose();
     super.onClose();
   }

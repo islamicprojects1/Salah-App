@@ -1,146 +1,213 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:salah/core/di/injection_container.dart';
+import 'package:salah/core/constants/enums.dart';
+import 'package:salah/features/settings/data/services/localization_service.dart';
+import 'package:salah/core/theme/app_colors.dart';
 
-/// App typography styles
+/// App font families & typography styles
 class AppFonts {
   AppFonts._();
 
   // ============================================================
-  // BASE FONT
+  // FONT FAMILIES
   // ============================================================
-  
-  /// Primary font family
-  /// Using Poppins for English and Tajawal for Arabic dynamic switching
-  static String get _fontFamily {
-    // Check current locale
-    if (Get.locale?.languageCode == 'ar') {
-      return 'Tajawal';
+
+  static const String arabic = 'Tajawal';
+  static const String english = 'Poppins';
+
+  /// Returns true if current language is Arabic
+  static bool get _isArabic {
+    try {
+      final localizationService = sl<LocalizationService>();
+      return localizationService.currentLanguage.value == AppLanguage.arabic;
+    } catch (_) {
+      return Get.locale?.languageCode == 'ar';
     }
-    return 'Poppins';
+  }
+
+  /// Get current font family based on locale
+  static String get current {
+    try {
+      final localizationService = sl<LocalizationService>();
+      return localizationService.currentLanguage.value == AppLanguage.arabic
+          ? arabic
+          : english;
+    } catch (_) {
+      return Get.locale?.languageCode == 'ar' ? arabic : english;
+    }
   }
 
   // ============================================================
-  // ============================================================
   // DISPLAY STYLES
   // ============================================================
-  
-  /// Large display - for very large numbers
+
   static TextStyle get displayLarge => TextStyle(
-    fontFamily: _fontFamily,
+    fontFamily: current,
     fontSize: 48,
     fontWeight: FontWeight.bold,
     height: 1.1,
+    letterSpacing: _isArabic ? 0 : -0.5,
+    color: AppColors.textPrimary,
+  );
+
+  static TextStyle get displayMedium => TextStyle(
+    fontFamily: current,
+    fontSize: 36,
+    fontWeight: FontWeight.bold,
+    height: 1.2,
+    letterSpacing: _isArabic ? 0 : -0.25,
+    color: AppColors.textPrimary,
+  );
+
+  static TextStyle get displaySmall => TextStyle(
+    fontFamily: current,
+    fontSize: 30,
+    fontWeight: FontWeight.bold,
+    height: 1.2,
+    letterSpacing: _isArabic ? 0 : 0,
+    color: AppColors.textPrimary,
   );
 
   // ============================================================
   // HEADLINE STYLES
   // ============================================================
-  
-  /// Large headline - for main titles
+
   static TextStyle get headlineLarge => TextStyle(
-    fontFamily: _fontFamily,
+    fontFamily: current,
     fontSize: 28,
     fontWeight: FontWeight.bold,
     height: 1.3,
+    letterSpacing: _isArabic ? 0 : 0,
+    color: AppColors.textPrimary,
   );
 
-  /// Medium headline
   static TextStyle get headlineMedium => TextStyle(
-    fontFamily: _fontFamily,
+    fontFamily: current,
     fontSize: 24,
     fontWeight: FontWeight.bold,
     height: 1.3,
+    letterSpacing: _isArabic ? 0 : 0,
+    color: AppColors.textPrimary,
   );
 
-  /// Small headline
   static TextStyle get headlineSmall => TextStyle(
-    fontFamily: _fontFamily,
+    fontFamily: current,
     fontSize: 20,
     fontWeight: FontWeight.w600,
     height: 1.3,
+    letterSpacing: _isArabic ? 0 : 0,
+    color: AppColors.textPrimary,
   );
 
   // ============================================================
   // TITLE STYLES
   // ============================================================
-  
-  /// Large title
+
   static TextStyle get titleLarge => TextStyle(
-    fontFamily: _fontFamily,
+    fontFamily: current,
     fontSize: 18,
     fontWeight: FontWeight.w600,
     height: 1.4,
+    letterSpacing: _isArabic ? 0 : 0.15,
+    color: AppColors.textPrimary,
   );
 
-  /// Medium title
   static TextStyle get titleMedium => TextStyle(
-    fontFamily: _fontFamily,
+    fontFamily: current,
     fontSize: 16,
     fontWeight: FontWeight.w600,
     height: 1.4,
+    letterSpacing: _isArabic ? 0 : 0.15,
+    color: AppColors.textPrimary,
   );
 
-  /// Small title
   static TextStyle get titleSmall => TextStyle(
-    fontFamily: _fontFamily,
+    fontFamily: current,
     fontSize: 14,
     fontWeight: FontWeight.w600,
     height: 1.4,
+    letterSpacing: _isArabic ? 0 : 0.1,
+    color: AppColors.textPrimary,
   );
 
   // ============================================================
   // BODY STYLES
   // ============================================================
-  
-  /// Large body text
+
   static TextStyle get bodyLarge => TextStyle(
-    fontFamily: _fontFamily,
+    fontFamily: current,
     fontSize: 16,
     fontWeight: FontWeight.normal,
     height: 1.5,
+    letterSpacing: _isArabic ? 0 : 0.15,
+    wordSpacing: _isArabic ? 1.5 : 0,
+    color: AppColors.textPrimary,
   );
 
-  /// Medium body text
   static TextStyle get bodyMedium => TextStyle(
-    fontFamily: _fontFamily,
+    fontFamily: current,
     fontSize: 14,
     fontWeight: FontWeight.normal,
     height: 1.5,
+    letterSpacing: _isArabic ? 0 : 0.15,
+    wordSpacing: _isArabic ? 1.5 : 0,
+    color: AppColors.textPrimary,
   );
 
-  /// Small body text
   static TextStyle get bodySmall => TextStyle(
-    fontFamily: _fontFamily,
+    fontFamily: current,
     fontSize: 12,
     fontWeight: FontWeight.normal,
     height: 1.5,
+    letterSpacing: _isArabic ? 0 : 0.15,
+    wordSpacing: _isArabic ? 1.5 : 0,
+    color: AppColors.textSecondary,
   );
 
   // ============================================================
   // LABEL STYLES
   // ============================================================
-  
-  /// Large label
+
   static TextStyle get labelLarge => TextStyle(
-    fontFamily: _fontFamily,
+    fontFamily: current,
     fontSize: 14,
     fontWeight: FontWeight.w500,
     height: 1.4,
+    letterSpacing: _isArabic ? 0 : 0.1,
+    color: AppColors.textPrimary,
   );
 
-  /// Medium label
   static TextStyle get labelMedium => TextStyle(
-    fontFamily: _fontFamily,
+    fontFamily: current,
     fontSize: 12,
     fontWeight: FontWeight.w500,
     height: 1.4,
+    letterSpacing: _isArabic ? 0 : 0.5,
+    color: AppColors.textSecondary,
   );
 
-  /// Small label
   static TextStyle get labelSmall => TextStyle(
-    fontFamily: _fontFamily,
+    fontFamily: current,
     fontSize: 10,
     fontWeight: FontWeight.w500,
     height: 1.4,
+    letterSpacing: _isArabic ? 0 : 0.5,
+    color: AppColors.textSecondary,
   );
+
+  // ============================================================
+  // HELPER — with custom color override
+  // ============================================================
+
+  /// Apply a custom color to any style
+  /// Example: AppFonts.titleLarge.withColor(AppColors.primary)
+  // ignore: avoid_classes_with_only_static_members
+}
+
+/// Extension to easily override color on any TextStyle
+extension TextStyleExtension on TextStyle {
+  TextStyle withColor(Color color) => copyWith(color: color);
+  TextStyle withSize(double size) => copyWith(fontSize: size);
+  TextStyle withWeight(FontWeight weight) => copyWith(fontWeight: weight);
 }

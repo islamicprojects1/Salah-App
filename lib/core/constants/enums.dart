@@ -1,16 +1,38 @@
 import 'dart:ui';
 
-/// Centralized enums for the Qurb app.
+/// Centralized enums for the Salah app.
+///
 /// Import this file instead of defining enums in multiple places.
+/// Organised by feature domain for quick navigation.
 
 // ============================================================
 // PRAYER & TIMING
 // ============================================================
 
-/// Prayer names (5 daily + sunrise)
-enum PrayerName { fajr, sunrise, dhuhr, asr, maghrib, isha }
+/// The five daily prayers plus sunrise (Shuruq).
+enum PrayerName {
+  fajr,
+  sunrise,
+  dhuhr,
+  asr,
+  maghrib,
+  isha;
 
-/// Prayer timing quality (when user logged relative to time window)
+  /// Human-readable Arabic transliteration.
+  String get displayName => switch (this) {
+    PrayerName.fajr => 'Fajr',
+    PrayerName.sunrise => 'Sunrise',
+    PrayerName.dhuhr => 'Dhuhr',
+    PrayerName.asr => 'Asr',
+    PrayerName.maghrib => 'Maghrib',
+    PrayerName.isha => 'Isha',
+  };
+
+  /// Whether this prayer is a required salah (sunrise is not).
+  bool get isFard => this != PrayerName.sunrise;
+}
+
+/// When the user logged a prayer relative to its time window.
 enum PrayerTimingQuality {
   veryEarly,
   early,
@@ -18,28 +40,21 @@ enum PrayerTimingQuality {
   late,
   veryLate,
   missed,
-  notYet,
+  notYet;
+
+  bool get isLogged =>
+      this == veryEarly ||
+      this == early ||
+      this == onTime ||
+      this == late ||
+      this == veryLate;
 }
 
-/// Legacy prayer quality (backward compatibility)
-enum PrayerQuality {
-  early,
-  onTime,
-  late,
-  missed,
-}
-
-/// Live context: current prayer state for UI
-enum LivePrayerStatus {
-  notStarted,
-  pending,
-  prayedOnTime,
-  prayedLate,
-  missed,
-}
-
-/// Card/display: simple prayer status (e.g. member card, missed prayers list)
+/// Simple prayer status for cards and lists.
 enum PrayerCardStatus { prayed, missed, notYet }
+
+/// Live UI state for the current prayer slot.
+enum LivePrayerStatus { notStarted, pending, prayedOnTime, prayedLate, missed }
 
 // ============================================================
 // USER & PROFILE
@@ -49,14 +64,7 @@ enum Gender { male, female }
 
 enum UserRole { solo, parent, child }
 
-// CalculationMethod and Madhab: app uses adhan package in PrayerTimeService (snake_case);
-// UserModel defines its own for Firestore (camelCase). Not centralized here to avoid conflict.
-
-enum PrivacyMode {
-  public,
-  anonymous,
-  private,
-}
+enum PrivacyMode { public, anonymous, private }
 
 // ============================================================
 // FAMILY & GROUPS
@@ -64,16 +72,16 @@ enum PrivacyMode {
 
 enum MemberRole { parent, child }
 
-enum PulseEventType { prayerLogged, encouragement, dailyComplete, familyCelebration }
-
-enum ActivityType {
-  prayerLog,
-  streakAchievement,
-  encouragement,
-  joinedFamily,
-}
-
 enum GroupType { family, guided, friends }
+
+enum ActivityType { prayerLog, streakAchievement, encouragement, joinedFamily }
+
+enum PulseEventType {
+  prayerLogged,
+  encouragement,
+  dailyComplete,
+  familyCelebration,
+}
 
 // ============================================================
 // APP SETTINGS
@@ -93,12 +101,12 @@ enum AppLanguage {
 
   Locale get locale => Locale(code);
 
-  static AppLanguage fromCode(String code) {
-    return AppLanguage.values.firstWhere(
-      (lang) => lang.code == code,
-      orElse: () => AppLanguage.arabic,
-    );
-  }
+  bool get isRtl => direction == TextDirection.rtl;
+
+  static AppLanguage fromCode(String code) => AppLanguage.values.firstWhere(
+    (lang) => lang.code == code,
+    orElse: () => AppLanguage.arabic,
+  );
 }
 
 enum NotificationSoundMode { adhan, vibrate, silent }
@@ -115,22 +123,18 @@ enum NotificationActionType {
   markMissed,
   confirmPrayed,
   willPrayNow,
-  dismiss,
-}
+  dismiss;
 
-enum ReportType {
-  userReport,
-  bugReport,
-  featureRequest,
-  contentReport,
-  other,
-}
+  /// Whether this action represents a snooze operation.
+  bool get isSnooze => this == snooze5 || this == snooze10 || this == snooze15;
 
-enum ReportStatus {
-  pending,
-  inProgress,
-  resolved,
-  dismissed,
+  /// Snooze duration in minutes. Returns null for non-snooze actions.
+  int? get snoozeMinutes => switch (this) {
+    NotificationActionType.snooze5 => 5,
+    NotificationActionType.snooze10 => 10,
+    NotificationActionType.snooze15 => 15,
+    _ => null,
+  };
 }
 
 enum FeedItemType {
@@ -144,13 +148,15 @@ enum FeedItemType {
   milestone,
 }
 
-enum ReactionType {
-  like,
-  celebrate,
-  pray,
-  encourage,
-  love,
-}
+enum ReactionType { like, celebrate, pray, encourage, love }
+
+// ============================================================
+// REPORTS
+// ============================================================
+
+enum ReportType { userReport, bugReport, featureRequest, contentReport, other }
+
+enum ReportStatus { pending, inProgress, resolved, dismissed }
 
 // ============================================================
 // SYNC & OFFLINE
@@ -170,22 +176,9 @@ enum SyncStatus { idle, loading, success, error }
 // ACHIEVEMENTS & CHALLENGES
 // ============================================================
 
-enum AchievementTier {
-  bronze,
-  silver,
-  gold,
-  platinum,
-  diamond,
-}
+enum AchievementTier { bronze, silver, gold, platinum, diamond }
 
-enum AchievementCategory {
-  streak,
-  prayers,
-  early,
-  social,
-  family,
-  special,
-}
+enum AchievementCategory { streak, prayers, early, social, family, special }
 
 enum ChallengeType {
   consecutivePrayer,
@@ -202,16 +195,14 @@ enum ChallengeType {
 enum ChallengeStatus { upcoming, active, completed, expired }
 
 // ============================================================
-// ADMIN & UI
+// ADMIN
 // ============================================================
 
-enum AdminRole {
-  superAdmin,
-  admin,
-  moderator,
-  support,
-  analyst,
-}
+enum AdminRole { superAdmin, admin, moderator, support, analyst }
+
+// ============================================================
+// UI
+// ============================================================
 
 enum OnboardingStep {
   welcome,
@@ -225,3 +216,8 @@ enum OnboardingStep {
 enum AppButtonType { primary, outlined, text }
 
 enum SnackbarType { success, error, warning, info }
+
+/// @deprecated — استخدم [PrayerTimingQuality] بدلاً منه.
+/// محتفظ به للتوافق مع الكود القديم فقط — سيُحذف بعد الـ refactor.
+@Deprecated('Use PrayerTimingQuality instead')
+enum PrayerQuality { early, onTime, late, missed }

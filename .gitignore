@@ -1,6 +1,12 @@
 # Miscellaneous
 *.class
 *.log
+node_modules/
+
+# Environment / Secrets (never upload)
+.env
+.env.*
+*.env
 *.pyc
 *.swp
 .DS_Store

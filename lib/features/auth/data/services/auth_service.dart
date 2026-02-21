@@ -1,10 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:salah/core/di/injection_container.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:salah/features/notifications/data/services/fcm_service.dart';
+import 'package:salah/core/error/app_logger.dart';
+import 'package:salah/features/auth/data/helpers/auth_error_messages.dart';
+import 'package:salah/features/auth/data/helpers/auth_validation.dart';
 
 /// Service for managing authentication with Firebase
 class AuthService extends GetxService {
@@ -30,7 +29,7 @@ class AuthService extends GetxService {
     if (_isInitialized) return this;
     _isInitialized = true;
     _auth = FirebaseAuth.instance;
-    _googleSignIn = GoogleSignIn();
+    _googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);
 
     // Listen to auth state changes
     _auth.authStateChanges().listen((user) {
@@ -47,19 +46,10 @@ class AuthService extends GetxService {
   // GETTERS
   // ============================================================
 
-  /// Check if user is logged in
   bool get isLoggedIn => currentUser.value != null;
-
-  /// Get user ID
   String? get userId => currentUser.value?.uid;
-
-  /// Get user email
   String? get userEmail => currentUser.value?.email;
-
-  /// Get user display name
   String? get userName => currentUser.value?.displayName;
-
-  /// Get user photo URL
   String? get userPhotoUrl => currentUser.value?.photoURL;
 
   // ============================================================
@@ -76,15 +66,13 @@ class AuthService extends GetxService {
       isLoading.value = true;
       errorMessage.value = '';
 
-      // Validate email format
-      final emailError = _validateEmail(email);
+      final emailError = AuthValidation.validateEmail(email);
       if (emailError != null) {
         errorMessage.value = emailError;
         return null;
       }
 
-      // Validate password strength
-      final passwordError = _validatePassword(password);
+      final passwordError = AuthValidation.validatePassword(password);
       if (passwordError != null) {
         errorMessage.value = passwordError;
         return null;
@@ -95,17 +83,20 @@ class AuthService extends GetxService {
         password: password,
       );
 
-      // Update display name if provided
       if (displayName != null && credential.user != null) {
         await credential.user!.updateDisplayName(displayName);
+        // Reload to get updated display name
+        await credential.user!.reload();
       }
 
-      return credential.user;
-    } on FirebaseException catch (e) {
-      errorMessage.value = _getErrorMessage(e.code);
+      return _auth.currentUser;
+    } on FirebaseAuthException catch (e) {
+      errorMessage.value = AuthErrorMessages.fromCode(e.code);
+      AppLogger.warning('registerWithEmail failed: ${e.code}', e);
       return null;
     } catch (e) {
-      errorMessage.value = e.toString();
+      errorMessage.value = 'auth_error_default'.tr;
+      AppLogger.error('registerWithEmail unexpected error', e);
       return null;
     } finally {
       isLoading.value = false;
@@ -121,16 +112,14 @@ class AuthService extends GetxService {
       isLoading.value = true;
       errorMessage.value = '';
 
-      // Validate email format
-      final emailError = _validateEmail(email);
+      final emailError = AuthValidation.validateEmail(email);
       if (emailError != null) {
         errorMessage.value = emailError;
         return null;
       }
 
-      // Basic password check (not empty)
       if (password.isEmpty) {
-        errorMessage.value = 'يرجى إدخال كلمة المرور';
+        errorMessage.value = 'enter_password'.tr;
         return null;
       }
 
@@ -140,38 +129,17 @@ class AuthService extends GetxService {
       );
 
       return credential.user;
-    } on FirebaseException catch (e) {
-      errorMessage.value = _getErrorMessage(e.code);
+    } on FirebaseAuthException catch (e) {
+      errorMessage.value = AuthErrorMessages.fromCode(e.code);
+      AppLogger.warning('signInWithEmail failed: ${e.code}', e);
       return null;
     } catch (e) {
-      errorMessage.value = e.toString();
+      errorMessage.value = 'auth_error_default'.tr;
+      AppLogger.error('signInWithEmail unexpected error', e);
       return null;
     } finally {
       isLoading.value = false;
     }
-  }
-
-  /// Validate email format
-  String? _validateEmail(String email) {
-    if (email.isEmpty) {
-      return 'يرجى إدخال البريد الإلكتروني';
-    }
-    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-    if (!emailRegex.hasMatch(email.trim())) {
-      return 'صيغة البريد الإلكتروني غير صحيحة';
-    }
-    return null;
-  }
-
-  /// Validate password strength
-  String? _validatePassword(String password) {
-    if (password.isEmpty) {
-      return 'يرجى إدخال كلمة المرور';
-    }
-    if (password.length < 8) {
-      return 'كلمة المرور يجب أن تكون 8 أحرف على الأقل';
-    }
-    return null;
   }
 
   // ============================================================
@@ -184,28 +152,46 @@ class AuthService extends GetxService {
       isLoading.value = true;
       errorMessage.value = '';
 
-      // Trigger the Google Sign In flow
+      // Sign out first to force account picker
+      await _googleSignIn.signOut();
+
       final googleUser = await _googleSignIn.signIn();
 
       if (googleUser == null) {
-        errorMessage.value = 'فشل تسجيل الدخول مع قوقل';
+        // User cancelled — not an error
+        errorMessage.value = '';
         return null;
       }
 
       final googleAuth = await googleUser.authentication;
 
-      // Create credential
+      if (googleAuth.accessToken == null && googleAuth.idToken == null) {
+        errorMessage.value = 'auth_error_google_cancelled'.tr;
+        return null;
+      }
+
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
-      // Sign in to Firebase
       final userCredential = await _auth.signInWithCredential(credential);
-
       return userCredential.user;
+    } on FirebaseAuthException catch (e) {
+      errorMessage.value = AuthErrorMessages.fromCode(e.code);
+      AppLogger.warning('signInWithGoogle Firebase error: ${e.code}', e);
+      return null;
     } catch (e) {
-      errorMessage.value = e.toString();
+      // Check for user cancellation
+      final msg = e.toString();
+      if (msg.contains('canceled') ||
+          msg.contains('cancelled') ||
+          msg.contains('sign_in_canceled')) {
+        errorMessage.value = '';
+        return null;
+      }
+      errorMessage.value = 'auth_error_default'.tr;
+      AppLogger.error('signInWithGoogle unexpected error', e);
       return null;
     } finally {
       isLoading.value = false;
@@ -222,13 +208,19 @@ class AuthService extends GetxService {
       isLoading.value = true;
       errorMessage.value = '';
 
-      await _auth.sendPasswordResetEmail(email: email);
+      final emailError = AuthValidation.validateEmail(email);
+      if (emailError != null) {
+        errorMessage.value = emailError;
+        return false;
+      }
+
+      await _auth.sendPasswordResetEmail(email: email.trim());
       return true;
-    } on FirebaseException catch (e) {
-      errorMessage.value = _getErrorMessage(e.code);
+    } on FirebaseAuthException catch (e) {
+      errorMessage.value = AuthErrorMessages.fromCode(e.code);
       return false;
     } catch (e) {
-      errorMessage.value = e.toString();
+      errorMessage.value = 'auth_error_default'.tr;
       return false;
     } finally {
       isLoading.value = false;
@@ -241,13 +233,19 @@ class AuthService extends GetxService {
       isLoading.value = true;
       errorMessage.value = '';
 
+      final passwordError = AuthValidation.validatePassword(newPassword);
+      if (passwordError != null) {
+        errorMessage.value = passwordError;
+        return false;
+      }
+
       await currentUser.value?.updatePassword(newPassword);
       return true;
-    } on FirebaseException catch (e) {
-      errorMessage.value = _getErrorMessage(e.code);
+    } on FirebaseAuthException catch (e) {
+      errorMessage.value = AuthErrorMessages.fromCode(e.code);
       return false;
     } catch (e) {
-      errorMessage.value = e.toString();
+      errorMessage.value = 'auth_error_default'.tr;
       return false;
     } finally {
       isLoading.value = false;
@@ -266,6 +264,7 @@ class AuthService extends GetxService {
       currentUser.value = _auth.currentUser;
       return true;
     } catch (e) {
+      AppLogger.warning('updateDisplayName failed', e);
       return false;
     }
   }
@@ -276,13 +275,16 @@ class AuthService extends GetxService {
       if (displayName != null) {
         await currentUser.value?.updateDisplayName(displayName);
       }
-      if (photoURL != null) await currentUser.value?.updatePhotoURL(photoURL);
+      if (photoURL != null) {
+        await currentUser.value?.updatePhotoURL(photoURL);
+      }
 
       await currentUser.value?.reload();
       currentUser.value = _auth.currentUser;
       return true;
     } catch (e) {
-      errorMessage.value = e.toString();
+      errorMessage.value = 'auth_error_default'.tr;
+      AppLogger.warning('updateProfile failed', e);
       return false;
     }
   }
@@ -291,13 +293,21 @@ class AuthService extends GetxService {
   // SIGN OUT
   // ============================================================
 
-  /// Sign out
+  /// Sign out from all providers
   Future<void> signOut() async {
     try {
-      await _googleSignIn.signOut();
+      final isGoogleUser =
+          currentUser.value?.providerData.any(
+            (p) => p.providerId == 'google.com',
+          ) ??
+          false;
+
+      if (isGoogleUser) {
+        await _googleSignIn.signOut();
+      }
       await _auth.signOut();
     } catch (e) {
-      // Handle error
+      AppLogger.debug('AuthService.signOut error (non-critical)', e);
     }
   }
 
@@ -306,59 +316,27 @@ class AuthService extends GetxService {
     try {
       await currentUser.value?.delete();
       return true;
-    } on FirebaseException catch (e) {
-      errorMessage.value = _getErrorMessage(e.code);
+    } on FirebaseAuthException catch (e) {
+      errorMessage.value = AuthErrorMessages.fromCode(e.code);
       return false;
     } catch (e) {
-      errorMessage.value = e.toString();
+      errorMessage.value = 'auth_error_default'.tr;
       return false;
     }
   }
 
-  // ============================================================
-  // HELPER METHODS
-  // ============================================================
-
-  /// Get user-friendly error message
-  String _getErrorMessage(String code) {
-    switch (code) {
-      case 'user-not-found':
-        return 'لا يوجد حساب بهذا البريد الإلكتروني';
-      case 'wrong-password':
-        return 'كلمة المرور غير صحيحة';
-      case 'email-already-in-use':
-        return 'البريد الإلكتروني مستخدم مسبقاً';
-      case 'weak-password':
-        return 'كلمة المرور ضعيفة';
-      case 'invalid-email':
-        return 'البريد الإلكتروني غير صالح';
-      case 'too-many-requests':
-        return 'محاولات كثيرة، حاول لاحقاً';
-      case 'requires-recent-login':
-        return 'يرجى إعادة تسجيل الدخول';
-      default:
-        return 'حدث خطأ، حاول مرة أخرى';
+  /// Refresh current user token
+  Future<String?> refreshToken() async {
+    try {
+      return await currentUser.value?.getIdToken(true);
+    } catch (e) {
+      AppLogger.warning('refreshToken failed', e);
+      return null;
     }
   }
 
   /// Update FCM token in Firestore
   Future<void> _updateFcmToken() async {
-    try {
-      final user = currentUser.value;
-      if (user == null) return;
-
-      if (!Get.isRegistered<FcmService>()) return;
-
-      final token = await sl<FcmService>().getToken();
-      if (token != null) {
-        await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
-          'fcmToken': token,
-          'lastTokenUpdate': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
-        debugPrint('FCM Token updated for user: ${user.uid}');
-      }
-    } catch (e) {
-      debugPrint('Error updating FCM token: $e');
-    }
+    return; // TODO: restore when FcmService is re-implemented
   }
 }

@@ -4,95 +4,110 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:salah/core/feedback/toast_widget.dart';
 
-/// Central service for showing modern toast notifications.
+/// Central service for showing overlay toast notifications.
 ///
-/// Uses overlay-based toasts (not Get.snackbar) for full control over
-/// appearance and animation. Single source of truth for all toast UI.
+/// Uses Flutter's [Overlay] directly for full control over appearance
+/// and animation. Always prefer this over [Get.snackbar].
+///
+/// ```dart
+/// ToastService.success('Prayer logged!');
+/// ToastService.error('Sync failed', 'Check your connection and try again.');
+/// ```
 class ToastService {
-  ToastService._();
+  const ToastService._();
 
-  static OverlayEntry? _currentEntry;
+  static OverlayEntry? _current;
+  static Timer? _timer;
 
-  /// Dismiss any currently visible toast.
+  // ============================================================
+  // PUBLIC API
+  // ============================================================
+
+  static void success(String title, [String? message]) =>
+      _show(title, message: message, type: ToastType.success);
+
+  static void error(String title, [String? message]) => _show(
+    title,
+    message: message,
+    type: ToastType.error,
+    duration: const Duration(seconds: 4),
+  );
+
+  static void warning(String title, [String? message]) =>
+      _show(title, message: message, type: ToastType.warning);
+
+  static void info(String title, [String? message]) =>
+      _show(title, message: message, type: ToastType.info);
+
+  /// Immediately removes any visible toast.
   static void dismiss() {
-    _currentEntry?.remove();
-    _currentEntry = null;
+    _timer?.cancel();
+    _timer = null;
+    _safeRemove(_current);
+    _current = null;
   }
+
+  // ============================================================
+  // INTERNALS
+  // ============================================================
 
   static void _show(
     String title, {
     String? message,
     required ToastType type,
     Duration duration = const Duration(seconds: 3),
-    bool deferred = false,
+    bool isRetry = false, // ✅ بدون underscore
   }) {
     dismiss();
 
-    final overlay = Get.overlayContext;
-    final overlayState = overlay != null ? Overlay.maybeOf(overlay) : null;
+    final overlayContext = Get.overlayContext;
+    final overlayState = overlayContext != null
+        ? Overlay.maybeOf(overlayContext)
+        : null;
 
-    if (overlay == null || overlayState == null) {
-      if (!deferred) {
+    if (overlayState == null) {
+      if (!isRetry) {
+        // Defer one frame and try again — overlay may not be ready yet.
         WidgetsBinding.instance.addPostFrameCallback((_) {
           _show(
             title,
             message: message,
             type: type,
             duration: duration,
-            deferred: true,
+            isRetry: true,
           );
         });
-      } else {
-        debugPrint('ToastService: Overlay not ready, skipping toast.');
       }
       return;
     }
 
-    late OverlayEntry entry;
+    late final OverlayEntry entry;
     entry = OverlayEntry(
-      builder: (context) => ToastWidget(
+      builder: (_) => ToastWidget(
         title: title,
         message: message,
         type: type,
         duration: duration,
         onTap: () {
-          try {
-            entry.remove();
-          } catch (_) {}
-          if (_currentEntry == entry) _currentEntry = null;
+          if (_current == entry) dismiss();
         },
       ),
     );
-    _currentEntry = entry;
+
+    _current = entry;
     overlayState.insert(entry);
 
-    Timer(duration, () {
-      if (_currentEntry != entry) return;
-      try {
-        entry.remove();
-      } catch (_) {}
-      if (_currentEntry == entry) _currentEntry = null;
+    _timer = Timer(duration, () {
+      if (_current == entry) dismiss();
     });
   }
 
-  static void success(String title, [String? message]) {
-    _show(title, message: message, type: ToastType.success);
-  }
-
-  static void error(String title, [String? message]) {
-    _show(
-      title,
-      message: message,
-      type: ToastType.error,
-      duration: const Duration(seconds: 4),
-    );
-  }
-
-  static void warning(String title, [String? message]) {
-    _show(title, message: message, type: ToastType.warning);
-  }
-
-  static void info(String title, [String? message]) {
-    _show(title, message: message, type: ToastType.info);
+  static void _safeRemove(OverlayEntry? entry) {
+    if (entry == null) return;
+    try {
+      entry.remove();
+    } catch (_) {
+      // Entry may already be removed if the overlay was disposed.
+    }
   }
 }

@@ -42,7 +42,6 @@ dependencies:
   
   get_storage: ^2.1.1
   http: ^1.6.0
-  adhan: ^2.0.0+1
   geolocator: ^14.0.2
   intl: ^0.20.2
   share_plus: ^12.0.1
@@ -50,7 +49,7 @@ dependencies:
   flutter_localization: ^0.3.3
   app_settings: ^7.0.0
   connectivity_plus: ^7.0.0
-  flutter_launcher_icons: ^0.14.4
+
   flutter_local_notifications: ^20.0.0
   lottie: ^3.3.2
   google_sign_in: ^6.3.0
@@ -60,16 +59,18 @@ dependencies:
   sqflite: ^2.4.2
   path: ^1.9.1
   uuid: ^4.5.1
+  path_provider: ^2.1.5
   image_picker: ^1.2.1
   url_launcher: ^6.3.2
   audioplayers: ^6.1.0
   get_it: ^9.2.0
+  adhan: ^2.0.0
 
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-
+  flutter_launcher_icons: ^0.14.4
   flutter_lints: ^6.0.0
 
   # The "flutter_lints" package below contains a set of recommended lints to

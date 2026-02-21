@@ -7,6 +7,7 @@ import 'package:salah/features/splash/presentation/screens/splash_screen.dart';
 import 'package:salah/features/prayer/presentation/screens/home_screen.dart';
 import 'package:salah/features/settings/presentation/screens/settings_screen.dart';
 import 'package:salah/features/onboarding/presentation/screens/onboarding_screen.dart';
+import 'package:salah/features/onboarding/presentation/bindings/onboarding_binding.dart';
 import 'package:salah/features/auth/presentation/screens/login_screen.dart';
 import 'package:salah/features/auth/presentation/screens/register_screen.dart';
 import 'package:salah/features/auth/presentation/screens/profile_setup_screen.dart';
@@ -14,10 +15,6 @@ import 'package:salah/features/prayer/presentation/screens/dashboard_screen.dart
 import 'package:salah/features/settings/presentation/bindings/settings_binding.dart';
 import 'package:salah/features/auth/presentation/bindings/auth_binding.dart';
 import 'package:salah/features/prayer/presentation/bindings/dashboard_binding.dart';
-import 'package:salah/features/family/presentation/bindings/family_binding.dart';
-import 'package:salah/features/family/presentation/screens/create_family_screen.dart';
-import 'package:salah/features/family/presentation/screens/join_family_screen.dart';
-import 'package:salah/features/family/presentation/screens/family_dashboard_screen.dart';
 import 'package:salah/features/prayer/presentation/screens/missed_prayers_screen.dart';
 import 'package:salah/features/prayer/controller/missed_prayers_controller.dart';
 import 'package:salah/features/profile/presentation/screens/profile_screen.dart';
@@ -25,8 +22,6 @@ import 'package:salah/features/stats/presentation/screens/stats_screen.dart';
 import 'package:salah/features/stats/presentation/bindings/stats_binding.dart';
 import 'package:salah/features/profile/controller/profile_controller.dart';
 import 'package:salah/features/prayer/presentation/screens/qibla_screen.dart';
-import 'package:salah/features/notifications/presentation/screens/notifications_screen.dart';
-import 'package:salah/features/notifications/controller/notifications_controller.dart';
 
 /// App pages configuration for GetX routing
 ///
@@ -50,7 +45,7 @@ class AppPages {
     GetPage(
       name: AppRoutes.onboarding,
       page: () => const OnboardingScreen(),
-      binding: AuthBinding(),
+      binding: OnboardingBinding(),
       middlewares: [OnboardingMiddleware()],
       transition: Transition.fade,
     ),
@@ -63,18 +58,18 @@ class AppPages {
       transition: Transition.fade, // Smooth fade to login
     ),
 
-    // Register
+    // Register — no binding: uses AuthController from Login (still in stack)
     GetPage(
       name: AppRoutes.register,
       page: () => const RegisterScreen(),
-      transition: Transition.cupertino, // Standard push
+      transition: Transition.cupertino,
     ),
 
-    // Profile Setup
+    // Profile Setup — no binding: uses AuthController from Login/Register
     GetPage(
       name: AppRoutes.profileSetup,
       page: () => const ProfileSetupScreen(),
-      transition: Transition.cupertino, // Standard push
+      transition: Transition.cupertino,
     ),
 
     // Profile Screen
@@ -117,25 +112,6 @@ class AppPages {
       transition: Transition.leftToRight, // Standard navigation
       binding: SelectedCityBinding(),
     ),
-    // Family Screens
-    GetPage(
-      name: AppRoutes.family,
-      page: () => const FamilyDashboardScreen(),
-      binding: FamilyBinding(),
-      transition: Transition.cupertino, // Standard navigation
-    ),
-    GetPage(
-      name: AppRoutes.createFamily,
-      page: () => const CreateFamilyScreen(),
-      binding: FamilyBinding(),
-      transition: Transition.cupertino, // Standard navigation
-    ),
-    GetPage(
-      name: AppRoutes.joinFamily,
-      page: () => const JoinFamilyScreen(),
-      binding: FamilyBinding(),
-      transition: Transition.cupertino, // Standard navigation
-    ),
 
     GetPage(
       name: AppRoutes.missedPrayers,
@@ -157,16 +133,6 @@ class AppPages {
     GetPage(
       name: AppRoutes.qibla,
       page: () => const QiblaScreen(),
-      transition: Transition.cupertino,
-    ),
-
-    // Notifications
-    GetPage(
-      name: AppRoutes.notifications,
-      page: () => const NotificationsScreen(),
-      binding: BindingsBuilder(() {
-        Get.lazyPut<NotificationsController>(() => NotificationsController());
-      }),
       transition: Transition.cupertino,
     ),
   ];

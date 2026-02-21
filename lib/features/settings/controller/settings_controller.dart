@@ -17,18 +17,20 @@ import 'package:salah/features/settings/data/services/localization_service.dart'
 import 'package:salah/features/settings/data/services/theme_service.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:adhan/adhan.dart' as adhan;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:salah/core/feedback/app_feedback.dart';
 import 'package:salah/core/constants/storage_keys.dart';
+import 'package:salah/core/error/app_logger.dart';
 import 'package:salah/core/routes/app_routes.dart';
+import 'package:salah/core/services/audio_service.dart';
 import 'package:salah/core/services/location_service.dart';
 import 'package:salah/core/services/storage_service.dart';
+import 'package:salah/features/settings/controller/settings_support_mixin.dart';
 
 /// Settings controller – UI logic only. Theme/language/notifications in services or storage.
-class SettingsController extends GetxController {
+class SettingsController extends GetxController with SettingsSupportMixin {
   final _themeService = sl<ThemeService>();
   final _localizationService = sl<LocalizationService>();
   final _storage = sl<StorageService>();
@@ -44,8 +46,10 @@ class SettingsController extends GetxController {
   // Expose underlying auth user for UI fallback (e.g. photo/email if userModel not loaded)
   Rx<User?> get currentUser => _authService.currentUser;
 
-  // Keep underlying auth user for ID checks if needed,/ but UI should use userModel
+  // Keep underlying auth user for ID checks if needed; UI should use userModel
   User? get _authUser => _authService.currentUser.value;
+  @override
+  AuthService get authService => _authService;
 
   final RxBool notificationsEnabled = true.obs;
   final RxBool adhanEnabled = true.obs;
@@ -62,6 +66,11 @@ class SettingsController extends GetxController {
   final Rx<NotificationSoundMode> notificationSoundMode =
       NotificationSoundMode.adhan.obs;
 
+  // Approaching & Takbeer
+  final RxBool approachingAlertEnabled = false.obs;
+  final RxInt approachingAlertMinutes = 15.obs;
+  final RxBool takbeerAtPrayerEnabled = true.obs;
+
   String get locationDisplayLabel => _locationService.locationDisplayLabel;
   bool get isUsingDefaultLocation =>
       _locationService.isUsingDefaultLocation.value;
@@ -74,9 +83,9 @@ class SettingsController extends GetxController {
 
   // Prayer Settings
   final _prayerService = sl<PrayerTimeService>();
-  adhan.CalculationMethod get currentCalculationMethod =>
-      _prayerService.currentCalculationMethod.value;
-  adhan.Madhab get currentMadhab => _prayerService.currentMadhab.value;
+  // adhan.CalculationMethod get currentCalculationMethod =>
+  //     _prayerService.currentCalculationMethod.value;
+  // adhan.Madhab get currentMadhab => _prayerService.currentMadhab.value;
 
   @override
   void onInit() {
@@ -117,6 +126,10 @@ class SettingsController extends GetxController {
     ishaNotif.value = _storage.read<bool>(StorageKeys.ishaNotification) ?? true;
 
     notificationSoundMode.value = _storage.getNotificationSoundMode();
+
+    approachingAlertEnabled.value = _storage.approachingAlertEnabled;
+    approachingAlertMinutes.value = _storage.approachingAlertMinutes;
+    takbeerAtPrayerEnabled.value = _storage.takbeerAtPrayerEnabled;
   }
 
   Future<void> _fetchErrorMessage(String uid) async {
@@ -128,17 +141,17 @@ class SettingsController extends GetxController {
         await _storage.write('prayer_offsets', user.prayerOffsets);
       }
     } catch (e) {
-      debugPrint('Error fetching user profile: $e');
+      AppLogger.debug('Settings: fetch user profile failed', e);
     }
   }
 
-  Future<void> updateCalculationMethod(adhan.CalculationMethod method) async {
-    await _prayerService.setCalculationMethod(method);
-  }
+  // Future<void> updateCalculationMethod(adhan.CalculationMethod method) async {
+  //   await _prayerService.setCalculationMethod(method);
+  // }
 
-  Future<void> updateMadhab(adhan.Madhab madhab) async {
-    await _prayerService.setMadhab(madhab);
-  }
+  // Future<void> updateMadhab(adhan.Madhab madhab) async {
+  //   await _prayerService.setMadhab(madhab);
+  // }
 
   Future<void> changeTheme(AppThemeMode mode) async {
     await _themeService.changeTheme(mode);
@@ -353,28 +366,28 @@ class SettingsController extends GetxController {
     if (pickedFile == null) return;
 
     AppDialogs.showLoading();
-    try {
-      final File imageFile = File(pickedFile.path);
-      final url = await _cloudinaryService.uploadImage(
-        imageFile,
-        folder: 'user_profiles',
-      );
+    // try {
+    // final File imageFile = File(pickedFile.path);
+    // final url = await _cloudinaryService.uploadImage(
+    //   imageFile,
+    //   folder: 'user_profiles',
+    // );
 
-      if (url != null) {
-        await _authService.updateProfile(photoURL: url);
-        await _userRepository.updateUserProfile(
-          userId: uid,
-          updates: {'photoUrl': url},
-        );
-        AppDialogs.hideLoading();
-        AppFeedback.showSuccess('success'.tr, 'profile_updated'.tr);
-      } else {
-        throw Exception('Upload failed');
-      }
-    } catch (e) {
-      AppDialogs.hideLoading();
-      AppFeedback.showError('error'.tr, 'update_failed'.tr);
-    }
+    // if (url != null) {
+    //   await _authService.updateProfile(photoURL: url);
+    //   await _userRepository.updateUserProfile(
+    //     userId: uid,
+    //     updates: {'photoUrl': url},
+    //   );
+    //     AppDialogs.hideLoading();
+    //     AppFeedback.showSuccess('success'.tr, 'profile_updated'.tr);
+    //   } else {
+    //     throw Exception('Upload failed');
+    //   }
+    // } catch (e) {
+    //   AppDialogs.hideLoading();
+    //   AppFeedback.showError('error'.tr, 'update_failed'.tr);
+    // }
   }
 
   Future<void> changeLanguage(AppLanguage language) async {
@@ -397,14 +410,13 @@ class SettingsController extends GetxController {
   Future<void> setAdhanEnabled(bool value) async {
     await _storage.write(StorageKeys.adhanNotificationsEnabled, value);
     adhanEnabled.value = value;
-    if (Get.isRegistered<NotificationService>()) {
-      Get.find<NotificationService>().rescheduleAllForToday();
-    }
+    _rescheduleNotifications();
   }
 
   Future<void> setReminderEnabled(bool value) async {
     await _storage.write(StorageKeys.reminderNotification, value);
     reminderEnabled.value = value;
+    _rescheduleNotifications();
   }
 
   Future<void> setFamilyNotificationsEnabled(bool value) async {
@@ -415,6 +427,43 @@ class SettingsController extends GetxController {
   Future<void> setNotificationSoundMode(NotificationSoundMode mode) async {
     await _storage.setNotificationSoundMode(mode);
     notificationSoundMode.value = mode;
+    _rescheduleNotifications();
+  }
+
+  Future<void> setApproachingAlertEnabled(bool value) async {
+    await _storage.setApproachingAlertEnabled(value);
+    approachingAlertEnabled.value = value;
+    _rescheduleNotifications();
+  }
+
+  Future<void> setApproachingAlertMinutes(int minutes) async {
+    await _storage.setApproachingAlertMinutes(minutes);
+    approachingAlertMinutes.value = minutes;
+    _rescheduleNotifications();
+  }
+
+  Future<void> setTakbeerAtPrayerEnabled(bool value) async {
+    await _storage.setTakbeerAtPrayerEnabled(value);
+    takbeerAtPrayerEnabled.value = value;
+    _rescheduleNotifications();
+  }
+
+  void _rescheduleNotifications() {
+    if (sl.isRegistered<NotificationService>()) {
+      sl<NotificationService>().rescheduleAllForToday();
+    }
+  }
+
+  void playApproachPreview(PrayerName prayer) {
+    if (sl.isRegistered<AudioService>()) {
+      sl<AudioService>().playApproachSound(prayer);
+    }
+  }
+
+  void playTakbeerPreview() {
+    if (sl.isRegistered<AudioService>()) {
+      sl<AudioService>().playTakbeer();
+    }
   }
 
   Future<void> setPrayerNotif(String key, bool value) async {
@@ -436,33 +485,7 @@ class SettingsController extends GetxController {
         ishaNotif.value = value;
         break;
     }
-    // Refresh notifications
-    if (Get.isRegistered<NotificationService>()) {
-      Get.find<NotificationService>().rescheduleAllForToday();
-    }
-  }
-
-  void showAboutDialog() {
-    Get.dialog(
-      AlertDialog(
-        title: Text('about'.tr),
-        content: Text('${'app_name'.tr}\n${'version'.tr}: 1.0.0'),
-        actions: [
-          TextButton(onPressed: () => Get.back(), child: Text('close'.tr)),
-        ],
-      ),
-    );
-  }
-
-  Future<void> shareApp() async {
-    try {
-      await Share.share('share_app_text'.tr, subject: 'app_name'.tr);
-    } catch (_) {}
-  }
-
-  void openRateApp() {
-    // When app is on store: launch store URL
-    Get.snackbar('rate_app'.tr, 'coming_soon_store'.tr);
+    _rescheduleNotifications();
   }
 
   /// Refresh GPS location, reverse geocode, and recalculate prayer times.
@@ -471,91 +494,5 @@ class SettingsController extends GetxController {
     if (Get.isRegistered<PrayerTimeService>()) {
       await Get.find<PrayerTimeService>().calculatePrayerTimes();
     }
-  }
-
-  // ==================== Premium & Support Logic ====================
-
-  Future<void> openSocialLink(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
-      Get.snackbar('error'.tr, 'could_not_open_link'.tr);
-    }
-  }
-
-  Future<void> reportBug() async {
-    final Uri emailLaunchUri = Uri(
-      scheme: 'mailto',
-      path: 'tazkifyai@gmail.com',
-      query: _encodeQueryParameters({
-        'subject': 'Report a Bug - Salah App',
-        'body':
-            'User ID: ${_authService.userId}\n\nPlease describe the bug below:\n',
-      }),
-    );
-
-    if (await canLaunchUrl(emailLaunchUri)) {
-      await launchUrl(emailLaunchUri);
-    } else {
-      Get.snackbar('error'.tr, 'could_not_open_email'.tr);
-    }
-  }
-
-  Future<void> suggestFeature() async {
-    final Uri emailLaunchUri = Uri(
-      scheme: 'mailto',
-      path: 'tazkifyai@gmail.com',
-      query: _encodeQueryParameters({
-        'subject': 'Feature Suggestion - Salah App',
-        'body': 'I would like to suggest a new feature:\n',
-      }),
-    );
-
-    if (await canLaunchUrl(emailLaunchUri)) {
-      await launchUrl(emailLaunchUri);
-    } else {
-      Get.snackbar('error'.tr, 'could_not_open_email'.tr);
-    }
-  }
-
-  Future<void> syncWithGoogleCalendar() async {
-    // Placeholder for actual Google Calendar API integration
-    // For now, we guide the user or show a "Coming Soon" with benefit explanation
-    Get.dialog(
-      AlertDialog(
-        title: Text('google_calendar_sync'.tr),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.calendar_today_rounded,
-              size: 48,
-              color: Colors.blue,
-            ),
-            const SizedBox(height: 16),
-            Text('calendar_sync_desc'.tr, textAlign: TextAlign.center),
-            const SizedBox(height: 8),
-            Text(
-              'This feature will allow you to see prayer times directly in your Google Calendar.',
-              style: TextStyle(fontSize: 12, color: Colors.grey),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Get.back(), child: Text('ok'.tr)),
-        ],
-      ),
-    );
-  }
-
-  String? _encodeQueryParameters(Map<String, String> params) {
-    return params.entries
-        .map(
-          (MapEntry<String, String> e) =>
-              '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}',
-        )
-        .join('&');
   }
 }

@@ -1,397 +1,417 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:lottie/lottie.dart';
-import 'package:salah/core/constants/enums.dart';
+import 'package:salah/core/constants/app_dimensions.dart';
 import 'package:salah/core/theme/app_colors.dart';
+import 'package:salah/core/theme/app_fonts.dart';
+import 'package:salah/core/widgets/app_text_field.dart';
 import 'package:salah/features/onboarding/controller/onboarding_controller.dart';
+import 'package:salah/features/onboarding/presentation/widgets/onboarding_widgets.dart';
 
-/// Profile setup page
 class ProfileSetupPage extends GetView<OnboardingController> {
   const ProfileSetupPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final pageData = controller.getPageData(OnboardingStep.profileSetup);
-    final isArabic = Get.locale?.languageCode == 'ar';
+    final data = controller.pageData;
 
-    return SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const SizedBox(height: 40),
-
-            // Animation
-            Center(
-              child: SizedBox(
-                height: 150,
-                child: Lottie.asset(
-                  pageData.lottieAsset,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.person_rounded,
-                        size: 50,
-                        color: AppColors.primary,
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Title
-            Center(
-              child: Text(
-                pageData.titleKey.tr,
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 8),
-
-            Center(
-              child: Text(
-                pageData.subtitleKey.tr,
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
-              ),
-            ),
-
-            const SizedBox(height: 40),
-
-            // Name Input
-            _buildInputSection(
-              label: 'name_label'.tr,
-              child: TextField(
+    return OnboardingPageLayout(
+      scrollable: true,
+      lottieAsset: data.lottieAsset,
+      iconData: data.iconData,
+      title: data.localizedTitle,
+      subtitle: data.localizedSubtitle,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Name ──
+              _SectionLabel(label: 'name_label'.tr),
+              const SizedBox(height: 8),
+              AppTextField(
                 controller: controller.nameController,
-                textAlign: isArabic ? TextAlign.right : TextAlign.left,
-                decoration: InputDecoration(
-                  hintText: 'name_label'.tr,
-                  prefixIcon: Icon(
-                    Icons.person_outline,
-                    color: AppColors.primary,
-                  ),
-                  filled: true,
-                  fillColor: AppColors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(
-                      color: AppColors.textSecondary.withValues(alpha: 0.2),
-                    ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(
-                      color: AppColors.textSecondary.withValues(alpha: 0.2),
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(color: AppColors.primary, width: 2),
-                  ),
-                ),
+                label: 'name_label'.tr,
+                prefixIcon: Icons.person_outline,
+                textCapitalization: TextCapitalization.words,
+                textInputAction: TextInputAction.done,
               ),
-            ),
+              const SizedBox(height: 22),
 
-            const SizedBox(height: 24),
-
-            // Gender Selection
-            _buildInputSection(
-              label: 'gender_label'.tr,
-              child: Obx(
+              // ── Gender ──
+              _SectionLabel(label: 'gender_label'.tr),
+              const SizedBox(height: 10),
+              Obx(
                 () => Row(
                   children: [
                     Expanded(
-                      child: _buildGenderOption(
-                        icon: Icons.male,
+                      child: _GenderCard(
+                        icon: Icons.male_rounded,
                         label: 'male'.tr,
                         value: 'male',
-                        isSelected: controller.selectedGender.value == 'male',
+                        selectedValue: controller.selectedGender.value,
+                        onTap: () => controller.setGender('male'),
+                        color: const Color(0xFF4285F4),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: _buildGenderOption(
-                        icon: Icons.female,
+                      child: _GenderCard(
+                        icon: Icons.female_rounded,
                         label: 'female'.tr,
                         value: 'female',
-                        isSelected: controller.selectedGender.value == 'female',
+                        selectedValue: controller.selectedGender.value,
+                        onTap: () => controller.setGender('female'),
+                        color: const Color(0xFFE91E63),
                       ),
                     ),
                   ],
                 ),
               ),
-            ),
+              const SizedBox(height: 22),
 
-            const SizedBox(height: 24),
+              // ── Birth date ──
+              _SectionLabel(label: 'birthdate_label'.tr),
+              const SizedBox(height: 8),
+              Obx(
+                () => _DatePickerCard(
+                  selectedDate: controller.selectedBirthDate.value,
+                  onTap: () => _showDatePicker(context),
+                ),
+              ),
+              const SizedBox(height: 32),
 
-            // Birth Date (Optional)
-            _buildInputSection(
-              label: 'birthdate_label'.tr,
-              child: Obx(
-                () => Material(
-                  color: AppColors.transparent,
-                  child: InkWell(
-                    onTap: () => _showDatePicker(context),
-                    borderRadius: BorderRadius.circular(14),
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppColors.white,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: AppColors.textSecondary.withValues(alpha: 0.2),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.calendar_today_rounded,
-                            color: AppColors.primary,
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            controller.selectedBirthDate.value != null
-                                ? _formatDate(
-                                    controller.selectedBirthDate.value!,
-                                  )
-                                : 'birthdate_label'.tr,
-                            style: TextStyle(
-                              color: controller.selectedBirthDate.value != null
-                                  ? AppColors.textPrimary
-                                  : AppColors.textSecondary,
-                              fontSize: 16,
-                            ),
-                          ),
-                          const Spacer(),
-                          Icon(
-                            Icons.arrow_drop_down,
-                            color: AppColors.textSecondary,
-                          ),
-                        ],
-                      ),
+              // ── Validation hint ──
+              Obx(() {
+                if (controller.isProfileValid) {
+                  return _ValidationSuccess();
+                }
+                return const SizedBox.shrink();
+              }),
+
+              // ── Complete button ──
+              Obx(
+                () => OnboardingButton(
+                  text: 'complete_btn'.tr,
+                  onTap: controller.isProfileValid
+                      ? controller.completeOnboarding
+                      : () {},
+                  color: controller.isProfileValid
+                      ? AppColors.success
+                      : AppColors.textSecondary.withValues(alpha: 0.35),
+                  icon: controller.isProfileValid
+                      ? Icons.check_circle_rounded
+                      : Icons.person_outline,
+                  isLoading: controller.isLoading.value,
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // ── Skip ──
+              Center(
+                child: TextButton(
+                  onPressed: controller.completeOnboarding,
+                  child: Text(
+                    'skip_btn'.tr,
+                    style: AppFonts.bodySmall.copyWith(
+                      color: AppColors.textSecondary,
+                      decoration: TextDecoration.underline,
                     ),
                   ),
                 ),
               ),
-            ),
+              const SizedBox(height: 60),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 
-            const SizedBox(height: 40),
+  Future<void> _showDatePicker(BuildContext context) async {
+    final initialDate = controller.selectedBirthDate.value ?? DateTime(2000);
+    DateTime tempDate = initialDate;
 
-            // Complete button
-            _buildCompleteButton(isArabic),
+    await showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) {
+        return _DatePickerSheet(
+          initialDate: initialDate,
+          onDateChanged: (d) => tempDate = d,
+          onConfirm: () {
+            controller.setBirthDate(tempDate);
+            Get.back();
+          },
+        );
+      },
+    );
+  }
+}
 
-            const SizedBox(height: 16),
+// ─────────────────────────────────────────────
+// Section label
+// ─────────────────────────────────────────────
+class _SectionLabel extends StatelessWidget {
+  final String label;
+  const _SectionLabel({required this.label});
 
-            // Skip
-            Center(
-              child: TextButton(
-                onPressed: () {
-                  HapticFeedback.lightImpact();
-                  controller.completeOnboarding();
-                },
-                child: Text(
-                  'skip_btn'.tr,
-                  style: TextStyle(color: AppColors.textSecondary),
-                ),
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      label,
+      style: AppFonts.bodyMedium.copyWith(
+        fontWeight: FontWeight.w700,
+        color: AppColors.textPrimary,
+        fontSize: 14,
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+// Gender card
+// ─────────────────────────────────────────────
+class _GenderCard extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final String? selectedValue;
+  final VoidCallback onTap;
+  final Color color;
+
+  const _GenderCard({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.selectedValue,
+    required this.onTap,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isSelected = selectedValue == value;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
+        padding: const EdgeInsets.symmetric(vertical: 18),
+        decoration: BoxDecoration(
+          color: isSelected ? color : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected ? color : color.withValues(alpha: 0.25),
+            width: isSelected ? 2 : 1,
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: color.withValues(alpha: 0.28),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ]
+              : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: isSelected ? Colors.white : color, size: 32),
+            const SizedBox(height: 6),
+            Text(
+              label,
+              style: AppFonts.bodyMedium.copyWith(
+                color: isSelected ? Colors.white : AppColors.textPrimary,
+                fontWeight: FontWeight.w700,
               ),
             ),
-
-            const SizedBox(height: 40),
           ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildInputSection({required String label, required Widget child}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textSecondary,
+// ─────────────────────────────────────────────
+// Date picker card
+// ─────────────────────────────────────────────
+class _DatePickerCard extends StatelessWidget {
+  final DateTime? selectedDate;
+  final VoidCallback onTap;
+
+  const _DatePickerCard({required this.selectedDate, required this.onTap});
+
+  String _format(DateTime d) =>
+      '${d.day.toString().padLeft(2, '0')} / ${d.month.toString().padLeft(2, '0')} / ${d.year}';
+
+  @override
+  Widget build(BuildContext context) {
+    final hasDate = selectedDate != null;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        decoration: BoxDecoration(
+          color: hasDate
+              ? AppColors.primary.withValues(alpha: 0.06)
+              : Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: hasDate
+                ? AppColors.primary.withValues(alpha: 0.4)
+                : AppColors.textSecondary.withValues(alpha: 0.2),
+            width: hasDate ? 1.5 : 1,
           ),
         ),
-        const SizedBox(height: 8),
-        child,
-      ],
+        child: Row(
+          children: [
+            Icon(
+              Icons.calendar_today_rounded,
+              color: hasDate ? AppColors.primary : AppColors.textSecondary,
+              size: 20,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              hasDate ? _format(selectedDate!) : 'select_birthdate'.tr,
+              style: AppFonts.bodyLarge.copyWith(
+                color: hasDate
+                    ? AppColors.textPrimary
+                    : AppColors.textSecondary,
+                fontWeight: hasDate ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+            const Spacer(),
+            Icon(
+              Icons.keyboard_arrow_down_rounded,
+              color: AppColors.textSecondary,
+              size: 22,
+            ),
+          ],
+        ),
+      ),
     );
   }
+}
 
-  Widget _buildGenderOption({
-    required IconData icon,
-    required String label,
-    required String value,
-    required bool isSelected,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () {
-          HapticFeedback.selectionClick();
-          controller.setGender(value);
-        },
-        borderRadius: BorderRadius.circular(14),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          decoration: BoxDecoration(
-            color: isSelected ? AppColors.primary : AppColors.white,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: isSelected
-                  ? AppColors.primary
-                  : AppColors.textSecondary.withValues(alpha: 0.2),
-              width: isSelected ? 2 : 1,
+// ─────────────────────────────────────────────
+// Validation success banner
+// ─────────────────────────────────────────────
+class _ValidationSuccess extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.success.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.check_circle_rounded, color: AppColors.success, size: 18),
+          const SizedBox(width: 8),
+          Text(
+            'profile_ready'.tr,
+            style: AppFonts.bodySmall.copyWith(
+              color: AppColors.success,
+              fontWeight: FontWeight.w600,
             ),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.3),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ]
-                : null,
           ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+// Date picker bottom sheet
+// ─────────────────────────────────────────────
+class _DatePickerSheet extends StatelessWidget {
+  final DateTime initialDate;
+  final ValueChanged<DateTime> onDateChanged;
+  final VoidCallback onConfirm;
+
+  const _DatePickerSheet({
+    required this.initialDate,
+    required this.onDateChanged,
+    required this.onConfirm,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Handle
+        Container(
+          margin: const EdgeInsets.only(top: 12, bottom: 4),
+          width: 40,
+          height: 4,
+          decoration: BoxDecoration(
+            color: Colors.grey.shade300,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        // Header
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(
-                icon,
-                color: isSelected ? AppColors.white : AppColors.textSecondary,
+              TextButton(
+                onPressed: Get.back,
+                child: Text(
+                  'cancel'.tr,
+                  style: TextStyle(color: AppColors.textSecondary),
+                ),
               ),
-              const SizedBox(width: 8),
               Text(
-                label,
-                style: TextStyle(
-                  color: isSelected ? AppColors.white : AppColors.textPrimary,
-                  fontWeight: FontWeight.w600,
+                'select_date'.tr,
+                style: AppFonts.titleMedium.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              TextButton(
+                onPressed: onConfirm,
+                child: Text(
+                  'confirm'.tr,
+                  style: TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Future<void> _showDatePicker(BuildContext context) async {
-    final now = DateTime.now();
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: controller.selectedBirthDate.value ?? DateTime(2000),
-      firstDate: DateTime(1920),
-      lastDate: DateTime(now.year - 7), // Minimum 7 years old
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: AppColors.primary,
-              onPrimary: Colors.white,
-              surface: AppColors.white,
-              onSurface: AppColors.textPrimary,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (picked != null) {
-      controller.setBirthDate(picked);
-    }
-  }
-
-  String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
-  }
-
-  Widget _buildCompleteButton(bool isArabic) {
-    return Obx(() {
-      final isValid = controller.nameController.text.isNotEmpty;
-
-      return Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: isValid
-              ? () {
-                  HapticFeedback.mediumImpact();
-                  controller.completeOnboarding();
-                }
-              : null,
-          borderRadius: BorderRadius.circular(16),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 18),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: isValid
-                    ? [
-                        AppColors.success,
-                        AppColors.success.withValues(alpha: 0.8),
-                      ]
-                    : [
-                        AppColors.textSecondary.withValues(alpha: 0.3),
-                        AppColors.textSecondary.withValues(alpha: 0.2),
-                      ],
-              ),
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: isValid
-                  ? [
-                      BoxShadow(
-                        color: AppColors.success.withValues(alpha: 0.3),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
-                      ),
-                    ]
-                  : null,
-            ),
-            child: Center(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    isValid ? Icons.check_circle : Icons.person_outline,
-                    color: AppColors.white,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'complete_btn'.tr,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.white,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+        const Divider(height: 1),
+        SizedBox(
+          height: 220,
+          child: CupertinoDatePicker(
+            mode: CupertinoDatePickerMode.date,
+            initialDateTime: initialDate,
+            minimumDate: DateTime(1920),
+            maximumDate: DateTime.now().subtract(const Duration(days: 365 * 5)),
+            onDateTimeChanged: onDateChanged,
           ),
         ),
-      );
-    });
+        const SizedBox(height: 16),
+      ],
+    );
   }
 }

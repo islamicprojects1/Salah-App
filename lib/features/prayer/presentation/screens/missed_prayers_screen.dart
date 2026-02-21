@@ -40,7 +40,7 @@ class MissedPrayersScreen extends GetView<MissedPrayersController> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Lottie.asset(
-                  'assets/animations/success.json',
+                  'assets/animations/Success.json',
                   width: 200,
                   height: 200,
                   repeat: false,

@@ -1,138 +1,160 @@
-/// Storage keys used for persisting app settings with GetStorage
-/// 
-/// These constants ensure consistency when reading/writing to local storage
+/// Storage keys for GetStorage local persistence.
+///
+/// Single source of truth — always read/write through these constants
+/// to avoid typos and key collisions across the codebase.
 class StorageKeys {
-  StorageKeys._();
-  
+  const StorageKeys._();
+
   // ============================================================
   // APP SETTINGS
   // ============================================================
-  
-  /// Key for storing the selected language code (e.g., 'ar', 'en')
+
+  /// Selected language code ('ar' | 'en')
   static const String language = 'language';
-  
-  /// Key for storing the selected theme mode ('system', 'light', 'dark')
+
+  /// Selected theme mode ('system' | 'light' | 'dark')
   static const String themeMode = 'theme_mode';
-  
-  /// Key for checking if this is the user's first time opening the app
+
+  /// True on first app launch
   static const String isFirstTime = 'is_first_time';
-  
-  /// Key for checking if onboarding is completed
+
+  /// True once onboarding is finished
   static const String onboardingCompleted = 'onboarding_completed';
 
   // ============================================================
-  // PRAYER TIMES
+  // PRAYER TIMES CACHE
   // ============================================================
-  
-  /// Key for storing the last known prayer times fetch timestamp
+
+  /// Unix timestamp (ms) of the last successful prayer-times fetch
   static const String lastPrayerTimesFetch = 'last_prayer_times_fetch';
-  
-  /// Key for storing cached prayer times
+
+  /// JSON-encoded cached prayer times
   static const String cachedPrayerTimes = 'cached_prayer_times';
 
   // ============================================================
   // LOCATION
   // ============================================================
-  
-  /// Key for storing user's location latitude
+
   static const String latitude = 'latitude';
-  
-  /// Key for storing user's location longitude
   static const String longitude = 'longitude';
-  
-  /// Key for storing user's city name
   static const String cityName = 'city_name';
 
   // ============================================================
-  // NOTIFICATIONS
+  // NOTIFICATIONS — MASTER TOGGLES
   // ============================================================
-  
-  /// Key for storing notification preferences
+
+  /// Master switch for all notifications
   static const String notificationsEnabled = 'notifications_enabled';
 
-  /// Key for storing if all adhan notifications are enabled
+  /// Toggle for all adhan-type notifications
   static const String adhanNotificationsEnabled = 'adhan_notifications_enabled';
-  
-  /// Key for storing Fajr notification preference
+
+  // ============================================================
+  // NOTIFICATIONS — PER PRAYER
+  // ============================================================
+
   static const String fajrNotification = 'fajr_notification';
-  
-  /// Key for storing Dhuhr notification preference
   static const String dhuhrNotification = 'dhuhr_notification';
-  
-  /// Key for storing Asr notification preference
   static const String asrNotification = 'asr_notification';
-  
-  /// Key for storing Maghrib notification preference
   static const String maghribNotification = 'maghrib_notification';
-  
-  /// Key for storing Isha notification preference
   static const String ishaNotification = 'isha_notification';
-  
-  /// Key for reminder notification preference
+
+  // ============================================================
+  // NOTIFICATIONS — BEHAVIOUR
+  // ============================================================
+
+  /// Post-adhan reminder notification toggle
   static const String reminderNotification = 'reminder_notification';
-  
-  /// Key for family notification preference
+
+  /// Family/social activity notifications toggle
   static const String familyNotification = 'family_notification';
-  
-  /// Key for notification sound mode ('adhan', 'vibrate', 'silent')
+
+  /// Sound mode ('adhan' | 'vibrate' | 'silent')
   static const String notificationSoundMode = 'notification_sound_mode';
 
-  /// Once we've shown the "enable notifications in app settings" hint, don't repeat
-  static const String notificationPermissionHintShown = 'notification_permission_hint_shown';
+  /// Minutes before prayer for approaching alert (5 | 10 | 15 | 20 | 30)
+  static const String approachingAlertMinutes = 'approaching_alert_minutes';
 
-  /// Last date (YYYY-MM-DD) we showed the qada hint so we show at most once per day
+  /// Whether the approaching alert is active
+  static const String approachingAlertEnabled = 'approaching_alert_enabled';
+
+  /// Short takbeer at prayer time (not full adhan)
+  static const String takbeerAtPrayerEnabled = 'takbeer_at_prayer_enabled';
+
+  /// True once we have shown the "open app settings" notification hint
+  static const String notificationPermissionHintShown =
+      'notification_permission_hint_shown';
+
+  /// Last date (yyyy-MM-dd) the qada hint was displayed (max once per day)
   static const String lastQadaHintDate = 'last_qada_hint_date';
 
   // ============================================================
-  // PENDING ACTIONS (for notification quick actions)
+  // PENDING QUICK-ACTIONS (from notification taps)
   // ============================================================
-  
-  /// Key for storing pending prayer log from notification
+
+  /// JSON-encoded pending prayer log triggered by a notification action
   static const String pendingPrayerLog = 'pending_prayer_log';
-  
-  /// Key for storing pending missed prayer from notification
+
+  /// JSON-encoded pending missed prayer from a notification action
   static const String pendingMissedPrayer = 'pending_missed_prayer';
-  
-  /// Key for storing pending will pray action
+
+  /// JSON-encoded "will pray now" action from a notification
   static const String pendingWillPray = 'pending_will_pray';
 
   // ============================================================
   // OFFLINE SYNC
   // ============================================================
-  
-  /// Key for storing offline sync queue
+
+  /// JSON-encoded list of queued sync operations
   static const String offlineSyncQueue = 'offline_sync_queue';
-  
-  /// Key for storing last sync timestamp
+
+  /// Unix timestamp (ms) of the last successful sync
   static const String lastSyncTimestamp = 'last_sync_timestamp';
-  
-  /// Key for storing offline prayer logs
+
+  /// JSON-encoded list of prayer logs recorded while offline
   static const String offlinePrayerLogs = 'offline_prayer_logs';
 
   // ============================================================
-  // USER PATTERNS (for smart notifications)
+  // USER PATTERNS (smart reminder ML data)
   // ============================================================
-  
-  /// Key prefix for storing user prayer patterns
+
+  /// Prefix — append prayer name: e.g. 'user_pattern_fajr'
   static const String userPatternPrefix = 'user_pattern_';
-  
-  /// Key for storing last logged prayers
+
+  /// JSON-encoded list of the most recently logged prayers
   static const String lastLoggedPrayers = 'last_logged_prayers';
 
   // ============================================================
   // USER DATA CACHE
   // ============================================================
-  
-  /// Key for storing cached user data
-  static const String cachedUserData = 'cached_user_data';
-  
-  /// Key for storing cached family data
-  static const String cachedFamilyData = 'cached_family_data';
-  
-  /// Key for storing user's current streak
-  static const String currentStreak = 'current_streak';
-  
-  /// Key for storing today's logged prayers
-  static const String todayLoggedPrayers = 'today_logged_prayers';
-}
 
+  /// JSON-encoded cached UserModel
+  static const String cachedUserData = 'cached_user_data';
+
+  /// JSON-encoded cached family/group data
+  static const String cachedFamilyData = 'cached_family_data';
+
+  /// Current prayer streak count
+  static const String currentStreak = 'current_streak';
+
+  /// JSON-encoded list of today's logged prayer names
+  static const String todayLoggedPrayers = 'today_logged_prayers';
+
+  // ============================================================
+  // HELPERS
+  // ============================================================
+
+  /// Builds the user-pattern key for a specific prayer name.
+  /// e.g. `StorageKeys.userPatternKey('fajr')` → `'user_pattern_fajr'`
+  static String userPatternKey(String prayerName) =>
+      '$userPatternPrefix$prayerName';
+
+  /// All per-prayer notification keys, indexed by prayer name (lowercase).
+  static const Map<String, String> prayerNotificationKeys = {
+    'fajr': fajrNotification,
+    'dhuhr': dhuhrNotification,
+    'asr': asrNotification,
+    'maghrib': maghribNotification,
+    'isha': ishaNotification,
+  };
+}

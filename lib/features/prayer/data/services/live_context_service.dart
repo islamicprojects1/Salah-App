@@ -173,12 +173,12 @@ class LiveContextService extends GetxService {
     final log = todayLogs.firstWhereOrNull((l) => l.prayer == currentName);
 
     // Determine prayer time window using PrayerTimeRange helper
-    final prayerTimes = _prayerTimeService.prayerTimes.value;
+    final todayPrayers = _prayerTimeService.getTodayPrayers();
     PrayerTimeRange? range;
-    if (prayerTimes != null) {
+    if (todayPrayers.isNotEmpty) {
       final nonNullPrayer = currentName ?? PrayerName.fajr;
-      range = PrayerTimeRange.fromPrayerTimes(
-        prayerTimes: prayerTimes,
+      range = PrayerTimeRange.fromPrayerModels(
+        prayers: todayPrayers,
         prayer: nonNullPrayer,
       );
     }

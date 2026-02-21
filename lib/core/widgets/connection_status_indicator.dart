@@ -3,52 +3,80 @@ import 'package:get/get.dart';
 import 'package:salah/core/di/injection_container.dart';
 import 'package:salah/core/services/sync_service.dart';
 import 'package:salah/core/theme/app_colors.dart';
+import 'package:salah/core/theme/app_fonts.dart';
+import 'package:salah/core/constants/app_dimensions.dart';
 import 'package:salah/features/prayer/data/repositories/prayer_repository.dart';
 
-/// Connection status indicator – reactive via GetX Obx.
-/// Uses [SyncService] for sync state and [PrayerRepository.syncAllPending] for manual sync.
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// CONNECTION STATUS INDICATOR
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//
+// ✅ ضروري — شريط صغير يظهر في الداشبورد عند انقطاع الاتصال
+//            أو وجود سجلات صلاة لم تُرفَع بعد.
+//
+// يختفي تلقائياً عندما يكون الجهاز متصلاً ولا يوجد شيء معلّق.
+// عند الضغط عليه → bottom sheet يشرح الحالة ويتيح المزامنة اليدوية.
+//
+// يقرأ من [SyncService] فقط — لا يتعامل مع Firestore مباشرة.
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 class ConnectionStatusIndicator extends StatelessWidget {
   const ConnectionStatusIndicator({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final syncService = sl<SyncService>();
-    return Obx(() {
-      final isOnline = syncService.isOnlineObs.value;
-      final pendingCount = syncService.state.pendingCount.value;
-      final isSyncing = syncService.state.isSyncing.value;
+    final sync = sl<SyncService>();
 
-      if (isOnline && pendingCount == 0) {
-        return const SizedBox.shrink();
-      }
+    return Obx(() {
+      final isOnline = sync.isOnlineObs.value;
+      final pending = sync.state.pendingCount.value;
+      final isSyncing = sync.state.isSyncing.value;
+
+      // لا نعرض شيئاً إذا كل شيء طبيعي
+      if (isOnline && pending == 0) return const SizedBox.shrink();
+
+      final bgColor = _bgColor(isOnline, isSyncing, pending);
+      final borderColor = _borderColor(isOnline, isSyncing, pending);
 
       return AnimatedContainer(
         duration: const Duration(milliseconds: 300),
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        margin: const EdgeInsets.symmetric(
+          horizontal: AppDimensions.paddingMD,
+          vertical: AppDimensions.paddingSM,
+        ),
         child: Material(
           color: AppColors.transparent,
+          borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
           child: InkWell(
-            onTap: () => _showSyncDetails(context, syncService),
-            borderRadius: BorderRadius.circular(12),
+            onTap: () => _showDetails(context, sync),
+            borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppDimensions.paddingMD,
+                vertical: AppDimensions.paddingSM,
+              ),
               decoration: BoxDecoration(
-                color: _getBackgroundColor(isOnline, isSyncing, pendingCount),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: _getBorderColor(isOnline, isSyncing, pendingCount),
-                  width: 1,
-                ),
+                color: bgColor,
+                borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
+                border: Border.all(color: borderColor),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _buildIcon(isOnline, isSyncing, pendingCount),
-                  const SizedBox(width: 10),
-                  _buildText(isOnline, isSyncing, pendingCount),
+                  _StatusIcon(
+                    isOnline: isOnline,
+                    isSyncing: isSyncing,
+                    pending: pending,
+                  ),
+                  const SizedBox(width: 8),
+                  _StatusLabel(
+                    isOnline: isOnline,
+                    isSyncing: isSyncing,
+                    pending: pending,
+                  ),
                   if (isSyncing) ...[
-                    const SizedBox(width: 12),
-                    _buildProgressIndicator(syncService.syncProgress.value),
+                    const SizedBox(width: 10),
+                    _ProgressBar(progress: sync.syncProgress.value),
                   ],
                 ],
               ),
@@ -59,11 +87,70 @@ class ConnectionStatusIndicator extends StatelessWidget {
     });
   }
 
-  Widget _buildIcon(bool isOnline, bool isSyncing, int pendingCount) {
+  // ── Bottom Sheet ────────────────────────────────────────────
+
+  void _showDetails(BuildContext context, SyncService sync) {
+    final isOnline = sync.isOnlineObs.value;
+    final pending = sync.state.pendingCount.value;
+    final isSyncing = sync.state.isSyncing.value;
+    final lastSync = sync.state.lastSyncTime.value;
+
+    Get.bottomSheet(
+      _SyncDetailsSheet(
+        isOnline: isOnline,
+        pending: pending,
+        isSyncing: isSyncing,
+        lastSync: lastSync,
+        bgColor: _bgColor(isOnline, isSyncing, pending),
+      ),
+      isScrollControlled: true,
+    );
+  }
+
+  // ── Color Helpers ───────────────────────────────────────────
+
+  static Color _bgColor(bool online, bool syncing, int pending) {
+    if (!online) return AppColors.warning.withValues(alpha: 0.1);
+    if (syncing) return AppColors.primary.withValues(alpha: 0.1);
+    if (pending > 0) return AppColors.info.withValues(alpha: 0.1);
+    return AppColors.success.withValues(alpha: 0.1);
+  }
+
+  static Color _borderColor(bool online, bool syncing, int pending) {
+    if (!online) return AppColors.warning.withValues(alpha: 0.3);
+    if (syncing) return AppColors.primary.withValues(alpha: 0.3);
+    if (pending > 0) return AppColors.info.withValues(alpha: 0.3);
+    return AppColors.success.withValues(alpha: 0.3);
+  }
+
+  static Color _accentColor(bool online, bool syncing, int pending) {
+    if (!online) return AppColors.warning;
+    if (syncing) return AppColors.primary;
+    if (pending > 0) return AppColors.info;
+    return AppColors.success;
+  }
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// SUB-WIDGETS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+class _StatusIcon extends StatelessWidget {
+  final bool isOnline, isSyncing;
+  final int pending;
+
+  const _StatusIcon({
+    required this.isOnline,
+    required this.isSyncing,
+    required this.pending,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     if (isSyncing) {
       return SizedBox(
-        width: 18,
-        height: 18,
+        width: 16,
+        height: 16,
         child: CircularProgressIndicator(
           strokeWidth: 2,
           valueColor: AlwaysStoppedAnimation(AppColors.primary),
@@ -71,160 +158,185 @@ class ConnectionStatusIndicator extends StatelessWidget {
       );
     }
     if (!isOnline) {
-      return Icon(Icons.cloud_off_rounded, color: AppColors.warning, size: 20);
+      return Icon(Icons.cloud_off_rounded, color: AppColors.warning, size: 18);
     }
-    if (pendingCount > 0) {
-      return Icon(Icons.sync_rounded, color: AppColors.info, size: 20);
+    if (pending > 0) {
+      return Icon(Icons.sync_rounded, color: AppColors.info, size: 18);
     }
-    return Icon(Icons.cloud_done_rounded, color: AppColors.success, size: 20);
+    return Icon(Icons.cloud_done_rounded, color: AppColors.success, size: 18);
   }
+}
 
-  Widget _buildText(bool isOnline, bool isSyncing, int pendingCount) {
-    String text;
-    Color color;
+class _StatusLabel extends StatelessWidget {
+  final bool isOnline, isSyncing;
+  final int pending;
+
+  const _StatusLabel({
+    required this.isOnline,
+    required this.isSyncing,
+    required this.pending,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final String text;
+    final Color color;
+
     if (isSyncing) {
       text = 'syncing'.tr;
       color = AppColors.primary;
     } else if (!isOnline) {
       text = 'offline'.tr;
       color = AppColors.warning;
-    } else if (pendingCount > 0) {
-      text = 'pending_items'.trParams({'count': '$pendingCount'});
+    } else if (pending > 0) {
+      text = 'pending_items'.trParams({'count': '$pending'});
       color = AppColors.info;
     } else {
       text = 'synced'.tr;
       color = AppColors.success;
     }
+
     return Text(
       text,
-      style: TextStyle(color: color, fontWeight: FontWeight.w600, fontSize: 13),
+      style: AppFonts.labelMedium
+          .withColor(color)
+          .copyWith(fontWeight: FontWeight.w600),
     );
   }
+}
 
-  Widget _buildProgressIndicator(double progress) {
-    return Container(
+class _ProgressBar extends StatelessWidget {
+  final double progress;
+
+  const _ProgressBar({required this.progress});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
       width: 40,
       height: 4,
-      decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.2),
+      child: ClipRRect(
         borderRadius: BorderRadius.circular(2),
-      ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          return Align(
-            alignment: Alignment.centerLeft,
-            child: Container(
-              width: constraints.maxWidth * progress.clamp(0.0, 1.0),
-              decoration: BoxDecoration(
-                color: AppColors.primary,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          );
-        },
+        child: LinearProgressIndicator(
+          value: progress.clamp(0.0, 1.0),
+          backgroundColor: AppColors.primary.withValues(alpha: 0.2),
+          valueColor: AlwaysStoppedAnimation(AppColors.primary),
+        ),
       ),
     );
   }
+}
 
-  Color _getBackgroundColor(bool isOnline, bool isSyncing, int pendingCount) {
-    if (!isOnline) return AppColors.warning.withValues(alpha: 0.1);
-    if (isSyncing) return AppColors.primary.withValues(alpha: 0.1);
-    if (pendingCount > 0) return AppColors.info.withValues(alpha: 0.1);
-    return AppColors.success.withValues(alpha: 0.1);
-  }
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// SYNC DETAILS BOTTOM SHEET
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  Color _getBorderColor(bool isOnline, bool isSyncing, int pendingCount) {
-    if (!isOnline) return AppColors.warning.withValues(alpha: 0.3);
-    if (isSyncing) return AppColors.primary.withValues(alpha: 0.3);
-    if (pendingCount > 0) return AppColors.info.withValues(alpha: 0.3);
-    return AppColors.success.withValues(alpha: 0.3);
-  }
+class _SyncDetailsSheet extends StatelessWidget {
+  final bool isOnline, isSyncing;
+  final int pending;
+  final DateTime? lastSync;
+  final Color bgColor;
 
-  void _showSyncDetails(BuildContext context, SyncService service) {
-    final isOnline = service.isOnlineObs.value;
-    final pendingCount = service.state.pendingCount.value;
-    final isSyncing = service.state.isSyncing.value;
-    final lastSync = service.state.lastSyncTime.value;
+  const _SyncDetailsSheet({
+    required this.isOnline,
+    required this.isSyncing,
+    required this.pending,
+    required this.lastSync,
+    required this.bgColor,
+  });
 
-    Get.bottomSheet(
-      Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppDimensions.paddingXL),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(AppDimensions.radiusXL),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.divider,
-                borderRadius: BorderRadius.circular(2),
-              ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Drag handle
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.divider,
+              borderRadius: BorderRadius.circular(2),
             ),
-            const SizedBox(height: 24),
-            Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                color: _getBackgroundColor(isOnline, isSyncing, pendingCount),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                isOnline ? Icons.cloud_done_rounded : Icons.cloud_off_rounded,
-                color: isOnline ? AppColors.success : AppColors.warning,
-                size: 32,
-              ),
+          ),
+          const SizedBox(height: AppDimensions.paddingXL),
+
+          // Icon circle
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(color: bgColor, shape: BoxShape.circle),
+            child: Icon(
+              isOnline ? Icons.cloud_done_rounded : Icons.cloud_off_rounded,
+              color: isOnline ? AppColors.success : AppColors.warning,
+              size: 32,
             ),
-            const SizedBox(height: 16),
+          ),
+          const SizedBox(height: AppDimensions.paddingMD),
+
+          // Status title
+          Text(
+            isOnline ? 'online'.tr : 'offline'.tr,
+            style: AppFonts.titleLarge
+                .withColor(AppColors.textPrimary)
+                .copyWith(fontWeight: FontWeight.bold),
+          ),
+
+          if (pending > 0) ...[
+            const SizedBox(height: AppDimensions.paddingSM),
             Text(
-              isOnline ? 'online'.tr : 'offline'.tr,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
+              'pending_sync_desc'.trParams({'count': '$pending'}),
+              style: AppFonts.bodyMedium.withColor(AppColors.textSecondary),
+              textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
-            if (pendingCount > 0) ...[
-              Text(
-                'pending_sync_desc'.trParams({'count': '$pendingCount'}),
-                style: TextStyle(color: AppColors.textSecondary),
-              ),
-              const SizedBox(height: 16),
-            ],
-            if (lastSync != null) ...[
-              Text(
-                'last_sync'.trParams({'time': _formatTime(lastSync)}),
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
-              ),
-              const SizedBox(height: 16),
-            ],
-            if (isOnline && pendingCount > 0 && !isSyncing)
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Get.back();
-                    sl<PrayerRepository>().syncAllPending();
-                  },
-                  icon: const Icon(Icons.sync_rounded),
-                  label: Text('sync_now'.tr),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: AppColors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+          ],
+
+          if (lastSync != null) ...[
+            const SizedBox(height: AppDimensions.paddingSM),
+            Text(
+              'last_sync'.trParams({'time': _formatTime(lastSync!)}),
+              style: AppFonts.bodySmall.withColor(AppColors.textSecondary),
+            ),
+          ],
+
+          // Sync now button
+          if (isOnline && pending > 0 && !isSyncing) ...[
+            const SizedBox(height: AppDimensions.paddingXL),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Get.back();
+                  sl<PrayerRepository>().syncAllPending();
+                },
+                icon: const Icon(Icons.sync_rounded),
+                label: Text('sync_now'.tr),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: AppColors.white,
+                  padding: const EdgeInsets.symmetric(
+                    vertical: AppDimensions.paddingMD,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
                   ),
                 ),
               ),
-            const SizedBox(height: 16),
+            ),
           ],
-        ),
+
+          SizedBox(
+            height: Get.mediaQuery.padding.bottom + AppDimensions.paddingMD,
+          ),
+        ],
       ),
     );
   }

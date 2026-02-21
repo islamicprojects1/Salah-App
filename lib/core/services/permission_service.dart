@@ -1,143 +1,153 @@
 import 'package:get/get.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-/// Service for managing app permissions
-class PermissionService extends GetxService {
-  // ============================================================
-  // OBSERVABLE STATE
-  // ============================================================
-  
-  final locationPermissionStatus = PermissionStatus.denied.obs;
-  final notificationPermissionStatus = PermissionStatus.denied.obs;
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// PERMISSION SERVICE
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//
+// ✅ ضروري — نقطة مركزية لطلب وتتبّع صلاحيات التطبيق.
+//
+// الصلاحيات المُدارة:
+//   • الموقع       → لحساب مواقيت الصلاة واتجاه القبلة
+//   • الإشعارات    → لإرسال تنبيهات الصلاة
+//   • الإنذار الدقيق (Android 12+) → لجدولة إشعارات الصلاة بدقة
+//
+// يُستخدَم في:
+//   • OnboardingController  — طلب الصلاحيات في أول تشغيل
+//   • SettingsController    — إعادة الطلب من الإعدادات
+//   • LocationService       — قبل جلب الموقع
+//
+// الاستخدام:
+//   final granted = await PermissionService.to.requestLocationPermission();
+//   PermissionService.to.isNotificationGranted
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  // ============================================================
+class PermissionService extends GetxService {
+  static PermissionService get to => Get.find();
+
+  // ══════════════════════════════════════════════════════════════
+  // OBSERVABLE STATE
+  // ══════════════════════════════════════════════════════════════
+
+  final locationStatus = PermissionStatus.denied.obs;
+  final notificationStatus = PermissionStatus.denied.obs;
+
+  // ══════════════════════════════════════════════════════════════
   // INITIALIZATION
-  // ============================================================
-  
-  /// Initialize the service
+  // ══════════════════════════════════════════════════════════════
+
   Future<PermissionService> init() async {
     await checkAllPermissions();
     return this;
   }
 
-  /// Check all permissions status
+  /// فحص حالة جميع الصلاحيات دون طلبها
   Future<void> checkAllPermissions() async {
-    locationPermissionStatus.value = await Permission.location.status;
-    notificationPermissionStatus.value = await Permission.notification.status;
+    locationStatus.value = await Permission.location.status;
+    notificationStatus.value = await Permission.notification.status;
   }
 
-  // ============================================================
-  // LOCATION PERMISSION
-  // ============================================================
-  
-  /// Check if location permission is granted
-  bool get isLocationGranted => 
-      locationPermissionStatus.value.isGranted;
-  
-  /// Check if location permission is permanently denied
-  bool get isLocationPermanentlyDenied => 
-      locationPermissionStatus.value.isPermanentlyDenied;
+  // ══════════════════════════════════════════════════════════════
+  // LOCATION
+  // ══════════════════════════════════════════════════════════════
 
-  /// Request location permission
+  bool get isLocationGranted => locationStatus.value.isGranted;
+  bool get isLocationPermanentlyDenied =>
+      locationStatus.value.isPermanentlyDenied;
+
+  /// طلب صلاحية الموقع.
+  /// إذا كانت مرفوضة نهائياً → يفتح إعدادات التطبيق.
+  /// يرجع true إذا مُنحت.
   Future<bool> requestLocationPermission() async {
-    // Check current status
-    final status = await Permission.location.status;
-    
-    if (status.isGranted) {
-      locationPermissionStatus.value = status;
+    final current = await Permission.location.status;
+
+    if (current.isGranted) {
+      locationStatus.value = current;
       return true;
     }
-    
-    if (status.isPermanentlyDenied) {
-      // Open app settings
+
+    if (current.isPermanentlyDenied) {
       await openAppSettings();
-      return false;
+      // نعيد فحص الحالة بعد عودة المستخدم من الإعدادات
+      locationStatus.value = await Permission.location.status;
+      return locationStatus.value.isGranted;
     }
-    
-    // Request permission
+
     final result = await Permission.location.request();
-    locationPermissionStatus.value = result;
-    
+    locationStatus.value = result;
     return result.isGranted;
   }
 
-  /// Request precise location permission (for Qibla accuracy)
+  /// طلب صلاحية الموقع الدقيق (أفضل دقة للقبلة).
   Future<bool> requestPreciseLocationPermission() async {
-    final status = await Permission.locationWhenInUse.request();
-    locationPermissionStatus.value = status;
-    return status.isGranted;
-  }
-
-  // ============================================================
-  // NOTIFICATION PERMISSION
-  // ============================================================
-  
-  /// Check if notification permission is granted
-  bool get isNotificationGranted => 
-      notificationPermissionStatus.value.isGranted;
-  
-  /// Check if notification permission is permanently denied
-  bool get isNotificationPermanentlyDenied => 
-      notificationPermissionStatus.value.isPermanentlyDenied;
-
-  /// Request notification permission
-  Future<bool> requestNotificationPermission() async {
-    // Check current status
-    final status = await Permission.notification.status;
-    
-    if (status.isGranted) {
-      notificationPermissionStatus.value = status;
-      return true;
-    }
-    
-    if (status.isPermanentlyDenied) {
-      // Open app settings
-      await openAppSettings();
-      return false;
-    }
-    
-    // Request permission
-    final result = await Permission.notification.request();
-    notificationPermissionStatus.value = result;
-    
+    final result = await Permission.locationWhenInUse.request();
+    locationStatus.value = result;
     return result.isGranted;
   }
 
-  // ============================================================
-  // ALARM PERMISSION (for exact alarm scheduling)
-  // ============================================================
-  
-  /// Request schedule exact alarm permission (Android 12+)
-  Future<bool> requestExactAlarmPermission() async {
-    final status = await Permission.scheduleExactAlarm.status;
-    
-    if (status.isGranted) {
+  // ══════════════════════════════════════════════════════════════
+  // NOTIFICATIONS
+  // ══════════════════════════════════════════════════════════════
+
+  bool get isNotificationGranted => notificationStatus.value.isGranted;
+  bool get isNotificationPermanentlyDenied =>
+      notificationStatus.value.isPermanentlyDenied;
+
+  /// طلب صلاحية الإشعارات.
+  /// إذا كانت مرفوضة نهائياً → يفتح إعدادات التطبيق.
+  Future<bool> requestNotificationPermission() async {
+    final current = await Permission.notification.status;
+
+    if (current.isGranted) {
+      notificationStatus.value = current;
       return true;
     }
-    
+
+    if (current.isPermanentlyDenied) {
+      await openAppSettings();
+      notificationStatus.value = await Permission.notification.status;
+      return notificationStatus.value.isGranted;
+    }
+
+    final result = await Permission.notification.request();
+    notificationStatus.value = result;
+    return result.isGranted;
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // EXACT ALARM (Android 12+)
+  // ══════════════════════════════════════════════════════════════
+
+  /// صلاحية الإنذار الدقيق — ضرورية لجدولة إشعارات الصلاة في Android 12+.
+  /// بدونها قد تتأخر الإشعارات أو لا تصل في الوقت المحدد.
+  Future<bool> requestExactAlarmPermission() async {
+    final current = await Permission.scheduleExactAlarm.status;
+    if (current.isGranted) return true;
+
     final result = await Permission.scheduleExactAlarm.request();
     return result.isGranted;
   }
 
-  // ============================================================
-  // HELPER METHODS
-  // ============================================================
-  
-  /// Open app settings
-  Future<void> openSettings() async {
-    await openAppSettings();
-  }
+  // ══════════════════════════════════════════════════════════════
+  // COMBINED
+  // ══════════════════════════════════════════════════════════════
 
-  /// Check if all required permissions are granted
-  bool get areAllPermissionsGranted => 
-      isLocationGranted && isNotificationGranted;
+  /// هل جميع الصلاحيات الأساسية مُمنوحة؟
+  bool get areAllGranted => isLocationGranted && isNotificationGranted;
 
-  /// Request all required permissions
+  /// طلب جميع الصلاحيات المطلوبة دفعة واحدة (للـ Onboarding).
+  /// يرجع true إذا مُنحت الموقع والإشعارات معاً.
   Future<bool> requestAllPermissions() async {
-    final locationGranted = await requestLocationPermission();
-    final notificationGranted = await requestNotificationPermission();
-    await requestExactAlarmPermission();
-    
-    return locationGranted && notificationGranted;
+    final location = await requestLocationPermission();
+    final notification = await requestNotificationPermission();
+    await requestExactAlarmPermission(); // لا نشترط نجاحها
+    return location && notification;
   }
+
+  // ══════════════════════════════════════════════════════════════
+  // HELPERS
+  // ══════════════════════════════════════════════════════════════
+
+  /// فتح إعدادات التطبيق (لو رفض المستخدم الصلاحية نهائياً)
+  Future<void> openSettings() => openAppSettings();
 }

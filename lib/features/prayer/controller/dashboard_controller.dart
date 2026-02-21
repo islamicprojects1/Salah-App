@@ -6,6 +6,7 @@ import 'package:salah/core/helpers/prayer_names.dart';
 import 'package:get/get.dart';
 import 'package:salah/core/constants/api_constants.dart';
 import 'package:salah/core/constants/storage_keys.dart';
+import 'package:salah/core/error/app_logger.dart';
 import 'package:salah/core/feedback/app_feedback.dart';
 import 'package:salah/core/services/storage_service.dart';
 import 'package:salah/core/di/injection_container.dart';
@@ -13,7 +14,6 @@ import 'package:salah/core/routes/app_routes.dart';
 import 'package:salah/core/services/location_service.dart';
 import 'package:salah/features/auth/data/repositories/user_repository.dart';
 import 'package:salah/features/auth/data/services/auth_service.dart';
-import 'package:salah/features/family/data/services/family_service.dart';
 import 'package:salah/features/prayer/data/models/prayer_log_model.dart';
 import 'package:salah/features/prayer/data/models/prayer_time_model.dart';
 import 'package:salah/features/prayer/data/repositories/prayer_repository.dart';
@@ -134,6 +134,18 @@ class DashboardController extends GetxController with WidgetsBindingObserver {
   /// Navigate to city selection (e.g. from location hint banner).
   void openSelectCity() => Get.toNamed(AppRoutes.selectCity);
 
+  /// Whether there are unlogged (qada) prayers to review.
+  RxList get unloggedPrayers => _qadaService.allPendingQada;
+
+  /// Open the qada review bottom sheet. If no unlogged prayers, show a message.
+  Future<void> openQadaReview() async {
+    if (_qadaService.allPendingQada.isEmpty) {
+      AppFeedback.showSnackbar('qada_hint_title'.tr, 'qada_none'.tr);
+      return;
+    }
+    await QadaReviewBottomSheet.show();
+  }
+
   /// If there are unlogged prayers, show hint at most once per day and offer to open qada review.
   Future<void> _maybeShowQadaHint() async {
     try {
@@ -156,7 +168,9 @@ class DashboardController extends GetxController with WidgetsBindingObserver {
           QadaReviewBottomSheet.show();
         },
       );
-    } catch (_) {}
+    } catch (e) {
+      AppLogger.debug('Qada hint failed', e);
+    }
   }
 
   /// If notifications are enabled in app but system permission is denied, show hint once.
@@ -187,7 +201,9 @@ class DashboardController extends GetxController with WidgetsBindingObserver {
           Get.back();
         },
       );
-    } catch (_) {}
+    } catch (e) {
+      AppLogger.debug('Notification permission hint failed', e);
+    }
   }
 
   Future<void> _initDashboard() async {
@@ -219,7 +235,8 @@ class DashboardController extends GetxController with WidgetsBindingObserver {
         _maybeShowNotificationPermissionHint();
         _maybeShowQadaHint();
       });
-    } catch (_) {
+    } catch (e) {
+      AppLogger.error('Dashboard init failed', e);
       AppFeedback.showError('error'.tr, 'dashboard_load_error'.tr);
       isLoading.value = false;
     }
@@ -258,8 +275,8 @@ class DashboardController extends GetxController with WidgetsBindingObserver {
         if ((counts[day] ?? 0) > 5) counts[day] = 5; // Cap at 5
       }
       dailyPrayerCounts.assignAll(counts);
-    } catch (_) {
-      // Silently fail — heatmap is non-critical
+    } catch (e) {
+      AppLogger.debug('Heatmap load failed (non-critical)', e);
     }
   }
 
@@ -301,25 +318,15 @@ class DashboardController extends GetxController with WidgetsBindingObserver {
       } else {
         AppFeedback.showSuccess('done'.tr, 'saved_will_sync_later'.tr);
       }
-    } catch (_) {}
+    } catch (e) {
+      AppLogger.error('Process pending prayer log from notification failed', e);
+    }
   }
 
   // _prayerKeyToName removed – use PrayerNames.fromKey() instead
 
   void _addPulseIfFamily(String prayerDisplayName) {
-    try {
-      final familyService = sl<FamilyService>();
-      final family = familyService.currentFamily.value;
-      final user = _authService.currentUser.value;
-      if (family == null || user == null) return;
-      familyService.addPulseEvent(
-        familyId: family.id,
-        type: 'prayer_logged',
-        userId: user.uid,
-        userName: user.displayName ?? 'me'.tr,
-        prayerName: prayerDisplayName,
-      );
-    } catch (_) {}
+    // Stub — FamilyService will be re-added when family feature is rebuilt
   }
 
   Future<void> _loadStreak() async {
@@ -398,7 +405,8 @@ class DashboardController extends GetxController with WidgetsBindingObserver {
           );
         }
       }
-    } catch (_) {
+    } catch (e) {
+      AppLogger.error('Notification schedule failed', e);
       AppFeedback.showError('error'.tr, 'notification_schedule_error'.tr);
     }
   }
@@ -642,7 +650,9 @@ class DashboardController extends GetxController with WidgetsBindingObserver {
         if (!synced) anyQueued = true;
         _addPulseIfFamily(prayer.name);
         logged++;
-      } catch (_) {}
+      } catch (e) {
+        AppLogger.debug('Batch log prayer failed for ${prayer.name}', e);
+      }
     }
     if (logged > 0) {
       _liveContextService.onPrayerLogged();

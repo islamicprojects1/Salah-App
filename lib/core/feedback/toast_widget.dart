@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:salah/core/constants/app_dimensions.dart';
 import 'package:salah/core/theme/app_colors.dart';
 
-/// Type of toast for styling and icon.
+/// Visual type of the toast — controls colour and icon.
 enum ToastType { success, error, warning, info }
 
-/// Modern, theme-aware toast content widget.
+/// Animated overlay toast widget.
 ///
-/// Used by [ToastService] as overlay content. Single source for all in-app toasts.
+/// Slides in from the top, fades in, and auto-dismisses after [duration].
+/// Tapping dismisses it immediately.
+///
+/// Created and managed exclusively by [ToastService].
 class ToastWidget extends StatefulWidget {
   const ToastWidget({
     super.key,
@@ -30,66 +33,51 @@ class ToastWidget extends StatefulWidget {
 
 class _ToastWidgetState extends State<ToastWidget>
     with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _fade;
-  late Animation<Offset> _slide;
+  late final AnimationController _ctrl;
+  late final Animation<double> _fade;
+  late final Animation<Offset> _slide;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
+    _ctrl = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
-    _fade = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
+    _fade = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
     _slide = Tween<Offset>(
       begin: const Offset(0, -1),
       end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
-    );
-    _controller.forward();
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
+    _ctrl.forward();
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _ctrl.dispose();
     super.dispose();
   }
 
-  Color _backgroundColor() {
-    switch (widget.type) {
-      case ToastType.success:
-        return AppColors.success;
-      case ToastType.error:
-        return AppColors.error;
-      case ToastType.warning:
-        return AppColors.warning;
-      case ToastType.info:
-        return AppColors.info;
-    }
-  }
+  Color get _bgColor => switch (widget.type) {
+    ToastType.success => AppColors.success,
+    ToastType.error => AppColors.error,
+    ToastType.warning => AppColors.warning,
+    ToastType.info => AppColors.info,
+  };
 
-  IconData _icon() {
-    switch (widget.type) {
-      case ToastType.success:
-        return Icons.check_circle_rounded;
-      case ToastType.error:
-        return Icons.error_rounded;
-      case ToastType.warning:
-        return Icons.warning_rounded;
-      case ToastType.info:
-        return Icons.info_rounded;
-    }
-  }
+  IconData get _icon => switch (widget.type) {
+    ToastType.success => Icons.check_circle_rounded,
+    ToastType.error => Icons.error_rounded,
+    ToastType.warning => Icons.warning_rounded,
+    ToastType.info => Icons.info_rounded,
+  };
 
   @override
   Widget build(BuildContext context) {
-    final safePadding = MediaQuery.of(context).padding;
+    final topPad = MediaQuery.paddingOf(context).top;
+
     return Positioned(
-      top: safePadding.top + AppDimensions.paddingMD,
+      top: topPad + AppDimensions.paddingMD,
       left: AppDimensions.paddingMD,
       right: AppDimensions.paddingMD,
       child: SlideTransition(
@@ -100,67 +88,86 @@ class _ToastWidgetState extends State<ToastWidget>
             color: Colors.transparent,
             child: InkWell(
               onTap: widget.onTap,
-              borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppDimensions.paddingMD,
-                  vertical: AppDimensions.paddingSM,
-                ),
-                decoration: BoxDecoration(
-                  color: _backgroundColor().withValues(alpha: 0.96),
-                  borderRadius:
-                      BorderRadius.circular(AppDimensions.radiusMD),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.15),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      _icon(),
-                      color: AppColors.white,
-                      size: 28,
-                    ),
-                    const SizedBox(width: AppDimensions.paddingSM),
-                    Expanded(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            widget.title,
-                            style: const TextStyle(
-                              color: AppColors.white,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 15,
-                            ),
-                          ),
-                          if (widget.message != null &&
-                              widget.message!.isNotEmpty) ...[
-                            const SizedBox(height: 2),
-                            Text(
-                              widget.message!,
-                              style: TextStyle(
-                                color: AppColors.white.withValues(alpha: 0.9),
-                                fontSize: 13,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+              borderRadius: AppDimensions.borderRadiusMD,
+              child: _ToastBody(
+                icon: _icon,
+                bgColor: _bgColor,
+                title: widget.title,
+                message: widget.message,
               ),
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+// Extracted to a private const-constructable widget for better performance.
+class _ToastBody extends StatelessWidget {
+  const _ToastBody({
+    required this.icon,
+    required this.bgColor,
+    required this.title,
+    this.message,
+  });
+
+  final IconData icon;
+  final Color bgColor;
+  final String title;
+  final String? message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppDimensions.paddingMD,
+        vertical: AppDimensions.paddingSM,
+      ),
+      decoration: BoxDecoration(
+        color: bgColor.withValues(alpha: 0.96),
+        borderRadius: AppDimensions.borderRadiusMD,
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x26000000), // ~15% black
+            blurRadius: 12,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: AppColors.white, size: AppDimensions.iconXXL),
+          const SizedBox(width: AppDimensions.paddingSM),
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: AppColors.white,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                  ),
+                ),
+                if (message case final String msg when msg.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    msg,
+                    style: TextStyle(
+                      color: AppColors.white.withValues(alpha: 0.9),
+                      fontSize: 13,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

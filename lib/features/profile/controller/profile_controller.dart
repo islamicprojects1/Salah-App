@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:salah/core/feedback/app_feedback.dart';
 import 'package:salah/core/services/cloudinary_service.dart';
 import 'package:salah/core/di/injection_container.dart';
 import 'package:salah/features/auth/data/repositories/user_repository.dart';
@@ -46,7 +47,7 @@ class ProfileController extends GetxController {
 
   Future<void> updateProfile() async {
     if (nameController.text.trim().isEmpty) {
-      Get.snackbar('error'.tr, 'enter_name'.tr);
+      AppFeedback.showError('error'.tr, 'enter_name'.tr);
       return;
     }
 
@@ -77,9 +78,9 @@ class ProfileController extends GetxController {
         },
       );
 
-      Get.snackbar('success'.tr, 'profile_update_success'.tr);
+      AppFeedback.showSuccess('success'.tr, 'profile_update_success'.tr);
     } catch (e) {
-      Get.snackbar('error'.tr, '${'profile_update_error_msg'.tr}: $e');
+      AppFeedback.showError('error'.tr, '${'profile_update_error_msg'.tr}: $e');
     } finally {
       isLoading.value = false;
     }
@@ -111,16 +112,16 @@ class ProfileController extends GetxController {
           userImage.value = url;
           // Proactively update user profile with new image
           await updateProfile();
-          Get.snackbar('success'.tr, 'image_upload_success'.tr);
+          AppFeedback.showSuccess('success'.tr, 'image_upload_success'.tr);
         } else {
           final error = _cloudinaryService.errorMessage.value;
-          Get.snackbar(
+          AppFeedback.showError(
             'upload_error'.tr,
             error.isNotEmpty ? error : 'upload_failed_try_later'.tr,
           );
         }
       } catch (e) {
-        Get.snackbar('technical_error'.tr, '${'unexpected_error_msg'.tr}: $e');
+        AppFeedback.showError('technical_error'.tr, '${'unexpected_error_msg'.tr}: $e');
       } finally {
         isLoading.value = false;
         uploadProgress.value = 0.0;
@@ -130,12 +131,12 @@ class ProfileController extends GetxController {
 
   Future<void> changePassword() async {
     if (newPasswordController.text != confirmPasswordController.text) {
-      Get.snackbar('error'.tr, 'passwords_do_not_match'.tr);
+      AppFeedback.showError('error'.tr, 'passwords_do_not_match'.tr);
       return;
     }
 
     if (newPasswordController.text.length < 8) {
-      Get.snackbar('error'.tr, 'password_too_short'.tr);
+      AppFeedback.showError('error'.tr, 'password_too_short'.tr);
       return;
     }
 
@@ -144,14 +145,14 @@ class ProfileController extends GetxController {
       await _authService.updatePassword(newPasswordController.text);
 
       Get.back(); // Close dialog
-      Get.snackbar('success'.tr, 'password_changed'.tr);
+      AppFeedback.showSuccess('success'.tr, 'password_changed'.tr);
 
       // Clear fields
       currentPasswordController.clear();
       newPasswordController.clear();
       confirmPasswordController.clear();
     } catch (e) {
-      Get.snackbar('error'.tr, 'password_change_failed'.tr);
+      AppFeedback.showError('error'.tr, 'password_change_failed'.tr);
     } finally {
       isLoading.value = false;
     }

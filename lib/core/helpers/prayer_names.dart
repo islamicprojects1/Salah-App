@@ -1,11 +1,17 @@
-import 'package:get/get_utils/src/extensions/internacionalization.dart';
+import 'package:get/get.dart';
 import 'package:salah/core/constants/enums.dart';
 import 'package:salah/features/prayer/data/models/prayer_log_model.dart';
 
-/// Single source of truth for prayer name ↔ enum mapping and "is logged" logic.
-/// Use everywhere instead of duplicated switches and string literals.
+/// Single source of truth for [PrayerName] ↔ string mapping and log-lookup logic.
+///
+/// Prefer [PrayerName.displayName] (added in enums.dart) for simple name display.
+/// Use this class for parsing, Arabic name lookups, and log checks.
 class PrayerNames {
-  PrayerNames._();
+  const PrayerNames._();
+
+  // ============================================================
+  // ARABIC NAMES
+  // ============================================================
 
   static const Map<PrayerName, String> _arNames = {
     PrayerName.fajr: 'الفجر',
@@ -16,57 +22,88 @@ class PrayerNames {
     PrayerName.isha: 'العشاء',
   };
 
-  /// Display name for a prayer (Localized).
-  static String displayName(PrayerName prayer) {
-    return prayer.name.tr;
-  }
+  // Reverse lookup: Arabic name → PrayerName
+  static final Map<String, PrayerName> _arNamesReverse = {
+    for (final e in _arNames.entries) e.value: e.key,
+  };
 
-  /// Parse display name (Arabic or enum name) to [PrayerName].
+  // ============================================================
+  // DISPLAY NAME
+  // ============================================================
+
+  /// Localised display name via GetX translation key.
+  static String displayName(PrayerName prayer) => prayer.name.tr;
+
+  /// Arabic name regardless of locale.
+  static String arabicName(PrayerName prayer) => _arNames[prayer]!;
+
+  // ============================================================
+  // PARSING
+  // ============================================================
+
+  /// Parses an English key string (`'fajr'`, `'dhuhr'`, …) to [PrayerName].
+  ///
+  /// Case-insensitive. Falls back to [PrayerName.fajr] for unknown keys.
+  static PrayerName fromKey(String key) => switch (key.toLowerCase()) {
+    'fajr' => PrayerName.fajr,
+    'sunrise' => PrayerName.sunrise,
+    'dhuhr' => PrayerName.dhuhr,
+    'asr' => PrayerName.asr,
+    'maghrib' => PrayerName.maghrib,
+    'isha' => PrayerName.isha,
+    _ => PrayerName.fajr,
+  };
+
+  /// Parses an Arabic name or English enum name to [PrayerName].
+  ///
+  /// Tries Arabic match first, then falls back to enum name match.
+  /// Falls back to [PrayerName.fajr] for unknown values.
   static PrayerName fromDisplayName(String name) {
-    final trimmed = name.trim().toLowerCase();
-    for (final e in _arNames.entries) {
-      if (e.value == name.trim() || e.value.toLowerCase() == trimmed) {
-        return e.key;
-      }
-    }
-    for (final p in PrayerName.values) {
-      if (p.name == trimmed) return p;
-    }
-    return PrayerName.fajr;
+    final trimmed = name.trim();
+    // Try Arabic lookup first
+    final fromAr = _arNamesReverse[trimmed];
+    if (fromAr != null) return fromAr;
+    // Try English enum name
+    return fromKey(trimmed);
   }
 
-  /// Convert an English key string (e.g. 'fajr', 'dhuhr') to [PrayerName] enum.
-  /// Single source of truth – replaces duplicate `_prayerKeyToName` methods.
-  static PrayerName fromKey(String key) {
-    switch (key.toLowerCase()) {
-      case 'fajr':
-        return PrayerName.fajr;
-      case 'sunrise':
-        return PrayerName.sunrise;
-      case 'dhuhr':
-        return PrayerName.dhuhr;
-      case 'asr':
-        return PrayerName.asr;
-      case 'maghrib':
-        return PrayerName.maghrib;
-      case 'isha':
-        return PrayerName.isha;
-      default:
-        return PrayerName.fajr;
-    }
+  // ============================================================
+  // LOG LOOKUP
+  // ============================================================
+
+  /// Returns true if [prayer] has already been logged in [logs].
+  ///
+  /// Matches by [PrayerName] enum value when [prayerType] is provided,
+  /// otherwise falls back to display-name string comparison.
+  static bool isLogged(List<PrayerLogModel> logs, PrayerName prayer) =>
+      logs.any((l) => l.prayer == prayer);
+
+  /// Overload for callers that have a display name string but no enum value.
+  static bool isLoggedByName(
+    List<PrayerLogModel> logs,
+    String prayerDisplayName, {
+    PrayerName? prayerType,
+  }) {
+    if (prayerType != null) return isLogged(logs, prayerType);
+    final nameLower = prayerDisplayName.trim().toLowerCase();
+    return logs.any(
+      (l) =>
+          displayName(l.prayer).trim().toLowerCase() == nameLower ||
+          l.prayer.name.toLowerCase() == nameLower,
+    );
   }
 
-  /// Whether the given prayer is already in the logs (by name or enum, including sunrise).
+  // ============================================================
+  // DEPRECATED ALIASES
+  // ============================================================
+
+  @Deprecated('Use PrayerNames.fromKey()')
+  static PrayerName fromKey2(String key) => fromKey(key);
+
+  @Deprecated('Use PrayerNames.isLoggedByName()')
   static bool isPrayerLogged(
     List<PrayerLogModel> logs,
     String prayerDisplayName,
     PrayerName? prayerType,
-  ) {
-    final nameLower = prayerDisplayName.trim().toLowerCase();
-    return logs.any((l) {
-      if (prayerType != null && l.prayer == prayerType) return true;
-      return displayName(l.prayer).trim().toLowerCase() == nameLower ||
-          l.prayer.name.toLowerCase() == nameLower;
-    });
-  }
+  ) => isLoggedByName(logs, prayerDisplayName, prayerType: prayerType);
 }

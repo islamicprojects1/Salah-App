@@ -5,6 +5,8 @@ import 'package:salah/features/auth/controller/auth_controller.dart';
 class AuthBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut<AuthController>(() => AuthController());
+    /// Use fenix: true so the controller is recreated if disposed and
+    /// the route is re-entered (e.g. logout → login → back to login)
+    Get.lazyPut<AuthController>(() => AuthController(), fenix: true);
   }
 }

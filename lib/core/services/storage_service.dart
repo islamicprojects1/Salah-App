@@ -1,110 +1,104 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:salah/core/constants/enums.dart';
 import 'package:salah/core/constants/storage_keys.dart';
 
-/// Service for handling local storage operations using GetStorage
-/// 
-/// This service provides a centralized way to read/write persistent data.
-/// It uses GetStorage for fast, synchronous storage operations.
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// STORAGE SERVICE
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//
+// ✅ ضروري — التخزين المحلي الدائم للتطبيق (يبقى بعد إغلاق التطبيق).
+//
+// يستخدم GetStorage (أسرع من SharedPreferences، متزامن، بدون async).
+//
+// ماذا يُخزَّن هنا؟
+//   • إعدادات المستخدم   : اللغة، الثيم، الإشعارات، طريقة الحساب
+//   • حالة التطبيق       : أول تشغيل، الـ onboarding مكتمل
+//   • الموقع المحفوظ     : خط العرض/الطول/اسم المدينة
+//   • الإجراءات المعلّقة : صلاة مسجّلة من إشعار قبل فتح التطبيق
+//   • بيانات مؤقتة      : streak، صلوات اليوم (cache سريع)
+//   • طابور المزامنة    : عناصر انتظار الإنترنت (backup للـ SQLite)
+//
+// الفرق بين StorageService و DatabaseHelper:
+//   StorageService → إعدادات وبيانات صغيرة (key-value)
+//   DatabaseHelper → سجلات الصلاة وقوائم كبيرة (SQLite tables)
+//
+// الاستخدام:
+//   StorageService.to.getLanguage()
+//   await StorageService.to.setThemeMode('dark')
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 class StorageService extends GetxService {
-  late final GetStorage _storage;
-  
+  static StorageService get to => Get.find();
+
+  late final GetStorage _box;
   bool _isInitialized = false;
 
-  /// Initialize the storage service
+  // ══════════════════════════════════════════════════════════════
+  // INITIALIZATION
+  // ══════════════════════════════════════════════════════════════
+
   Future<StorageService> init() async {
     if (_isInitialized) return this;
     _isInitialized = true;
     await GetStorage.init();
-    _storage = GetStorage();
+    _box = GetStorage();
     return this;
   }
-  
-  // ==================== Generic Operations ====================
-  
-  /// Read a value from storage
-  T? read<T>(String key) => _storage.read<T>(key);
-  
-  /// Write a value to storage
-  Future<void> write(String key, dynamic value) async {
-    await _storage.write(key, value);
-  }
-  
-  /// Remove a value from storage
-  Future<void> remove(String key) async {
-    await _storage.remove(key);
-  }
-  
-  /// Check if a key exists in storage
-  bool hasData(String key) => _storage.hasData(key);
-  
-  /// Clear all storage data
-  Future<void> clearAll() async {
-    await _storage.erase();
-  }
-  
-  // ==================== Language Operations ====================
-  
-  /// Get the stored language code, defaults to device locale or 'ar'
-  String getLanguage() {
-    return read<String>(StorageKeys.language) ?? 
-           Get.deviceLocale?.languageCode ?? 
-           'ar';
-  }
-  
-  /// Save the selected language code
-  Future<void> setLanguage(String languageCode) async {
-    await write(StorageKeys.language, languageCode);
-  }
-  
-  // ==================== Theme Operations ====================
-  
-  /// Get the stored theme mode, defaults to 'system'
-  String getThemeMode() {
-    return read<String>(StorageKeys.themeMode) ?? 'system';
-  }
-  
-  /// Save the selected theme mode
-  Future<void> setThemeMode(String mode) async {
-    await write(StorageKeys.themeMode, mode);
-  }
-  
-  // ==================== First Time Operations ====================
-  
-  /// Check if this is the user's first time opening the app
-  bool isFirstTime() {
-    return read<bool>(StorageKeys.isFirstTime) ?? true;
-  }
-  
-  /// Mark that the user has opened the app before
-  Future<void> setNotFirstTime() async {
-    await write(StorageKeys.isFirstTime, false);
-  }
-  
-  /// Check if onboarding is completed
-  bool isOnboardingCompleted() {
-    return read<bool>(StorageKeys.onboardingCompleted) ?? false;
-  }
-  
-  /// Mark onboarding as completed
-  Future<void> setOnboardingCompleted() async {
-    await write(StorageKeys.onboardingCompleted, true);
-  }
-  
-  // ==================== Location Operations ====================
-  
-  /// Get stored latitude
+
+  // ══════════════════════════════════════════════════════════════
+  // GENERIC OPS
+  // ══════════════════════════════════════════════════════════════
+
+  T? read<T>(String key) => _box.read<T>(key);
+  Future<void> write(String key, dynamic value) => _box.write(key, value);
+  Future<void> remove(String key) => _box.remove(key);
+  bool hasData(String key) => _box.hasData(key);
+  Future<void> clearAll() => _box.erase();
+
+  // ══════════════════════════════════════════════════════════════
+  // LANGUAGE
+  // ══════════════════════════════════════════════════════════════
+
+  /// اللغة الحالية — افتراضي: لغة الجهاز أو العربية
+  String getLanguage() =>
+      read<String>(StorageKeys.language) ??
+      Get.deviceLocale?.languageCode ??
+      'ar';
+
+  Future<void> setLanguage(String code) => write(StorageKeys.language, code);
+
+  // ══════════════════════════════════════════════════════════════
+  // THEME
+  // ══════════════════════════════════════════════════════════════
+
+  /// وضع الثيم: 'light' | 'dark' | 'system'
+  String getThemeMode() => read<String>(StorageKeys.themeMode) ?? 'system';
+
+  Future<void> setThemeMode(String mode) => write(StorageKeys.themeMode, mode);
+
+  // ══════════════════════════════════════════════════════════════
+  // ONBOARDING
+  // ══════════════════════════════════════════════════════════════
+
+  bool isFirstTime() => read<bool>(StorageKeys.isFirstTime) ?? true;
+  Future<void> setNotFirstTime() => write(StorageKeys.isFirstTime, false);
+
+  bool isOnboardingCompleted() =>
+      read<bool>(StorageKeys.onboardingCompleted) ?? false;
+  Future<void> setOnboardingCompleted() =>
+      write(StorageKeys.onboardingCompleted, true);
+
+  // ══════════════════════════════════════════════════════════════
+  // LOCATION
+  // ══════════════════════════════════════════════════════════════
+
   double? getLatitude() => read<double>(StorageKeys.latitude);
-  
-  /// Get stored longitude
   double? getLongitude() => read<double>(StorageKeys.longitude);
-  
-  /// Get stored city name
   String? getCityName() => read<String>(StorageKeys.cityName);
-  
-  /// Save location data
+
+  /// حفظ الموقع الجغرافي بعد جلبه من GPS أو اختيار المستخدم
   Future<void> saveLocation({
     required double latitude,
     required double longitude,
@@ -114,91 +108,103 @@ class StorageService extends GetxService {
     await write(StorageKeys.longitude, longitude);
     await write(StorageKeys.cityName, cityName);
   }
-  
-  // ==================== Notification Operations ====================
-  
-  /// Check if notifications are enabled
-  bool areNotificationsEnabled() {
-    return read<bool>(StorageKeys.notificationsEnabled) ?? true;
-  }
-  
-  /// Set notifications enabled state
-  Future<void> setNotificationsEnabled(bool enabled) async {
-    await write(StorageKeys.notificationsEnabled, enabled);
-  }
-  
-  /// Get notification preference for a specific prayer
-  bool getPrayerNotification(String prayerKey) {
-    return read<bool>(prayerKey) ?? true;
-  }
-  
-  /// Set notification preference for a specific prayer
-  Future<void> setPrayerNotification(String prayerKey, bool enabled) async {
-    await write(prayerKey, enabled);
-  }
 
-  /// Get the stored notification sound mode
+  // ══════════════════════════════════════════════════════════════
+  // NOTIFICATIONS
+  // ══════════════════════════════════════════════════════════════
+
+  bool areNotificationsEnabled() =>
+      read<bool>(StorageKeys.notificationsEnabled) ?? true;
+  Future<void> setNotificationsEnabled(bool v) =>
+      write(StorageKeys.notificationsEnabled, v);
+
+  /// إعداد الإشعار لصلاة معينة (يستخدم مفتاح الصلاة مباشرة)
+  bool getPrayerNotification(String prayerKey) => read<bool>(prayerKey) ?? true;
+  Future<void> setPrayerNotification(String prayerKey, bool v) =>
+      write(prayerKey, v);
+
+  // ══════════════════════════════════════════════════════════════
+  // NOTIFICATION SOUND MODE
+  // ══════════════════════════════════════════════════════════════
+
+  /// نوع الصوت: adhan | vibrate | silent
   NotificationSoundMode getNotificationSoundMode() {
-    final mode = read<String>(StorageKeys.notificationSoundMode);
-    if (mode == null) return NotificationSoundMode.adhan; // Default
+    final stored = read<String>(StorageKeys.notificationSoundMode);
+    if (stored == null) return NotificationSoundMode.adhan;
     return NotificationSoundMode.values.firstWhere(
-      (e) => e.name == mode,
+      (e) => e.name == stored,
       orElse: () => NotificationSoundMode.adhan,
     );
   }
 
-  /// Save the notification sound mode
-  Future<void> setNotificationSoundMode(NotificationSoundMode mode) async {
-    await write(StorageKeys.notificationSoundMode, mode.name);
-  }
+  Future<void> setNotificationSoundMode(NotificationSoundMode mode) =>
+      write(StorageKeys.notificationSoundMode, mode.name);
 
-  // ==================== Pending Actions (from notifications) ====================
-  
-  /// Set pending prayer log from notification action
-  Future<void> setPendingPrayerLog(String prayerName, DateTime time) async {
-    final data = {
-      'prayer': prayerName,
-      'time': time.toIso8601String(),
-    };
-    await write(StorageKeys.pendingPrayerLog, jsonEncode(data));
-  }
-  
-  /// Get pending prayer log
+  // ══════════════════════════════════════════════════════════════
+  // APPROACHING ALERT & TAKBEER
+  // ══════════════════════════════════════════════════════════════
+
+  /// الخيارات المتاحة لوقت تنبيه الاقتراب (بالدقائق)
+  static const List<int> approachingMinutesOptions = [5, 10, 15, 20, 30];
+
+  bool get approachingAlertEnabled =>
+      read<bool>(StorageKeys.approachingAlertEnabled) ?? false;
+  Future<void> setApproachingAlertEnabled(bool v) =>
+      write(StorageKeys.approachingAlertEnabled, v);
+
+  /// كم دقيقة قبل الأذان يُرسَل تنبيه الاقتراب
+  int get approachingAlertMinutes =>
+      read<int>(StorageKeys.approachingAlertMinutes) ?? 15;
+  Future<void> setApproachingAlertMinutes(int minutes) =>
+      write(StorageKeys.approachingAlertMinutes, minutes);
+
+  /// تشغيل التكبير عند دخول وقت الصلاة
+  bool get takbeerAtPrayerEnabled =>
+      read<bool>(StorageKeys.takbeerAtPrayerEnabled) ?? true;
+  Future<void> setTakbeerAtPrayerEnabled(bool v) =>
+      write(StorageKeys.takbeerAtPrayerEnabled, v);
+
+  // ══════════════════════════════════════════════════════════════
+  // PENDING ACTIONS (من الإشعارات)
+  // ══════════════════════════════════════════════════════════════
+  //
+  // عندما يضغط المستخدم "صلّيت" من الإشعار وهو خارج التطبيق،
+  // نحفظ العملية هنا ونُنفّذها حين يفتح التطبيق.
+
+  Future<void> setPendingPrayerLog(String prayer, DateTime time) => write(
+    StorageKeys.pendingPrayerLog,
+    jsonEncode({'prayer': prayer, 'time': time.toIso8601String()}),
+  );
+
   Map<String, dynamic>? getPendingPrayerLog() {
     final data = read<String>(StorageKeys.pendingPrayerLog);
     if (data == null) return null;
     return jsonDecode(data) as Map<String, dynamic>;
   }
-  
-  /// Clear pending prayer log
-  Future<void> clearPendingPrayerLog() async {
-    await remove(StorageKeys.pendingPrayerLog);
-  }
-  
-  /// Set pending missed prayer from notification action
-  Future<void> setPendingMissedPrayer(String prayerName, DateTime time) async {
-    final data = {
-      'prayer': prayerName,
-      'time': time.toIso8601String(),
-    };
-    await write(StorageKeys.pendingMissedPrayer, jsonEncode(data));
-  }
-  
-  /// Get pending missed prayer
+
+  Future<void> clearPendingPrayerLog() => remove(StorageKeys.pendingPrayerLog);
+
+  Future<void> setPendingMissedPrayer(String prayer, DateTime time) => write(
+    StorageKeys.pendingMissedPrayer,
+    jsonEncode({'prayer': prayer, 'time': time.toIso8601String()}),
+  );
+
   Map<String, dynamic>? getPendingMissedPrayer() {
     final data = read<String>(StorageKeys.pendingMissedPrayer);
     if (data == null) return null;
     return jsonDecode(data) as Map<String, dynamic>;
   }
-  
-  /// Clear pending missed prayer
-  Future<void> clearPendingMissedPrayer() async {
-    await remove(StorageKeys.pendingMissedPrayer);
-  }
 
-  // ==================== Offline Sync Queue ====================
-  
-  /// Add item to offline sync queue
+  Future<void> clearPendingMissedPrayer() =>
+      remove(StorageKeys.pendingMissedPrayer);
+
+  // ══════════════════════════════════════════════════════════════
+  // SYNC QUEUE (backup للـ SQLite عند الـ edge cases)
+  // ══════════════════════════════════════════════════════════════
+  //
+  // ملاحظة: مصدر الحقيقة الرئيسي هو DatabaseHelper.sync_queue
+  // هذا الطابور backup بسيط لعمليات صغيرة لا تحتاج SQLite.
+
   Future<void> addToSyncQueue(Map<String, dynamic> item) async {
     final queue = getSyncQueue();
     queue.add({
@@ -208,62 +214,49 @@ class StorageService extends GetxService {
     });
     await write(StorageKeys.offlineSyncQueue, jsonEncode(queue));
   }
-  
-  /// Get offline sync queue
+
   List<Map<String, dynamic>> getSyncQueue() {
     final data = read<String>(StorageKeys.offlineSyncQueue);
     if (data == null) return [];
-    final list = jsonDecode(data) as List;
-    return list.map((e) => Map<String, dynamic>.from(e)).toList();
-  }
-  
-  /// Remove item from sync queue by id
-  Future<void> removeFromSyncQueue(String id) async {
-    final queue = getSyncQueue();
-    queue.removeWhere((item) => item['id'] == id);
-    await write(StorageKeys.offlineSyncQueue, jsonEncode(queue));
-  }
-  
-  /// Clear sync queue
-  Future<void> clearSyncQueue() async {
-    await remove(StorageKeys.offlineSyncQueue);
-  }
-  
-  /// Update last sync timestamp
-  Future<void> updateLastSync() async {
-    await write(StorageKeys.lastSyncTimestamp, DateTime.now().toIso8601String());
-  }
-  
-  /// Get last sync timestamp
-  DateTime? getLastSync() {
-    final data = read<String>(StorageKeys.lastSyncTimestamp);
-    if (data == null) return null;
-    return DateTime.parse(data);
+    return (jsonDecode(data) as List)
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
   }
 
-  // ==================== User Data Cache ====================
-  
-  /// Cache user streak
-  Future<void> cacheStreak(int streak) async {
-    await write(StorageKeys.currentStreak, streak);
+  Future<void> removeFromSyncQueue(String id) async {
+    final queue = getSyncQueue()..removeWhere((e) => e['id'] == id);
+    await write(StorageKeys.offlineSyncQueue, jsonEncode(queue));
   }
-  
-  /// Get cached streak
-  int getCachedStreak() {
-    return read<int>(StorageKeys.currentStreak) ?? 0;
+
+  Future<void> clearSyncQueue() => remove(StorageKeys.offlineSyncQueue);
+
+  // ══════════════════════════════════════════════════════════════
+  // LAST SYNC TIMESTAMP
+  // ══════════════════════════════════════════════════════════════
+
+  Future<void> updateLastSync() =>
+      write(StorageKeys.lastSyncTimestamp, DateTime.now().toIso8601String());
+
+  DateTime? getLastSync() {
+    final data = read<String>(StorageKeys.lastSyncTimestamp);
+    return data != null ? DateTime.tryParse(data) : null;
   }
-  
-  /// Cache today's logged prayers
-  Future<void> cacheTodayPrayers(List<String> prayers) async {
-    await write(StorageKeys.todayLoggedPrayers, jsonEncode(prayers));
-  }
-  
-  /// Get cached today's prayers
+
+  // ══════════════════════════════════════════════════════════════
+  // USER DATA CACHE (cache سريع بدون SQLite)
+  // ══════════════════════════════════════════════════════════════
+
+  Future<void> cacheStreak(int streak) =>
+      write(StorageKeys.currentStreak, streak);
+  int getCachedStreak() => read<int>(StorageKeys.currentStreak) ?? 0;
+
+  /// صلوات اليوم المُسجَّلة (للعرض السريع بدون query لـ SQLite)
+  Future<void> cacheTodayPrayers(List<String> prayers) =>
+      write(StorageKeys.todayLoggedPrayers, jsonEncode(prayers));
+
   List<String> getCachedTodayPrayers() {
     final data = read<String>(StorageKeys.todayLoggedPrayers);
     if (data == null) return [];
-    final list = jsonDecode(data) as List;
-    return list.map((e) => e.toString()).toList();
+    return (jsonDecode(data) as List).map((e) => e.toString()).toList();
   }
 }
-

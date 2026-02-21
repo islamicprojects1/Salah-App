@@ -247,11 +247,11 @@ class MissedPrayersController extends GetxController {
         if (status == null) continue;
 
         // Get prayer time range for quality calculation
-        final prayerTimes = _prayerTimeService.prayerTimes.value;
-        if (prayerTimes == null) continue;
+        final todayPrayers = _prayerTimeService.getTodayPrayers();
+        if (todayPrayers.isEmpty) continue;
 
-        final range = PrayerTimeRange.fromPrayerTimes(
-          prayerTimes: prayerTimes,
+        final range = PrayerTimeRange.fromPrayerModels(
+          prayers: todayPrayers,
           prayer: prayerType,
         );
 

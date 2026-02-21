@@ -1,363 +1,159 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:salah/core/constants/app_dimensions.dart';
-import 'package:salah/core/constants/image_assets.dart';
 import 'package:salah/core/theme/app_colors.dart';
 import 'package:salah/core/theme/app_fonts.dart';
-import 'package:salah/core/widgets/app_button.dart';
-import 'package:salah/features/auth/controller/auth_controller.dart';
+import 'package:salah/features/onboarding/controller/onboarding_controller.dart';
+import 'package:salah/features/onboarding/presentation/screens/welcome_page.dart';
+import 'package:salah/features/onboarding/presentation/screens/features_page.dart';
+import 'package:salah/features/onboarding/presentation/screens/permissions_page.dart';
+import 'package:salah/features/onboarding/presentation/screens/profile_setup_page.dart';
+import 'package:salah/features/onboarding/presentation/widgets/onboarding_widgets.dart';
 
-/// Enhanced Onboarding screen with 3 pages and warm animations
-class OnboardingScreen extends StatefulWidget {
+class OnboardingScreen extends GetView<OnboardingController> {
   const OnboardingScreen({super.key});
 
-  @override
-  State<OnboardingScreen> createState() => _OnboardingScreenState();
-}
-
-class _OnboardingScreenState extends State<OnboardingScreen>
-    with TickerProviderStateMixin {
-  final PageController _pageController = PageController();
-  final AuthController _authController = Get.find<AuthController>();
-  int _currentPage = 0;
-
-  late AnimationController _fadeController;
-  late AnimationController _scaleController;
-  late Animation<double> _fadeAnimation;
-  late Animation<double> _scaleAnimation;
-
-  final List<_OnboardingPage> _pages = [
-    _OnboardingPage(
-      image: ImageAssets.appLogo,
-      title: 'onboarding_title_1'.tr,
-      subtitle: 'onboarding_subtitle_1'.tr,
-      iconFallback: Icons.mosque_outlined,
-      gradientColors: [AppColors.onboarding1Start, AppColors.onboarding1End],
-    ),
-    _OnboardingPage(
-      image: ImageAssets.onboardingCommunity,
-      title: 'onboarding_title_2'.tr,
-      subtitle: 'onboarding_subtitle_2'.tr,
-      iconFallback: Icons.family_restroom_outlined,
-      gradientColors: [AppColors.onboarding2Start, AppColors.onboarding2End],
-    ),
-    _OnboardingPage(
-      image: ImageAssets.onboardingLocation,
-      title: 'onboarding_title_3'.tr,
-      subtitle: 'onboarding_subtitle_3'.tr,
-      iconFallback: Icons.location_on_outlined,
-      gradientColors: [AppColors.onboarding3Start, AppColors.onboarding3End],
-    ),
+  // Subtle background tint per page
+  static const List<Color> _pageTints = [
+    Color(0xFFF0FFF4), // welcome  — soft mint
+    Color(0xFFF0F8FF), // features — cool blue
+    Color(0xFFFFF8F0), // family   — warm amber
+    Color(0xFFF5F0FF), // perms    — soft purple
+    Color(0xFFF0FFF8), // profile  — soft teal
   ];
 
   @override
-  void initState() {
-    super.initState();
-    _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-    _scaleController = AnimationController(
-      duration: const Duration(milliseconds: 600),
-      vsync: this,
-    );
-
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _fadeController, curve: Curves.easeIn));
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _scaleController, curve: Curves.easeOutBack),
-    );
-
-    _fadeController.forward();
-    _scaleController.forward();
-  }
-
-  void _nextPage() {
-    if (_currentPage < _pages.length - 1) {
-      _pageController.nextPage(
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeInOutCubic,
-      );
-    } else {
-      _finishOnboarding();
-    }
-  }
-
-  void _finishOnboarding() {
-    _authController.completeOnboarding();
-    Get.offAllNamed('/login');
-  }
-
-  void _onPageChanged(int index) {
-    setState(() => _currentPage = index);
-    _fadeController.reset();
-    _scaleController.reset();
-    _fadeController.forward();
-    _scaleController.forward();
-  }
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    _fadeController.dispose();
-    _scaleController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppColors.background,
-              AppColors.primary.withValues(alpha: 0.05),
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
+    final pages = [
+      const WelcomePage(),
+      const FeaturesPage(),
+      const FamilyPage(),
+      const PermissionsPage(),
+      const ProfileSetupPage(),
+    ];
+
+    return Obx(() {
+      final page = controller.currentPage.value.clamp(0, _pageTints.length - 1);
+
+      return AnimatedContainer(
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+        color: _pageTints[page],
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          body: Stack(
             children: [
-              // Skip button
-              Align(
-                alignment: AlignmentDirectional.topEnd,
-                child: Padding(
-                  padding: const EdgeInsets.all(AppDimensions.paddingMD),
-                  child: TextButton(
-                    onPressed: _finishOnboarding,
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppDimensions.paddingLG,
-                        vertical: AppDimensions.paddingSM,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'skip'.tr,
-                          style: AppFonts.bodyMedium.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Icon(
-                          Icons.arrow_forward_ios,
-                          size: 14,
-                          color: AppColors.textSecondary,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
+              // ── Decorative top arc ──
+              Positioned(top: -80, left: -60, child: _TopArc()),
 
-              // Page view
-              Expanded(
-                child: PageView.builder(
-                  controller: _pageController,
-                  onPageChanged: _onPageChanged,
-                  itemCount: _pages.length,
-                  itemBuilder: (context, index) {
-                    return AnimatedBuilder(
-                      animation: Listenable.merge([
-                        _fadeAnimation,
-                        _scaleAnimation,
-                      ]),
-                      builder: (context, child) {
-                        return Opacity(
-                          opacity: index == _currentPage
-                              ? _fadeAnimation.value
-                              : 1.0,
-                          child: Transform.scale(
-                            scale: index == _currentPage
-                                ? _scaleAnimation.value
-                                : 1.0,
-                            child: _buildPage(_pages[index]),
-                          ),
-                        );
-                      },
-                    );
-                  },
-                ),
-              ),
-
-              // Bottom section
-              Container(
-                padding: const EdgeInsets.all(AppDimensions.paddingLG),
-                child: Column(
-                  children: [
-                    // Dots indicator
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(
-                        _pages.length,
-                        (index) => _buildDot(index),
-                      ),
-                    ),
-
-                    const SizedBox(height: AppDimensions.paddingXL),
-
-                    // Next/Start button
-                    AppButton(
-                      text: _currentPage == _pages.length - 1
-                          ? 'get_started'.tr
-                          : 'next'.tr,
-                      onPressed: _nextPage,
-                      width: double.infinity,
-                      icon: _currentPage == _pages.length - 1
-                          ? Icons.rocket_launch_outlined
-                          : Icons.arrow_forward_ios,
-                    ),
-
-                    const SizedBox(height: AppDimensions.paddingMD),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPage(_OnboardingPage page) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppDimensions.paddingXL),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Image with gradient overlay
-          Container(
-            height: AppDimensions.imageOnboarding,
-            width: AppDimensions.imageOnboarding,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  page.gradientColors[0].withValues(alpha: 0.15),
-                  page.gradientColors[1].withValues(alpha: 0.15),
-                ],
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: page.gradientColors[0].withValues(alpha: 0.2),
-                  blurRadius: 40,
-                  offset: const Offset(0, 20),
-                ),
-              ],
-            ),
-            child: ClipOval(
-              clipBehavior: Clip.antiAlias,
-              child: Image.asset(
-                page.image,
-                height: AppDimensions.imageOnboarding,
-                fit: BoxFit.cover,
-                filterQuality: FilterQuality.high,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    height: AppDimensions.imageOnboarding,
-                    width: AppDimensions.imageOnboarding,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: page.gradientColors,
-                      ),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      page.iconFallback,
-                      size: AppDimensions.iconOnboardingPlaceholder,
-                      color: AppColors.white,
+              // ── Page content ──
+              PageView.builder(
+                controller: controller.pageController,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: pages.length,
+                itemBuilder: (_, index) {
+                  return FadeTransition(
+                    opacity: controller.fadeAnimation,
+                    child: SlideTransition(
+                      position: controller.slideAnimation,
+                      child: pages[index],
                     ),
                   );
                 },
               ),
-            ),
+
+              // ── Skip button ──
+              _SkipButton(controller: controller),
+
+              // ── Progress dots ──
+              _ProgressBar(controller: controller),
+            ],
           ),
-
-          const SizedBox(height: AppDimensions.paddingXXL),
-
-          // Title with gradient effect
-          ShaderMask(
-            shaderCallback: (bounds) => LinearGradient(
-              colors: [AppColors.primary, page.gradientColors[0]],
-            ).createShader(bounds),
-            child: Text(
-              page.title,
-              style: AppFonts.headlineLarge.copyWith(
-                color: AppColors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 32,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-
-          const SizedBox(height: AppDimensions.paddingMD),
-
-          // Subtitle
-          Text(
-            page.subtitle,
-            style: AppFonts.bodyLarge.copyWith(
-              color: AppColors.textSecondary,
-              height: 1.8,
-              fontSize: 18,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
+        ),
+      );
+    });
   }
+}
 
-  Widget _buildDot(int index) {
-    final isActive = index == _currentPage;
-    final page = _pages[_currentPage];
-
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      margin: const EdgeInsets.symmetric(horizontal: 4),
-      width: isActive ? AppDimensions.dotWidthActive : AppDimensions.dotSize,
-      height: AppDimensions.dotSize,
+// ─────────────────────────────────────────────
+// Decorative top arc
+// ─────────────────────────────────────────────
+class _TopArc extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 260,
+      height: 260,
       decoration: BoxDecoration(
-        gradient: isActive ? LinearGradient(colors: page.gradientColors) : null,
-        color: isActive ? null : AppColors.primary.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(AppDimensions.radiusXS),
-        boxShadow: isActive
-            ? [
-                BoxShadow(
-                  color: page.gradientColors[0].withValues(alpha: 0.4),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ]
-            : null,
+        shape: BoxShape.circle,
+        gradient: RadialGradient(
+          colors: [
+            AppColors.primary.withValues(alpha: 0.12),
+            AppColors.primary.withValues(alpha: 0.0),
+          ],
+        ),
       ),
     );
   }
 }
 
-class _OnboardingPage {
-  final String image;
-  final String title;
-  final String subtitle;
-  final IconData iconFallback;
-  final List<Color> gradientColors;
+// ─────────────────────────────────────────────
+// Skip button (top-right)
+// ─────────────────────────────────────────────
+class _SkipButton extends StatelessWidget {
+  final OnboardingController controller;
+  const _SkipButton({required this.controller});
 
-  _OnboardingPage({
-    required this.image,
-    required this.title,
-    required this.subtitle,
-    required this.iconFallback,
-    required this.gradientColors,
-  });
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      if (!controller.canSkip) return const SizedBox.shrink();
+      return Positioned(
+        top: 0,
+        right: 12,
+        child: SafeArea(
+          child: TextButton(
+            onPressed: controller.skip,
+            style: TextButton.styleFrom(
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            ),
+            child: Text(
+              'skip_btn'.tr,
+              style: AppFonts.bodyMedium.copyWith(
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ),
+      );
+    });
+  }
+}
+
+// ─────────────────────────────────────────────
+// Progress dots (bottom)
+// ─────────────────────────────────────────────
+class _ProgressBar extends StatelessWidget {
+  final OnboardingController controller;
+  const _ProgressBar({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    final bottom = MediaQuery.paddingOf(context).bottom;
+    return Positioned(
+      bottom: bottom + 16,
+      left: 0,
+      right: 0,
+      child: Center(
+        child: Obx(
+          () => OnboardingProgressDots(
+            current: controller.currentPage.value,
+            total: OnboardingController.totalPages,
+          ),
+        ),
+      ),
+    );
+  }
 }

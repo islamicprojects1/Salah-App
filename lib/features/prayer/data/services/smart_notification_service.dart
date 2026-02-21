@@ -6,8 +6,14 @@ import 'package:salah/core/constants/enums.dart';
 import 'package:salah/core/constants/storage_keys.dart';
 import 'package:salah/core/services/storage_service.dart';
 import 'package:salah/core/di/injection_container.dart';
-import 'package:salah/features/notifications/data/models/notification_models.dart';
 import 'package:timezone/timezone.dart' as tz;
+
+/// Stub for user prayer pattern (was in family feature). Used for smart reminder timing.
+class UserPrayerPattern {
+  final double confidence;
+  UserPrayerPattern({this.confidence = 0});
+  Duration getOptimalReminderOffset() => const Duration(minutes: 30);
+}
 
 /// Smart Notification Service
 /// يدير الإشعارات الذكية مع Quick Actions والتذكيرات المبنية على نمط المستخدم

@@ -2,18 +2,59 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:salah/core/routes/app_routes.dart';
 
-/// Service to handle native shake events via MethodChannel
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// SHAKE SERVICE
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//
+// ✅ ضروري — يستقبل أحداث اهتزاز الجهاز من الكود الأصلي (Native)
+//            ويفتح شاشة القبلة فوراً.
+//
+// كيف يعمل؟
+//   Android/iOS ← يكشف الاهتزاز عبر Accelerometer
+//   ← يرسل event عبر MethodChannel("com.salah.app/shake")
+//   ← ShakeService يستقبله ويتنقل لشاشة القبلة
+//
+// لماذا Native وليس Dart؟
+//   كشف الاهتزاز الموثوق يحتاج وصول مستمر للـ Accelerometer في الخلفية،
+//   وهذا يتطلب كوداً أصلياً في Android/iOS لضمان الدقة وتوفير البطارية.
+//
+// يُسجَّل في:
+//   main.dart → Get.put(ShakeService()) قبل runApp
+//
+// الاستخدام:
+//   لا تحتاج استدعاءه يدوياً — يعمل تلقائياً بعد التسجيل.
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 class ShakeService extends GetxService {
   static const _channel = MethodChannel('com.salah.app/shake');
 
-  // Track if navigation is already in progress to avoid multiple rapid pushes
+  // ══════════════════════════════════════════════════════════════
+  // OBSERVABLE STATE
+  // ══════════════════════════════════════════════════════════════
+
+  /// هل ميزة الاهتزاز مفعّلة (يمكن ربطها بإعداد في الـ Settings)
+  final isEnabled = true.obs;
+
+  // ══════════════════════════════════════════════════════════════
+  // PRIVATE
+  // ══════════════════════════════════════════════════════════════
+
+  /// منع التنقل المتعدد عند اهتزازات متتالية سريعة
   bool _isNavigating = false;
+
+  // ══════════════════════════════════════════════════════════════
+  // LIFECYCLE
+  // ══════════════════════════════════════════════════════════════
 
   @override
   void onInit() {
     super.onInit();
     _initShakeListener();
   }
+
+  // ══════════════════════════════════════════════════════════════
+  // PRIVATE METHODS
+  // ══════════════════════════════════════════════════════════════
 
   void _initShakeListener() {
     _channel.setMethodCallHandler((call) async {
@@ -24,18 +65,25 @@ class ShakeService extends GetxService {
   }
 
   void _handleShake() {
-    // Only navigate if we aren't already on the Qibla screen or navigating to it
-    // Check using split to ignore any query parameters if they exist
-    final current = Get.currentRoute.split('?').first;
-    if (current == AppRoutes.qibla || _isNavigating) return;
+    // لا نتنقل إذا كانت الميزة معطّلة
+    if (!isEnabled.value) return;
+
+    // لا نتنقل إذا كنا بالفعل في شاشة القبلة أو في منتصف تنقل
+    final currentRoute = Get.currentRoute.split('?').first;
+    if (currentRoute == AppRoutes.qibla || _isNavigating) return;
 
     _isNavigating = true;
-
-    // Provide haptic feedback if possible, or just navigate
     HapticFeedback.lightImpact();
 
     Get.toNamed(AppRoutes.qibla)?.then((_) {
       _isNavigating = false;
     });
   }
+
+  // ══════════════════════════════════════════════════════════════
+  // PUBLIC API
+  // ══════════════════════════════════════════════════════════════
+
+  /// تفعيل/تعطيل ميزة الاهتزاز (من إعدادات التطبيق)
+  void setEnabled(bool value) => isEnabled.value = value;
 }

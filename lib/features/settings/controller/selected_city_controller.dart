@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:salah/core/di/injection_container.dart';
 import 'package:http/http.dart' as http;
+import 'package:salah/core/feedback/app_feedback.dart';
 import 'package:salah/core/services/location_service.dart';
 import 'package:salah/core/services/storage_service.dart';
 import 'package:salah/features/prayer/data/services/prayer_time_service.dart';
@@ -58,11 +59,7 @@ class SelectedCityController extends GetxController {
         if (_locationService.isPermanentlyDenied.value) {
           _showPermissionSettingsDialog();
         } else {
-          Get.snackbar(
-            "error".tr,
-            "location_error_gps".tr,
-            snackPosition: SnackPosition.BOTTOM,
-          );
+          AppFeedback.showError("error".tr, "location_error_gps".tr);
         }
       }
     } finally {
@@ -151,13 +148,12 @@ class SelectedCityController extends GetxController {
       await _prayerTimeService.calculatePrayerTimes();
 
       Get.back();
-      Get.snackbar(
+      AppFeedback.showSuccess(
         "success".tr,
         "location_select_success".trParams({'city': cityName}),
-        snackPosition: SnackPosition.BOTTOM,
       );
     } catch (e) {
-      Get.snackbar("error".tr, "location_select_error".tr);
+      AppFeedback.showError("error".tr, "location_select_error".tr);
     }
   }
 

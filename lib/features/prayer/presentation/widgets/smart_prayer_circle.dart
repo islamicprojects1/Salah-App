@@ -71,9 +71,14 @@ class _SmartPrayerCircleState extends State<SmartPrayerCircle>
       final colorScheme = Theme.of(context).colorScheme;
       return LayoutBuilder(
         builder: (context, constraints) {
-          final double size = math.min(constraints.maxWidth, constraints.maxHeight);
+          final double size = math.min(
+            constraints.maxWidth,
+            constraints.maxHeight,
+          );
           // Ensure we don't go too small or too big if unconstrained
-          final double actualSize = size > 0 && size < double.infinity ? size : 300;
+          final double actualSize = size > 0 && size < double.infinity
+              ? size
+              : 300;
           final double innerSize = actualSize - 20;
 
           return Center(
@@ -134,38 +139,6 @@ class _SmartPrayerCircleState extends State<SmartPrayerCircle>
 
                     // 3. Status Info at Cardinal Positions (Top/Bottom)
 
-                    // --- TOP (12:00 Position): Time Capsule ---
-                    Positioned(
-                      top: actualSize * 0.17, // Dynamic positioning
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(20),
-                        child: BackdropFilter(
-                          filter: ui.ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.surface.withValues(alpha: 0.4),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: AppColors.primary.withValues(alpha: 0.1),
-                              ),
-                            ),
-                            child: Text(
-                              intl.DateFormat('h:mm a').format(_currentTime),
-                              style: AppFonts.labelSmall.copyWith(
-                                color: AppColors.textPrimary,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-
                     // --- BOTTOM (6:00 Position): Contextual Info ---
                     Positioned(
                       bottom: actualSize * 0.15, // Dynamic positioning
@@ -182,7 +155,9 @@ class _SmartPrayerCircleState extends State<SmartPrayerCircle>
                               color: AppColors.surface.withValues(alpha: 0.4),
                               borderRadius: BorderRadius.circular(15),
                               border: Border.all(
-                                color: AppColors.primary.withValues(alpha: 0.05),
+                                color: AppColors.primary.withValues(
+                                  alpha: 0.05,
+                                ),
                               ),
                             ),
                             child: Column(
@@ -206,8 +181,9 @@ class _SmartPrayerCircleState extends State<SmartPrayerCircle>
                                     'prayer_logged_success'.trParams({
                                       'prayer': currentPrayer?.name ?? '',
                                     }),
-                                    style: AppFonts.labelSmall
-                                        .copyWith(fontSize: 9),
+                                    style: AppFonts.labelSmall.copyWith(
+                                      fontSize: 9,
+                                    ),
                                   ),
                                 ] else if (isPrayerTime) ...[
                                   // Pulsing Call to Action
@@ -217,7 +193,9 @@ class _SmartPrayerCircleState extends State<SmartPrayerCircle>
                                     curve: Curves.easeInOut,
                                     builder: (context, value, child) =>
                                         Transform.scale(
-                                            scale: value, child: child),
+                                          scale: value,
+                                          child: child,
+                                        ),
                                     child: const Icon(
                                       Icons.touch_app_rounded,
                                       color: AppColors.primary,
@@ -225,12 +203,7 @@ class _SmartPrayerCircleState extends State<SmartPrayerCircle>
                                     ),
                                   ),
                                   const SizedBox(height: 2),
-                                  Text(
-                                    'it_is_now'.tr,
-                                    style: AppFonts.labelSmall.copyWith(
-                                      color: AppColors.textSecondary,
-                                    ),
-                                  ),
+
                                   Text(
                                     currentPrayer.name,
                                     style: AppFonts.titleSmall.copyWith(
@@ -255,16 +228,19 @@ class _SmartPrayerCircleState extends State<SmartPrayerCircle>
                                       vertical: 2,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: AppColors.primary
-                                          .withValues(alpha: 0.1),
+                                      color: AppColors.primary.withValues(
+                                        alpha: 0.1,
+                                      ),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
-                                    child: Text(
-                                      controller.timeUntilNextPrayer.value,
-                                      style: AppFonts.labelMedium.copyWith(
-                                        color: AppColors.primary,
-                                        fontWeight: FontWeight.bold,
-                                        fontFamily: 'monospace',
+                                    child: Obx(
+                                      () => Text(
+                                        controller.timeUntilNextPrayer.value,
+                                        style: AppFonts.labelMedium.copyWith(
+                                          color: AppColors.primary,
+                                          fontWeight: FontWeight.bold,
+                                          fontFamily: 'monospace',
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -282,21 +258,22 @@ class _SmartPrayerCircleState extends State<SmartPrayerCircle>
                         width: innerSize,
                         height: innerSize,
                         child: AnimatedBuilder(
-                            animation: _pulseController,
-                            builder: (context, child) {
-                              return CustomPaint(
-                                painter: _PrayerProgressPainter(
-                                  currentTime: _currentTime,
-                                  sunriseTime:
-                                      controller.todayPrayers.firstWhereOrNull(
-                                          (p) =>
-                                              p.prayerType ==
-                                              PrayerName.sunrise)?.dateTime,
-                                  nextPrayerTime: nextPrayer?.dateTime,
-                                  pulseValue: _pulseController.value,
-                                ),
-                              );
-                            }),
+                          animation: _pulseController,
+                          builder: (context, child) {
+                            return CustomPaint(
+                              painter: _PrayerProgressPainter(
+                                currentTime: _currentTime,
+                                sunriseTime: controller.todayPrayers
+                                    .firstWhereOrNull(
+                                      (p) => p.prayerType == PrayerName.sunrise,
+                                    )
+                                    ?.dateTime,
+                                nextPrayerTime: nextPrayer?.dateTime,
+                                pulseValue: _pulseController.value,
+                              ),
+                            );
+                          },
+                        ),
                       ),
                     ),
                   ],
@@ -510,7 +487,7 @@ class _PrayerProgressPainter extends CustomPainter {
     if (sunriseTime != null) {
       final startAngle = _getTimeAngle(sunriseTime!);
       final endAngle = _getTimeAngle(currentTime);
-      
+
       double sweepAngle = endAngle - startAngle;
       if (sweepAngle < 0) sweepAngle += 2 * math.pi;
 
@@ -537,7 +514,7 @@ class _PrayerProgressPainter extends CustomPainter {
     if (nextPrayerTime != null) {
       final startAngle = _getTimeAngle(currentTime);
       final endAngle = _getTimeAngle(nextPrayerTime!);
-      
+
       double sweepAngle = endAngle - startAngle;
       if (sweepAngle < 0) sweepAngle += 2 * math.pi;
 
@@ -577,7 +554,9 @@ class _PrayerProgressPainter extends CustomPainter {
       // Neon Pulse
       final pulseRadius = 8.0 + (pulseValue * 12.0);
       final pulsePaint = Paint()
-        ..color = AppColors.secondary.withValues(alpha: 0.3 * (1.0 - pulseValue))
+        ..color = AppColors.secondary.withValues(
+          alpha: 0.3 * (1.0 - pulseValue),
+        )
         ..style = PaintingStyle.fill;
       canvas.drawCircle(markerCenter, pulseRadius, pulsePaint);
 
@@ -609,4 +588,3 @@ extension PaintExtension on Paint {
     maskFilter = MaskFilter.blur(BlurStyle.normal, blur);
   }
 }
-

@@ -19,6 +19,7 @@ import 'package:salah/core/constants/storage_keys.dart';
 import 'package:salah/core/feedback/app_feedback.dart';
 import 'package:salah/core/helpers/prayer_names.dart';
 import 'package:salah/core/di/injection_container.dart';
+import 'package:salah/core/error/app_logger.dart';
 
 /// Service for managing local notifications
 class NotificationService extends GetxService {
@@ -95,7 +96,7 @@ class NotificationService extends GetxService {
     if (androidPlugin != null) {
       // 1. Prayer Channels (Three variants)
 
-      // Adhan Channel
+      // Adhan Channel (legacy - full adhan)
       await androidPlugin.createNotificationChannel(
         const AndroidNotificationChannel(
           'prayer_adhan',
@@ -106,6 +107,34 @@ class NotificationService extends GetxService {
           playSound: true,
         ),
       );
+
+      // Takbeer Channel (short, at prayer time) - uses takbir_1.mp3
+      await androidPlugin.createNotificationChannel(
+        const AndroidNotificationChannel(
+          ApiConstants.prayerTakbeerChannelId,
+          'Prayer (Takbeer)',
+          description: 'Short takbeer at prayer time',
+          importance: Importance.high,
+          sound: RawResourceAndroidNotificationSound('takbir_1'),
+          playSound: true,
+        ),
+      );
+
+      // Approaching channels (prayer-specific: fagrsoon, zohrsoon, etc.)
+      const approachSounds = ['fagrsoon', 'zohrsoon', 'asrsoon', 'maghribsoon', 'eshaasoon'];
+      const prayerKeys = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
+      for (var i = 0; i < approachSounds.length; i++) {
+        await androidPlugin.createNotificationChannel(
+          AndroidNotificationChannel(
+            '${ApiConstants.prayerApproachChannelPrefix}${prayerKeys[i]}',
+            'Approaching ${prayerKeys[i]}',
+            description: 'Approaching prayer alert',
+            importance: Importance.high,
+            sound: RawResourceAndroidNotificationSound(approachSounds[i]),
+            playSound: true,
+          ),
+        );
+      }
 
       // Vibrate Channel
       await androidPlugin.createNotificationChannel(
@@ -207,7 +236,9 @@ class NotificationService extends GetxService {
           data: {'payload': response.payload},
         );
       }
-    } catch (_) {}
+    } catch (e) {
+      AppLogger.debug('Notification tapped / analytics failed', e);
+    }
   }
 
   Future<void> _handlePrayedAction(
@@ -241,7 +272,9 @@ class NotificationService extends GetxService {
 
       try {
         sl<LiveContextService>().onPrayerLogged();
-      } catch (_) {}
+      } catch (e) {
+        AppLogger.debug('LiveContextService.onPrayerLogged failed', e);
+      }
 
       if (synced) {
         AppFeedback.showSuccess('done'.tr, 'prayer_logged_toast'.tr);
@@ -249,7 +282,8 @@ class NotificationService extends GetxService {
         AppFeedback.showSuccess('done'.tr, 'saved_will_sync_later'.tr);
       }
       Get.toNamed(AppRoutes.dashboard);
-    } catch (_) {
+    } catch (e) {
+      AppLogger.debug('Handle prayed action failed (saving pending)', e);
       final baseId = type == 'adhan' ? notifId : notifId - 100;
       _savePendingPrayerLog(prayerKey, adhanIso, baseId);
       Get.toNamed(AppRoutes.dashboard);
@@ -266,7 +300,9 @@ class NotificationService extends GetxService {
           'baseId': baseId,
         }),
       );
-    } catch (_) {}
+    } catch (e) {
+      AppLogger.debug('Save pending prayer log failed', e);
+    }
   }
 
   // _prayerKeyToName removed – use PrayerNames.fromKey() instead
@@ -347,12 +383,19 @@ class NotificationService extends GetxService {
   String _getPrayerChannelId(NotificationSoundMode mode) {
     switch (mode) {
       case NotificationSoundMode.adhan:
-        return 'prayer_adhan';
+        return _storage.takbeerAtPrayerEnabled
+            ? ApiConstants.prayerTakbeerChannelId
+            : 'prayer_vibrate';
       case NotificationSoundMode.vibrate:
         return 'prayer_vibrate';
       case NotificationSoundMode.silent:
         return 'prayer_silent';
     }
+  }
+
+  String _getApproachChannelId(PrayerName prayer) {
+    final key = prayer.name;
+    return '${ApiConstants.prayerApproachChannelPrefix}$key';
   }
 
   String _getNotifKeyForPrayer(PrayerName prayer) {
@@ -581,6 +624,28 @@ class NotificationService extends GetxService {
     );
   }
 
+  /// Schedule approaching prayer alert (X minutes before prayer)
+  Future<void> scheduleApproachingNotification({
+    required int id,
+    required String prayerName,
+    required String prayerKey,
+    required PrayerName prayer,
+    required DateTime prayerTime,
+    required int minutesBefore,
+  }) async {
+    final approachTime = prayerTime.subtract(Duration(minutes: minutesBefore));
+    final payload = 'approaching|$id|$prayerKey|${prayerTime.toIso8601String()}';
+    final channelId = _getApproachChannelId(prayer);
+    await scheduleNotification(
+      id: id,
+      title: 'approaching_prayer_title'.trParams({'prayer': prayerName}),
+      body: 'approaching_prayer_body'.trParams({'minutes': '$minutesBefore'}),
+      scheduledTime: approachTime,
+      payload: payload,
+      channelId: channelId,
+    );
+  }
+
   String _displayNameToKey(String name) {
     final n = name.trim().toLowerCase();
     if (n.contains('فجر') || n == 'fajr') return 'fajr';
@@ -692,7 +757,25 @@ class NotificationService extends GetxService {
         final individualPrayerEnabled =
             _storage.read<bool>(_getNotifKeyForPrayer(pType)) ?? true;
 
-        // Schedule adhan notification
+        // Schedule approaching alert (X min before prayer)
+        final approachingEnabled = _storage.approachingAlertEnabled;
+        if (approachingEnabled && individualPrayerEnabled && pType != null) {
+          final approachId = ApiConstants.approachingNotificationIdBase + baseId - 1;
+          final minutesBefore = _storage.approachingAlertMinutes;
+          final approachTime = prayer.dateTime.subtract(Duration(minutes: minutesBefore));
+          if (approachTime.isAfter(now)) {
+            await scheduleApproachingNotification(
+              id: approachId,
+              prayerName: prayer.name,
+              prayerKey: prayerKey,
+              prayer: pType,
+              prayerTime: prayer.dateTime,
+              minutesBefore: minutesBefore,
+            );
+          }
+        }
+
+        // Schedule adhan/takbeer notification at prayer time
         if (adhanMasterEnabled && individualPrayerEnabled) {
           await scheduleNotificationWithActions(
             id: baseId,
@@ -723,8 +806,8 @@ class NotificationService extends GetxService {
           }
         }
       }
-    } catch (_) {
-      // Notification rescheduling failed — non-critical
+    } catch (e) {
+      AppLogger.debug('Notification reschedule failed (non-critical)', e);
     }
   }
 

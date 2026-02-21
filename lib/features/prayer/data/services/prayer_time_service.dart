@@ -523,4 +523,60 @@ class PrayerTimeRange {
       prayerName: prayer,
     );
   }
+
+  /// Create a PrayerTimeRange from prayer models
+  static PrayerTimeRange? fromPrayerModels({
+    required List<PrayerTimeModel> prayers,
+    required PrayerName prayer,
+  }) {
+    try {
+      final current = prayers.firstWhereOrNull((p) => p.prayerType == prayer);
+      if (current == null) return null;
+
+      final adhan = current.dateTime;
+      DateTime nextPrayer;
+
+      if (prayer == PrayerName.isha) {
+        // Isha ends at midnight (matching fromPrayerTimes logic)
+        nextPrayer = DateTime(adhan.year, adhan.month, adhan.day + 1);
+      } else {
+        // Find next prayer (excluding sunrise as a destination for ranges usually)
+        // Actually, matching fromPrayerTimes logic:
+        // Fajr -> Sunrise
+        // Dhuhr -> Asr
+        // Asr -> Maghrib
+        // Maghrib -> Isha
+        
+        PrayerName? nextType;
+        switch (prayer) {
+          case PrayerName.fajr:
+            nextType = PrayerName.sunrise;
+            break;
+          case PrayerName.dhuhr:
+            nextType = PrayerName.asr;
+            break;
+          case PrayerName.asr:
+            nextType = PrayerName.maghrib;
+            break;
+          case PrayerName.maghrib:
+            nextType = PrayerName.isha;
+            break;
+          default:
+            return null;
+        }
+        
+        final next = prayers.firstWhereOrNull((p) => p.prayerType == nextType);
+        if (next == null) return null;
+        nextPrayer = next.dateTime;
+      }
+
+      return PrayerTimeRange(
+        adhanTime: adhan,
+        nextPrayerTime: nextPrayer,
+        prayerName: prayer,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
 }

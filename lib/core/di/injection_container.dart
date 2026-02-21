@@ -19,21 +19,17 @@ import 'package:salah/features/auth/data/services/auth_service.dart';
 import 'package:salah/core/services/sync_service.dart';
 import 'package:salah/features/prayer/data/services/prayer_time_service.dart';
 import 'package:salah/features/prayer/data/services/notification_service.dart';
-import 'package:salah/features/notifications/data/services/fcm_service.dart';
 import 'package:salah/core/services/audio_service.dart';
 import 'package:salah/core/services/shake_service.dart';
 import 'package:salah/features/prayer/data/services/qada_detection_service.dart';
 import 'package:salah/features/prayer/data/services/live_context_service.dart';
 import 'package:salah/features/prayer/data/services/smart_notification_service.dart';
-import 'package:salah/features/family/data/services/family_service.dart';
 
 // ============================================================
 // Data Layer
 // ============================================================
 import 'package:salah/features/prayer/data/repositories/prayer_repository.dart';
 import 'package:salah/features/auth/data/repositories/user_repository.dart';
-import 'package:salah/features/family/data/repositories/family_repository.dart';
-import 'package:salah/features/family/data/repositories/achievement_repository.dart';
 
 // ============================================================
 // Controllers
@@ -105,9 +101,6 @@ Future<void> initInjection() async {
     return sync;
   });
 
-  // FCM Service (lazy — not needed at startup)
-  sl.registerLazySingleton<FcmService>(() => FcmService());
-
   // Prayer Repository (depends on Firestore, Database, Connectivity, Sync, Auth)
   sl.registerLazySingleton<PrayerRepository>(
     () => PrayerRepository(
@@ -122,21 +115,6 @@ Future<void> initInjection() async {
   // User Repository (depends on Firestore, Database, Connectivity, PrayerRepo)
   sl.registerLazySingleton<UserRepository>(
     () => UserRepository(
-      firestore: sl<FirestoreService>(),
-      database: sl<DatabaseHelper>(),
-      connectivity: sl<ConnectivityService>(),
-      prayerRepository: sl<PrayerRepository>(),
-    ),
-  );
-
-  // Family Repository
-  sl.registerLazySingleton<FamilyRepository>(
-    () => FamilyRepository(firestore: sl<FirestoreService>()),
-  );
-
-  // Achievement Repository
-  sl.registerLazySingleton<AchievementRepository>(
-    () => AchievementRepository(
       firestore: sl<FirestoreService>(),
       database: sl<DatabaseHelper>(),
       connectivity: sl<ConnectivityService>(),
@@ -182,14 +160,6 @@ Future<void> initInjection() async {
   sl.registerLazySingleton<AudioService>(() => AudioService());
   sl.registerLazySingleton<ShakeService>(() => ShakeService());
 
-  // Family Feature
-  sl.registerLazySingleton<FamilyService>(
-    () => FamilyService(
-      authService: sl<AuthService>(),
-      database: sl<DatabaseHelper>(),
-    ),
-  );
-
   // ============================================================
   // 5. CONTROLLERS (registered with GetX for route lifecycle)
   // ============================================================
@@ -213,7 +183,6 @@ Future<void> initLateServices() async {
   await Future.wait<void>([
     sl<PrayerTimeService>().init(),
     sl<NotificationService>().init(),
-    sl<FcmService>().init(),
   ]);
 
   // Live Context Engine (current prayer, countdown, today summary)

@@ -4,45 +4,51 @@ import 'package:get/get.dart';
 import 'package:salah/core/feedback/toast_service.dart';
 import 'package:salah/core/theme/app_colors.dart';
 
-/// Single entry point for user feedback: toasts and dialogs.
+/// Single entry point for all user-facing feedback: toasts, dialogs, and haptics.
 ///
-/// Use this everywhere instead of Get.snackbar / Get.dialog.
-/// - Success/error/info/warning → modern overlay toasts via [ToastService].
-/// - Loading and confirmation → dialogs.
+/// Prefer this over calling [ToastService], [Get.dialog], or [Get.snackbar] directly,
+/// so feedback behaviour can be updated in one place.
 class AppFeedback {
-  AppFeedback._();
+  const AppFeedback._();
 
-  /// Trigger haptic feedback for success.
-  static void hapticSuccess() {
-    HapticFeedback.lightImpact();
-  }
+  // ============================================================
+  // HAPTICS
+  // ============================================================
 
-  /// Show an error toast (overlay-based, theme-aware).
-  static void showError(String title, [String? message]) {
-    ToastService.error(title, message);
-  }
+  static void hapticSuccess() => HapticFeedback.lightImpact();
+  static void hapticWarning() => HapticFeedback.mediumImpact();
+  static void hapticError() => HapticFeedback.heavyImpact();
 
-  /// Show a success toast.
-  static void showSuccess(String title, [String? message]) {
-    ToastService.success(title, message);
-  }
+  // ============================================================
+  // TOASTS
+  // ============================================================
 
-  /// Show info or warning toast. [isWarning] true → warning style.
+  static void showSuccess(String title, [String? message]) =>
+      ToastService.success(title, message);
+
+  static void showError(String title, [String? message]) =>
+      ToastService.error(title, message);
+
+  static void showWarning(String title, [String? message]) =>
+      ToastService.warning(title, message);
+
+  static void showInfo(String title, [String? message]) =>
+      ToastService.info(title, message);
+
+  /// Convenience method kept for backward compatibility.
   static void showSnackbar(
     String title, [
     String? message,
     bool isWarning = false,
-  ]) {
-    if (isWarning) {
-      ToastService.warning(title, message);
-    } else {
-      ToastService.info(title, message);
-    }
-  }
+  ]) => isWarning ? showWarning(title, message) : showInfo(title, message);
 
-  /// Show a loading dialog. Call [hideLoading] to close.
+  // ============================================================
+  // LOADING DIALOG
+  // ============================================================
+
+  /// Shows a non-dismissible loading dialog.
+  /// Always pair with [hideLoading] once the operation completes.
   static void showLoading([String? message]) {
-    final msg = message ?? 'loading'.tr;
     Get.dialog(
       PopScope(
         canPop: false,
@@ -55,7 +61,7 @@ class AppFeedback {
                 children: [
                   const CircularProgressIndicator(),
                   const SizedBox(height: 16),
-                  Text(msg),
+                  Text(message ?? 'loading'.tr),
                 ],
               ),
             ),
@@ -66,12 +72,19 @@ class AppFeedback {
     );
   }
 
-  /// Hide the current dialog (e.g. loading).
+  /// Closes the loading dialog opened by [showLoading].
   static void hideLoading() {
     if (Get.isDialogOpen ?? false) Get.back();
   }
 
-  /// Show a confirmation dialog. Returns true if user confirmed.
+  // ============================================================
+  // CONFIRMATION DIALOG
+  // ============================================================
+
+  /// Shows a blocking confirmation dialog.
+  ///
+  /// Returns `true` if the user pressed confirm, `false` if they cancelled
+  /// or dismissed the dialog.
   static Future<bool> confirm({
     required String title,
     required String message,
@@ -90,13 +103,13 @@ class AppFeedback {
           ),
           TextButton(
             onPressed: () => Get.back(result: true),
+            style: isDestructive
+                ? TextButton.styleFrom(foregroundColor: AppColors.error)
+                : null,
             child: Text(
               confirmText ?? 'confirm'.tr,
               style: isDestructive
-                  ? TextStyle(
-                      color: AppColors.error,
-                      fontWeight: FontWeight.bold,
-                    )
+                  ? const TextStyle(fontWeight: FontWeight.bold)
                   : null,
             ),
           ),
