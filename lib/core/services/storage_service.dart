@@ -79,6 +79,16 @@ class StorageService extends GetxService {
   Future<void> setThemeMode(String mode) => write(StorageKeys.themeMode, mode);
 
   // ══════════════════════════════════════════════════════════════
+  // PRAYER CALCULATION METHOD
+  // ══════════════════════════════════════════════════════════════
+
+  /// طريقة الحساب: 0 تعني تلقائي (حسب الدولة)
+  int getCalculationMethod() => read<int>(StorageKeys.calculationMethod) ?? 0;
+
+  Future<void> setCalculationMethod(int method) =>
+      write(StorageKeys.calculationMethod, method);
+
+  // ══════════════════════════════════════════════════════════════
   // ONBOARDING
   // ══════════════════════════════════════════════════════════════
 

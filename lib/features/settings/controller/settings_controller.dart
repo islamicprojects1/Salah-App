@@ -11,6 +11,7 @@ import 'package:salah/features/auth/data/models/user_model.dart';
 import 'package:salah/features/auth/data/models/user_privacy_settings.dart';
 import 'package:salah/features/auth/data/repositories/user_repository.dart';
 import 'package:salah/features/auth/data/services/auth_service.dart';
+import 'package:salah/features/family/controller/family_controller.dart';
 import 'package:salah/features/prayer/data/services/notification_service.dart';
 import 'package:salah/features/prayer/data/services/prayer_time_service.dart';
 import 'package:salah/features/settings/data/services/localization_service.dart';
@@ -273,6 +274,9 @@ class SettingsController extends GetxController with SettingsSupportMixin {
   }
 
   Future<void> logout() async {
+    if (Get.isRegistered<FamilyController>()) {
+      Get.find<FamilyController>().cancelStreamsForLogout();
+    }
     await _authService.signOut();
     Get.offAllNamed(AppRoutes.login);
   }

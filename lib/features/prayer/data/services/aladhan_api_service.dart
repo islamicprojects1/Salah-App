@@ -181,17 +181,7 @@ class AladhanApiService {
       final h = int.tryParse(hm[0]) ?? 0;
       final m = int.tryParse(hm[1]) ?? 0;
 
-      if (timestamp != null && timestamp > 0) {
-        // API timestamp = midnight in location's timezone
-        // instant = midnight + h hours + m minutes (same timezone)
-        final epochSeconds = timestamp + h * 3600 + m * 60;
-        return DateTime.fromMillisecondsSinceEpoch(
-          epochSeconds * 1000,
-          isUtc: true,
-        ).toLocal();
-      }
-
-      // Fallback when timestamp missing (legacy)
+      // Returning local DateTime ensures the displayed time matches the API's h:m string.
       return DateTime(year, month, day, h, m);
     }
 

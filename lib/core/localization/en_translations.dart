@@ -566,6 +566,99 @@ const Map<String, String> enTranslations = {
   'feature_family_encourage': 'Encourage the ones you love',
   'feature_family_reminders': 'Gentle, caring reminders',
   'feature_family_privacy': 'Your privacy is always protected',
+  // ══════════════════════════════════════════════════════════════
+  'not_specified': 'Not specified',
+
+  'no_internet': 'No internet connection',
+
+  // ══════════════════════════════════════════════════════════════
+  // PRAYERS
+  // ══════════════════════════════════════════════════════════════
+
+  // ══════════════════════════════════════════════════════════════
+  // FAMILY
+  // ══════════════════════════════════════════════════════════════
+  'my_group': 'My Group',
+  'members': 'Members',
+  'admin': 'Admin',
+  'shadow': 'Shadow',
+  'group_admin': 'Group Admin',
+  'group_member': 'Member',
+  'join': 'Join',
+  'leave': 'Leave',
+  'dissolve': 'Dissolve',
+  'create': 'Create',
+  'load_error': 'Failed to load',
+
+  'family_type': 'Family',
+  'guided_type': 'Circle / Guided',
+  'friends_type': 'Friends',
+  'family_type_desc': 'For families — parents and children',
+  'guided_type_desc': 'Quran circle or course — with a teacher',
+  'friends_type_desc': 'Friends group — all members are equal',
+
+  'family_welcome_title': 'Pray together, feel closer',
+  'family_welcome_desc':
+      'Create or join a group and track\nhow many of you prayed today — no details, no surveillance.',
+  'create_group': 'Create Group',
+  'join_group': 'Join with Code',
+  'privacy_note': "No one sees your individual prayers — only X/Y",
+
+  'prayed_today': 'from the group prayed today',
+  'all_prayed_today': 'Everyone prayed today 🎉',
+
+  'invite_members': 'Invite Members',
+  'share_link': 'Share Link',
+  'renew_code': 'Renew Code',
+  'code_copied': 'Code copied',
+  'code_renewed': 'Code renewed successfully',
+  'invite_text': 'Join my group on Qurb app',
+  'join_group_subject': 'Invitation to join a Qurb group',
+
+  'group_type': 'Group Type',
+  'group_name': 'Group Name',
+  'group_name_hint': 'e.g. Al-Shammari Family',
+  'group_name_optional': 'Optional — max 50 characters',
+  'create_group_error': 'An error occurred. Please try again.',
+
+  'enter_invite_code': 'Enter Invite Code',
+  'enter_invite_code_sub':
+      'The code is 8 characters\nYou can find it in your group chat',
+  'code_required': 'Please enter the code',
+  'code_invalid_length': 'Code must be exactly 8 characters',
+  'code_not_found': 'Code not found or expired',
+  'you_are_blocked': 'You cannot join this group',
+  'join_error_generic': 'An error occurred. Please try again.',
+
+  'no_members_yet': 'No members yet',
+  'kick_member': 'Remove Member',
+  'kick_and_block': 'Remove & Block',
+  'transfer_admin': 'Make Admin',
+  'kick_confirm_msg': 'Remove this member from the group?',
+  'block_confirm_msg':
+      "Remove and block this member? They won't be able to rejoin.",
+  'transfer_admin_msg':
+      "Make this member the group admin? You'll lose your admin rights.",
+
+  'add_shadow_member': 'Add member without phone',
+  'add_shadow_subtitle': 'For children or elderly without a smartphone',
+  'member_name': 'Name',
+  'member_name_hint': 'e.g. Mohammed (eldest son)',
+  'contact_optional': 'Contact (optional)',
+  'contact_hint': 'Email or phone — for future linking',
+  'add_member': 'Add Member',
+  'shadow_added': 'Member added successfully',
+  'shadow_name_exists': 'A shadow member with this name already exists.',
+
+  'leave_group': 'Leave Group',
+  'leave_group_msg': 'Are you sure you want to leave the group?',
+  'leave_last_admin_msg':
+      'You are the only admin. The group will be dissolved.',
+  'dissolve_group': 'Dissolve Group',
+  'dissolve_confirm_msg': 'Are you sure? This cannot be undone.',
+  'must_transfer_admin': 'Must Transfer Admin First',
+  'must_transfer_admin_msg':
+      'Before leaving, assign a new admin from the members list.',
 
   // ==================== Errors ====================
   'error_no_internet': 'No internet connection',

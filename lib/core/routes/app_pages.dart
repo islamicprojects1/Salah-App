@@ -1,4 +1,10 @@
 import 'package:get/get.dart';
+import 'package:salah/features/family/presentation/bindings/family_binding.dart';
+import 'package:salah/features/family/presentation/screens/create_group_screen.dart';
+import 'package:salah/features/family/presentation/screens/family_screen.dart';
+import 'package:salah/features/family/presentation/screens/join_group_screen.dart';
+import 'package:salah/features/shell/presentation/bindings/main_shell_binding.dart';
+import 'package:salah/features/shell/presentation/screens/main_shell_screen.dart';
 import 'package:salah/features/settings/presentation/bindings/selected_city_binding.dart';
 import 'package:salah/core/middleware/onboarding_middleware.dart';
 import 'package:salah/features/settings/presentation/screens/select_city_screen.dart';
@@ -11,10 +17,8 @@ import 'package:salah/features/onboarding/presentation/bindings/onboarding_bindi
 import 'package:salah/features/auth/presentation/screens/login_screen.dart';
 import 'package:salah/features/auth/presentation/screens/register_screen.dart';
 import 'package:salah/features/auth/presentation/screens/profile_setup_screen.dart';
-import 'package:salah/features/prayer/presentation/screens/dashboard_screen.dart';
 import 'package:salah/features/settings/presentation/bindings/settings_binding.dart';
 import 'package:salah/features/auth/presentation/bindings/auth_binding.dart';
-import 'package:salah/features/prayer/presentation/bindings/dashboard_binding.dart';
 import 'package:salah/features/prayer/presentation/screens/missed_prayers_screen.dart';
 import 'package:salah/features/prayer/controller/missed_prayers_controller.dart';
 import 'package:salah/features/profile/presentation/screens/profile_screen.dart';
@@ -49,8 +53,13 @@ class AppPages {
       middlewares: [OnboardingMiddleware()],
       transition: Transition.fade,
     ),
-
-    // Login
+    GetPage(
+      name: AppRoutes.family,
+      page: () => const FamilyScreen(),
+      binding: FamilyBinding(),
+    ),
+    GetPage(name: AppRoutes.createGroup, page: () => const CreateGroupScreen()),
+    GetPage(name: AppRoutes.joinGroup, page: () => const JoinGroupScreen()),
     GetPage(
       name: AppRoutes.login,
       page: () => const LoginScreen(),
@@ -82,13 +91,13 @@ class AppPages {
       transition: Transition.cupertino, // Standard push
     ),
 
-    // Dashboard (main screen after login)
+    // Main shell (Dashboard + Family tabs) after login
     GetPage(
       name: AppRoutes.dashboard,
-      page: () => const DashboardScreen(),
-      binding: DashboardBinding(),
+      page: () => const MainShellScreen(),
+      binding: MainShellBinding(),
       middlewares: [OnboardingMiddleware()],
-      transition: Transition.fadeIn, // Smooth entry to main app
+      transition: Transition.fadeIn,
     ),
 
     // Home Screen (legacy)

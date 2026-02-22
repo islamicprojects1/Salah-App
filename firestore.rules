@@ -59,11 +59,21 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // Groups (legacy): create by any signed-in user; read/update/delete only if in memberIds
+    // Groups: create by any signed-in user; read/update/delete only if member
     match /groups/{groupId} {
       allow create: if isSignedIn();
-      allow read, update, delete: if isSignedIn() &&
-        request.auth.uid in resource.data.get('memberIds', []);
+      // Allow 'list' so users can query the group by inviteCode (during join or unique check)
+      allow list: if isSignedIn();
+      // Allow 'get' if the user is a member or the admin
+      allow get, update, delete: if isSignedIn() &&
+        (request.auth.uid == resource.data.adminId || request.auth.uid in resource.data.get('memberIds', []));
+
+      // Members subcollection
+      match /members/{memberId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn() && memberId == request.auth.uid;
+        allow update, delete: if isSignedIn();
+      }
     }
 
     // Analytics: any authenticated user can create events (for app metrics)
@@ -78,7 +88,6 @@ service cloud.firestore {
       allow create: if isSignedIn();
       allow update, delete: if isSignedIn();
     }
-
     // Achievements (definitions): read-only for all authenticated
     match /achievements/{achievementId} {
       allow read: if isSignedIn();

@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 import 'package:salah/core/constants/app_dimensions.dart';
 import 'package:salah/core/theme/app_colors.dart';
 import 'package:salah/core/theme/app_fonts.dart';
-import 'package:salah/core/widgets/app_text_field.dart';
 import 'package:salah/features/onboarding/controller/onboarding_controller.dart';
 import 'package:salah/features/onboarding/presentation/widgets/onboarding_widgets.dart';
 
@@ -27,19 +26,7 @@ class ProfileSetupPage extends GetView<OnboardingController> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Name ──
-              _SectionLabel(label: 'name_label'.tr),
-              const SizedBox(height: 8),
-              AppTextField(
-                controller: controller.nameController,
-                label: 'name_label'.tr,
-                prefixIcon: Icons.person_outline,
-                textCapitalization: TextCapitalization.words,
-                textInputAction: TextInputAction.done,
-              ),
-              const SizedBox(height: 22),
-
-              // ── Gender ──
+              // ── Gender ── (name asked only in Register to avoid duplication)
               _SectionLabel(label: 'gender_label'.tr),
               const SizedBox(height: 10),
               Obx(

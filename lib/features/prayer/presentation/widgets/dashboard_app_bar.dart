@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:salah/core/constants/app_dimensions.dart';
@@ -7,16 +6,20 @@ import 'package:salah/core/theme/app_colors.dart';
 import 'package:salah/core/theme/app_fonts.dart';
 import 'package:salah/features/prayer/controller/dashboard_controller.dart';
 import 'package:salah/features/prayer/presentation/screens/qibla_screen.dart';
+import 'package:salah/features/shell/controller/main_shell_controller.dart';
 
 class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
   const DashboardAppBar({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<DashboardController>();
+    final dashboardCtrl = Get.find<DashboardController>();
+    final scaffoldKey = Get.isRegistered<MainShellController>()
+        ? Get.find<MainShellController>().scaffoldKey
+        : dashboardCtrl.scaffoldKey;
     return Obx(() {
       final isDefaultLocation =
-          controller.currentCity.value == 'makkah_fallback_label'.tr;
+          dashboardCtrl.currentCity.value == 'makkah_fallback_label'.tr;
       return AppBar(
         backgroundColor: AppColors.surface,
         elevation: 0,
@@ -33,7 +36,7 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
             : null,
         leading: IconButton(
           icon: Icon(Icons.menu, color: AppColors.textPrimary),
-          onPressed: () => controller.scaffoldKey.currentState?.openDrawer(),
+          onPressed: () => scaffoldKey.currentState?.openDrawer(),
         ),
         title: InkWell(
           onTap: () => Get.toNamed(AppRoutes.selectCity),
@@ -43,12 +46,12 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
             children: [
               Obx(
                 () => Icon(
-                  controller.currentCity.value == 'makkah_fallback_label'.tr
+                  dashboardCtrl.currentCity.value == 'makkah_fallback_label'.tr
                       ? Icons.location_off_outlined
                       : Icons.edit_location_outlined,
                   size: AppDimensions.iconMD,
                   color:
-                      controller.currentCity.value == 'makkah_fallback_label'.tr
+                      dashboardCtrl.currentCity.value == 'makkah_fallback_label'.tr
                       ? AppColors.error
                       : AppColors.textSecondary,
                 ),
@@ -57,12 +60,12 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
               Flexible(
                 child: Obx(
                   () => Text(
-                    controller.currentCity.value.split(',').first,
+                    dashboardCtrl.currentCity.value.split(',').first,
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,
                     style: AppFonts.titleMedium.copyWith(
                       color:
-                          controller.currentCity.value ==
+                          dashboardCtrl.currentCity.value ==
                               'makkah_fallback_label'.tr
                           ? AppColors.error
                           : AppColors.textPrimary,

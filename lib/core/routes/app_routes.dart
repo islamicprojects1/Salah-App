@@ -51,6 +51,8 @@ class AppRoutes {
 
   /// About screen - app information
   static const String about = '/about';
+  static const String createGroup = '/family/create';
+  static const String joinGroup = '/family/join';
 
   /// Notifications screen
   static const String notifications = '/notifications';

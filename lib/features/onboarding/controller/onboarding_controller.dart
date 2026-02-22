@@ -32,9 +32,7 @@ class OnboardingController extends GetxController
   final locationPermissionGranted = false.obs;
   final notificationPermissionGranted = false.obs;
 
-  // Profile form
-  final nameController = TextEditingController();
-  final name = ''.obs;
+  // Profile form (name asked only in Register to avoid duplication)
   final selectedGender = Rxn<String>();
   final selectedBirthDate = Rxn<DateTime>();
 
@@ -59,8 +57,8 @@ class OnboardingController extends GetxController
   bool get allPermissionsGranted =>
       locationPermissionGranted.value && notificationPermissionGranted.value;
 
-  bool get isProfileValid =>
-      name.value.trim().isNotEmpty && selectedGender.value != null;
+  /// Profile valid if gender selected (name is asked only in Register).
+  bool get isProfileValid => selectedGender.value != null;
 
   bool get canSkip =>
       currentStep != OnboardingStep.welcome &&
@@ -83,7 +81,6 @@ class OnboardingController extends GetxController
     super.onInit();
     _initDependencies();
     _initAnimations();
-    nameController.addListener(() => name.value = nameController.text);
     _checkPermissionsStatus();
   }
 
@@ -149,7 +146,6 @@ class OnboardingController extends GetxController
     slideController.dispose();
     bgController.dispose();
     pageController.dispose();
-    nameController.dispose();
     super.onClose();
   }
 
@@ -242,6 +238,15 @@ class OnboardingController extends GetxController
     } finally {
       isLoading.value = false;
     }
+  }
+
+  /// Request both permissions sequentially with one tap — location first, then notifications.
+  /// Matches UX best practice: single CTA, explain first, then system dialogs in order.
+  Future<void> requestAllPermissionsSequentially() async {
+    if (allPermissionsGranted) return;
+    HapticFeedback.mediumImpact();
+    await requestLocationPermission();
+    await requestNotificationPermission();
   }
 
   // ============================================================

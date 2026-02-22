@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:salah/core/constants/app_dimensions.dart';
 import 'package:salah/core/theme/app_colors.dart';
 import 'package:salah/core/theme/app_fonts.dart';
 import 'package:salah/features/onboarding/controller/onboarding_controller.dart';
@@ -24,7 +23,7 @@ class PermissionsPage extends GetView<OnboardingController> {
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Column(
             children: [
-              // ── Location card ──
+              // ── Location card (display only; CTA handles both) ──
               StaggeredFeatureItem(
                 index: 0,
                 child: Obx(
@@ -40,13 +39,13 @@ class PermissionsPage extends GetView<OnboardingController> {
                     isLoading:
                         controller.isLoading.value &&
                         !controller.locationPermissionGranted.value,
-                    onTap: controller.requestLocationPermission,
+                    onTap: null,
                   ),
                 ),
               ),
               const SizedBox(height: 14),
 
-              // ── Notification card ──
+              // ── Notification card (display only) ──
               StaggeredFeatureItem(
                 index: 1,
                 child: Obx(
@@ -62,7 +61,7 @@ class PermissionsPage extends GetView<OnboardingController> {
                     isLoading:
                         controller.isLoading.value &&
                         !controller.notificationPermissionGranted.value,
-                    onTap: controller.requestNotificationPermission,
+                    onTap: null,
                   ),
                 ),
               ),
@@ -71,20 +70,24 @@ class PermissionsPage extends GetView<OnboardingController> {
         ),
         const SizedBox(height: 28),
 
-        // ── CTA ──
+        // ── Single CTA: one tap requests both permissions sequentially ──
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Obx(
-            () => OnboardingButton(
-              text: controller.buttonText,
-              color: controller.allPermissionsGranted
-                  ? AppColors.success
-                  : AppColors.primary,
-              onTap: controller.nextStep,
-              icon: controller.allPermissionsGranted
-                  ? Icons.check_circle_rounded
-                  : Icons.arrow_forward_rounded,
-            ),
+            () {
+              final allGranted = controller.allPermissionsGranted;
+              return OnboardingButton(
+                text: controller.buttonText,
+                color: allGranted ? AppColors.success : AppColors.primary,
+                onTap: allGranted
+                    ? controller.nextStep
+                    : controller.requestAllPermissionsSequentially,
+                icon: allGranted
+                    ? Icons.check_circle_rounded
+                    : Icons.arrow_forward_rounded,
+                isLoading: controller.isLoading.value && !allGranted,
+              );
+            },
           ),
         ),
         const SizedBox(height: 12),
@@ -115,7 +118,7 @@ class _PermissionCard extends StatelessWidget {
   final String subtitle;
   final bool isGranted;
   final bool isLoading;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   const _PermissionCard({
     required this.icon,
@@ -124,7 +127,7 @@ class _PermissionCard extends StatelessWidget {
     required this.subtitle,
     required this.isGranted,
     required this.isLoading,
-    required this.onTap,
+    this.onTap,
   });
 
   @override
@@ -154,7 +157,7 @@ class _PermissionCard extends StatelessWidget {
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(18),
         child: InkWell(
-          onTap: isGranted ? null : onTap,
+          onTap: onTap,
           borderRadius: BorderRadius.circular(18),
           child: Padding(
             padding: const EdgeInsets.all(18),

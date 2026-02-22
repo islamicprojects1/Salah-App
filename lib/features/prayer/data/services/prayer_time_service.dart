@@ -92,8 +92,7 @@ class PrayerTimeService extends GetxService {
       // 2. Fetch from Aladhan API when online
       final isOnline = sl<ConnectivityService>().isConnected.value;
       if (isOnline) {
-        final method =
-            getAladhanMethodForCountry(_locationService.countryName.value);
+        final method = _getEffectiveMethod();
         final list = await _aladhanApi.fetchTimingsForDate(
           latitude: lat,
           longitude: lng,
@@ -217,8 +216,7 @@ class PrayerTimeService extends GetxService {
 
     final isOnline = sl<ConnectivityService>().isConnected.value;
     if (isOnline) {
-      final method =
-          getAladhanMethodForCountry(_locationService.countryName.value);
+      final method = _getEffectiveMethod();
       final list = await _aladhanApi.fetchTimingsForDate(
         latitude: lat,
         longitude: lng,
@@ -303,6 +301,13 @@ class PrayerTimeService extends GetxService {
   /// Next prayer
   Rx<PrayerTimeModel?> get nextPrayer {
     return Rx<PrayerTimeModel?>(getNextPrayer());
+  }
+
+  /// Get the method ID to use: stored preference or automatic by country.
+  int _getEffectiveMethod() {
+    final preferred = _storageService.getCalculationMethod();
+    if (preferred > 0) return preferred;
+    return getAladhanMethodForCountry(_locationService.countryName.value);
   }
 }
 

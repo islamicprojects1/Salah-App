@@ -15,6 +15,9 @@ class StorageKeys {
   /// Selected theme mode ('system' | 'light' | 'dark')
   static const String themeMode = 'theme_mode';
 
+  /// Preferred calculation method ID (0 means automatic)
+  static const String calculationMethod = 'calculation_method';
+
   /// True on first app launch
   static const String isFirstTime = 'is_first_time';
 
