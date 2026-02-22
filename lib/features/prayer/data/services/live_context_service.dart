@@ -38,7 +38,7 @@ class LiveContextService extends GetxService {
 
   // Observables
   final Rx<PrayerContextModel> prayerContext = PrayerContextModel.empty().obs;
-  final Rx<DaySummary> todaySummary = DaySummary.empty(DateTime.now()).obs;
+  final Rx<DailyPrayersSummary> todaySummary = DailyPrayersSummary.empty(DateTime.now()).obs;
   final RxList<PrayerLogModel> todayLogs = <PrayerLogModel>[].obs;
 
   // Internal state
@@ -120,7 +120,7 @@ class LiveContextService extends GetxService {
     final prayers = _prayerTimeService.getTodayPrayers();
     if (prayers.isEmpty) {
       prayerContext.value = PrayerContextModel.empty();
-      todaySummary.value = DaySummary.empty(now);
+      todaySummary.value = DailyPrayersSummary.empty(now);
       return;
     }
 
@@ -176,10 +176,9 @@ class LiveContextService extends GetxService {
     final todayPrayers = _prayerTimeService.getTodayPrayers();
     PrayerTimeRange? range;
     if (todayPrayers.isNotEmpty) {
-      final nonNullPrayer = currentName ?? PrayerName.fajr;
       range = PrayerTimeRange.fromPrayerModels(
         prayers: todayPrayers,
-        prayer: nonNullPrayer,
+        prayer: currentName,
       );
     }
 
@@ -206,7 +205,7 @@ class LiveContextService extends GetxService {
     }
   }
 
-  DaySummary _buildDaySummary(DateTime now) {
+  DailyPrayersSummary _buildDaySummary(DateTime now) {
     final date = DateTime(now.year, now.month, now.day);
     final map = <PrayerName, PrayerLogModel?>{
       PrayerName.fajr: null,
@@ -221,7 +220,7 @@ class LiveContextService extends GetxService {
         map[log.prayer] = log;
       }
     }
-    return DaySummary(date: date, prayers: map);
+    return DailyPrayersSummary(date: date, prayers: map);
   }
 
   @override

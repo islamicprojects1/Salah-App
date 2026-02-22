@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:salah/core/theme/app_fonts.dart';
+import 'package:salah/core/constants/app_dimensions.dart';
 import 'package:salah/features/prayer/controller/dashboard_controller.dart';
 
 /// Premium GitHub-style prayer heatmap with glassmorphism and soft edge fades.
@@ -18,17 +19,19 @@ class PrayerHeatmap extends StatelessWidget {
 
       final theme = Theme.of(context);
       final colorScheme = theme.colorScheme;
-      
+
       return ClipRRect(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(AppDimensions.radiusXXL),
         child: BackdropFilter(
           filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
           child: Container(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(AppDimensions.paddingXL),
             decoration: BoxDecoration(
               color: colorScheme.surface.withValues(alpha: 0.6),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: colorScheme.onSurface.withValues(alpha: 0.15)),
+              borderRadius: BorderRadius.circular(AppDimensions.radiusXXL),
+              border: Border.all(
+                color: colorScheme.onSurface.withValues(alpha: 0.15),
+              ),
               boxShadow: [
                 BoxShadow(
                   color: theme.shadowColor.withValues(alpha: 0.05),
@@ -41,8 +44,8 @@ class PrayerHeatmap extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildHeader(context),
-                const SizedBox(height: 16),
-                
+                const SizedBox(height: AppDimensions.paddingLG),
+
                 // Adaptive Grid with Fade Effect
                 ShaderMask(
                   shaderCallback: (Rect bounds) {
@@ -67,8 +70,8 @@ class PrayerHeatmap extends StatelessWidget {
                     child: _buildGrid(context, data),
                   ),
                 ),
-                
-                const SizedBox(height: 16),
+
+                const SizedBox(height: AppDimensions.paddingLG),
                 _buildLegend(context),
               ],
             ),
@@ -87,14 +90,18 @@ class PrayerHeatmap extends StatelessWidget {
         Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(6),
+              padding: const EdgeInsets.all(AppDimensions.paddingXS + 2),
               decoration: BoxDecoration(
                 color: colorScheme.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(AppDimensions.radiusSM),
               ),
-              child: Icon(Icons.calendar_view_week_rounded, color: colorScheme.primary, size: 18),
+              child: Icon(
+                Icons.calendar_view_week_rounded,
+                color: colorScheme.primary,
+                size: AppDimensions.iconSM + 2,
+              ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: AppDimensions.paddingSM + 2),
             Text(
               'prayer_heatmap'.tr,
               style: AppFonts.bodyLarge.copyWith(
@@ -106,7 +113,9 @@ class PrayerHeatmap extends StatelessWidget {
         ),
         Text(
           'last_6_months'.tr,
-          style: AppFonts.labelSmall.copyWith(color: theme.textTheme.bodySmall?.color),
+          style: AppFonts.labelSmall.copyWith(
+            color: theme.textTheme.bodySmall?.color,
+          ),
         ),
       ],
     );
@@ -116,7 +125,7 @@ class PrayerHeatmap extends StatelessWidget {
     final today = DateTime.now();
     // Start from 24 weeks ago
     final startDate = today.subtract(const Duration(days: 168));
-    
+
     List<Widget> columns = [];
     DateTime currentDate = startDate;
 
@@ -125,8 +134,12 @@ class PrayerHeatmap extends StatelessWidget {
     while (currentDate.isBefore(today) || currentDate.isAtSameMomentAs(today)) {
       List<Widget> weekCells = [];
       for (int i = 0; i < 7; i++) {
-        final date = DateTime(currentDate.year, currentDate.month, currentDate.day);
-        
+        final date = DateTime(
+          currentDate.year,
+          currentDate.month,
+          currentDate.day,
+        );
+
         if (date.isAfter(today)) {
           weekCells.add(_buildCell(context, null, date));
         } else {
@@ -135,7 +148,7 @@ class PrayerHeatmap extends StatelessWidget {
         }
         currentDate = currentDate.add(const Duration(days: 1));
       }
-      
+
       columns.add(
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 2),
@@ -144,16 +157,13 @@ class PrayerHeatmap extends StatelessWidget {
       );
     }
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: columns,
-    );
+    return Row(mainAxisSize: MainAxisSize.min, children: columns);
   }
 
   Widget _buildCell(BuildContext context, int? count, DateTime date) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    
+
     if (count == null) {
       return SizedBox(
         width: 14,
@@ -163,7 +173,9 @@ class PrayerHeatmap extends StatelessWidget {
             width: 2,
             height: 2,
             child: DecoratedBox(
-              decoration: BoxDecoration(color: colorScheme.onSurface.withValues(alpha: 0.1)),
+              decoration: BoxDecoration(
+                color: colorScheme.onSurface.withValues(alpha: 0.1),
+              ),
             ),
           ),
         ),
@@ -171,7 +183,7 @@ class PrayerHeatmap extends StatelessWidget {
     }
 
     final isFull = count == 5;
-    
+
     return Tooltip(
       message: '${date.day}/${date.month}: $count/5',
       child: AnimatedContainer(
@@ -182,15 +194,19 @@ class PrayerHeatmap extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(3),
           gradient: _getGradient(context, count),
-          boxShadow: isFull ? [
-            BoxShadow(
-              color: colorScheme.primary.withValues(alpha: 0.3),
-              blurRadius: 4,
-              spreadRadius: 0.5,
-            )
-          ] : null,
+          boxShadow: isFull
+              ? [
+                  BoxShadow(
+                    color: colorScheme.primary.withValues(alpha: 0.3),
+                    blurRadius: 4,
+                    spreadRadius: 0.5,
+                  ),
+                ]
+              : null,
           border: Border.all(
-            color: colorScheme.onSurface.withValues(alpha: count == 0 ? 0.05 : 0.1),
+            color: colorScheme.onSurface.withValues(
+              alpha: count == 0 ? 0.05 : 0.1,
+            ),
             width: 0.5,
           ),
         ),
@@ -202,14 +218,18 @@ class PrayerHeatmap extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     if (count == 0) {
       return LinearGradient(
-        colors: [colorScheme.onSurface.withValues(alpha: 0.05), colorScheme.onSurface.withValues(alpha: 0.08)],
-        begin: Alignment.topLeft, end: Alignment.bottomRight,
+        colors: [
+          colorScheme.onSurface.withValues(alpha: 0.05),
+          colorScheme.onSurface.withValues(alpha: 0.08),
+        ],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
       );
     }
-    
+
     final base = colorScheme.primary;
     final opacity = 0.2 + (count * 0.16); // 0.2 to 1.0 (approx)
-    
+
     return LinearGradient(
       colors: [
         base.withValues(alpha: opacity),
@@ -227,9 +247,12 @@ class PrayerHeatmap extends StatelessWidget {
       children: [
         Text(
           'heatmap_less'.tr,
-          style: AppFonts.labelSmall.copyWith(fontSize: 9, color: theme.textTheme.bodySmall?.color),
+          style: AppFonts.labelSmall.copyWith(
+            fontSize: 9,
+            color: theme.textTheme.bodySmall?.color,
+          ),
         ),
-        const SizedBox(width: 6),
+        const SizedBox(width: AppDimensions.paddingXS + 2),
         Row(
           children: List.generate(6, (i) {
             return Container(
@@ -243,13 +266,15 @@ class PrayerHeatmap extends StatelessWidget {
             );
           }),
         ),
-        const SizedBox(width: 6),
+        const SizedBox(width: AppDimensions.paddingXS + 2),
         Text(
           'heatmap_more'.tr,
-          style: AppFonts.labelSmall.copyWith(fontSize: 9, color: theme.textTheme.bodySmall?.color),
+          style: AppFonts.labelSmall.copyWith(
+            fontSize: 9,
+            color: theme.textTheme.bodySmall?.color,
+          ),
         ),
       ],
     );
   }
 }
-

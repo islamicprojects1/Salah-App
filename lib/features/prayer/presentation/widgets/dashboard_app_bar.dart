@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:salah/core/constants/app_dimensions.dart';
 import 'package:salah/core/routes/app_routes.dart';
 import 'package:salah/core/theme/app_colors.dart';
 import 'package:salah/core/theme/app_fonts.dart';
@@ -45,13 +46,14 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
                   controller.currentCity.value == 'makkah_fallback_label'.tr
                       ? Icons.location_off_outlined
                       : Icons.edit_location_outlined,
-                  size: 18,
-                  color: controller.currentCity.value == 'makkah_fallback_label'.tr
+                  size: AppDimensions.iconMD,
+                  color:
+                      controller.currentCity.value == 'makkah_fallback_label'.tr
                       ? AppColors.error
                       : AppColors.textSecondary,
                 ),
               ),
-              const SizedBox(width: 3),
+              const SizedBox(width: AppDimensions.paddingXS),
               Flexible(
                 child: Obx(
                   () => Text(
@@ -59,7 +61,8 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,
                     style: AppFonts.titleMedium.copyWith(
-                      color: controller.currentCity.value ==
+                      color:
+                          controller.currentCity.value ==
                               'makkah_fallback_label'.tr
                           ? AppColors.error
                           : AppColors.textPrimary,

@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
+import 'package:salah/core/constants/app_dimensions.dart';
 import 'package:salah/core/constants/enums.dart';
+import 'package:salah/core/constants/image_assets.dart';
 import 'package:salah/core/helpers/prayer_timing_helper.dart';
 import 'package:salah/core/theme/app_colors.dart';
 import 'package:salah/core/theme/app_fonts.dart';
@@ -11,7 +13,6 @@ import 'package:salah/features/prayer/data/models/prayer_time_model.dart';
 import 'package:salah/features/prayer/data/services/qada_detection_service.dart';
 import 'package:salah/features/prayer/presentation/widgets/missed_prayer_card.dart';
 
-/// Screen for quickly logging missed/unlogged prayers
 class MissedPrayersScreen extends GetView<MissedPrayersController> {
   const MissedPrayersScreen({super.key});
 
@@ -19,152 +20,28 @@ class MissedPrayersScreen extends GetView<MissedPrayersController> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(title: Text('missed_prayers'.tr), centerTitle: true),
       body: Obx(() {
         if (controller.isLoading.value) {
-          return Center(
-            child: Lottie.asset(
-              'assets/animations/loading.json',
-              width: 150,
-              height: 150,
-            ),
-          );
+          return const _LoadingState();
         }
 
         final hasData =
             controller.unloggedByDay.isNotEmpty ||
             controller.missedPrayers.isNotEmpty;
+
         if (!hasData) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Lottie.asset(
-                  'assets/animations/Success.json',
-                  width: 200,
-                  height: 200,
-                  repeat: false,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'all_prayers_completed'.tr,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          );
+          return const _EmptyState();
         }
 
         return Column(
           children: [
-            // Header
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(30),
-                  bottomRight: Radius.circular(30),
-                ),
-              ),
-              child: Column(
-                children: [
-                  Text(
-                    'missed_prayers_title'.tr,
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'missed_prayers_desc'.tr,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Content: by-day sections or legacy flat list
+            _MissedPrayersHeader(),
             Expanded(
               child: controller.unloggedByDay.isEmpty
                   ? _buildLegacyList(context)
                   : _buildByDayList(context),
             ),
-
-            // Bottom Buttons
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, -5),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: controller.skip,
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: Text('skip_for_now'.tr),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    flex: 2,
-                    child: Obx(
-                      () => ElevatedButton(
-                        onPressed: controller.isSaving.value
-                            ? null
-                            : controller.saveAll,
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          backgroundColor: AppColors.primary,
-                        ),
-                        child: controller.isSaving.value
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : Text(
-                                'save_all'.tr,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            _BottomActions(controller: controller),
           ],
         );
       }),
@@ -173,7 +50,7 @@ class MissedPrayersScreen extends GetView<MissedPrayersController> {
 
   Widget _buildLegacyList(BuildContext context) {
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
       itemCount: controller.missedPrayers.length,
       itemBuilder: (context, index) {
         final prayer = controller.missedPrayers[index];
@@ -185,17 +62,20 @@ class MissedPrayersScreen extends GetView<MissedPrayersController> {
           final timing =
               controller.prayerTimings[prayerType] ??
               PrayerTimingQuality.onTime;
-          return MissedPrayerCard(
-            prayer: prayer,
-            status: status,
-            timing: timing,
-            onStatusChanged: (newStatus) {
-              HapticFeedback.mediumImpact();
-              controller.setPrayerStatus(prayerType, newStatus);
-            },
-            onTimingChanged: (newTiming) =>
-                controller.setPrayerTiming(prayerType, newTiming),
-            onDismissed: () => controller.missedPrayers.removeAt(index),
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: MissedPrayerCard(
+              prayer: prayer,
+              status: status,
+              timing: timing,
+              onStatusChanged: (newStatus) {
+                HapticFeedback.mediumImpact();
+                controller.setPrayerStatus(prayerType, newStatus);
+              },
+              onTimingChanged: (newTiming) =>
+                  controller.setPrayerTiming(prayerType, newTiming),
+              onDismissed: () => controller.missedPrayers.removeAt(index),
+            ),
           );
         });
       },
@@ -204,7 +84,7 @@ class MissedPrayersScreen extends GetView<MissedPrayersController> {
 
   Widget _buildByDayList(BuildContext context) {
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
       itemCount: controller.unloggedByDay.length,
       itemBuilder: (context, groupIndex) {
         final group = controller.unloggedByDay[groupIndex];
@@ -213,36 +93,12 @@ class MissedPrayersScreen extends GetView<MissedPrayersController> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Day header + "I prayed all" button
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  children: [
-                    Text(
-                      '${group.label} (${group.count})',
-                      style: AppFonts.titleSmall.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const Spacer(),
-                    TextButton.icon(
-                      onPressed: isLogging
-                          ? null
-                          : () => controller.logAllForDay(group),
-                      icon: isLogging
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.check_circle_outline, size: 18),
-                      label: Text('qada_log_all'.tr),
-                    ),
-                  ],
-                ),
+              _DayGroupHeader(
+                label: group.label,
+                count: group.count,
+                isLogging: isLogging,
+                onLogAll: () => controller.logAllForDay(group),
               ),
-              // Cards for this day
               ...group.prayers.map((info) {
                 final prayerModel = prayerTimeModelFromUnlogged(info);
                 return Obx(() {
@@ -253,7 +109,7 @@ class MissedPrayersScreen extends GetView<MissedPrayersController> {
                       controller.timingByKey[info.key] ??
                       PrayerTimingQuality.onTime;
                   return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.only(bottom: 10),
                     child: MissedPrayerCard(
                       prayer: prayerModel,
                       status: status,
@@ -269,7 +125,7 @@ class MissedPrayersScreen extends GetView<MissedPrayersController> {
                   );
                 });
               }),
-              const SizedBox(height: 16),
+              const SizedBox(height: 8),
             ],
           );
         });
@@ -284,83 +140,158 @@ class MissedPrayersScreen extends GetView<MissedPrayersController> {
       dateTime: info.adhanTime,
     );
   }
+}
 
-  Widget _buildStatusButton({
-    required String label,
-    required IconData icon,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primary
-              : AppColors.primary.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? AppColors.primary : Colors.transparent,
-            width: 2,
-          ),
-        ),
-        child: Row(
+// ─────────────────────────────────────────────
+// Sub-widgets
+// ─────────────────────────────────────────────
+
+class _LoadingState extends StatelessWidget {
+  const _LoadingState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Lottie.asset(
+        ImageAssets.loadingAnimation,
+        width: 150,
+        height: 150,
+      ),
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  const _EmptyState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppDimensions.paddingXL),
+        child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              color: isSelected ? Colors.white : AppColors.primary,
-              size: 20,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                color: isSelected ? Colors.white : AppColors.primary,
-                fontWeight: FontWeight.w600,
+            Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                color: AppColors.success.withValues(alpha: 0.10),
+                shape: BoxShape.circle,
               ),
+              child: Icon(
+                Icons.check_circle_rounded,
+                size: 54,
+                color: AppColors.success,
+              ),
+            ),
+            const SizedBox(height: AppDimensions.paddingLG),
+            Text(
+              'all_prayers_completed'.tr,
+              style: AppFonts.titleLarge.copyWith(
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppDimensions.paddingSM),
+            Text(
+              'أحسنت! جميع صلواتك مسجّلة',
+              style: AppFonts.bodyMedium.copyWith(
+                color: AppColors.textSecondary,
+              ),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildTimingChip(
-    PrayerName prayer,
-    PrayerTimingQuality quality,
-    String label,
-    PrayerTimingQuality selectedTiming,
-  ) {
-    final isSelected = selectedTiming == quality;
-    final color = PrayerTimingHelper.getQualityColor(quality);
-
-    return InkWell(
-      onTap: () => controller.setPrayerTiming(prayer, quality),
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? color : color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected ? color : Colors.transparent,
-            width: 2,
-          ),
+class _MissedPrayersHeader extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            AppColors.primary,
+            AppColors.primary.withValues(alpha: 0.85),
+          ],
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: Column(
           children: [
-            Text(PrayerTimingHelper.getQualityEmoji(quality)),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                color: isSelected ? Colors.white : color,
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
+            // App bar row
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(
+                      Icons.arrow_back_ios_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                    onPressed: () => Get.back(),
+                  ),
+                  Expanded(
+                    child: Text(
+                      'missed_prayers'.tr,
+                      textAlign: TextAlign.center,
+                      style: AppFonts.titleMedium.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 48),
+                ],
+              ),
+            ),
+            // Info section
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 4, 24, 20),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.2),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.info_outline_rounded,
+                        color: Colors.white,
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'missed_prayers_desc'.tr,
+                        style: AppFonts.bodySmall.copyWith(
+                          color: Colors.white.withValues(alpha: 0.90),
+                          height: 1.5,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -368,28 +299,178 @@ class MissedPrayersScreen extends GetView<MissedPrayersController> {
       ),
     );
   }
+}
 
-  IconData _getPrayerIcon(PrayerName prayer) {
-    switch (prayer) {
-      case PrayerName.fajr:
-        return Icons.wb_twilight;
-      case PrayerName.dhuhr:
-        return Icons.wb_sunny;
-      case PrayerName.asr:
-        return Icons.wb_cloudy;
-      case PrayerName.maghrib:
-        return Icons.wb_twilight;
-      case PrayerName.isha:
-        return Icons.nights_stay;
-      default:
-        return Icons.access_time;
-    }
+class _DayGroupHeader extends StatelessWidget {
+  final String label;
+  final int count;
+  final bool isLogging;
+  final VoidCallback onLogAll;
+
+  const _DayGroupHeader({
+    required this.label,
+    required this.count,
+    required this.isLogging,
+    required this.onLogAll,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 16, bottom: 10),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: AppColors.primary.withValues(alpha: 0.20),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.calendar_today_rounded,
+                  size: 13,
+                  color: AppColors.primary,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  '$label ($count)',
+                  style: AppFonts.labelMedium.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Spacer(),
+          GestureDetector(
+            onTap: isLogging ? null : onLogAll,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: isLogging
+                    ? Colors.grey.withValues(alpha: 0.10)
+                    : AppColors.success.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                children: [
+                  if (isLogging)
+                    const SizedBox(
+                      width: 12,
+                      height: 12,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  else
+                    Icon(
+                      Icons.check_circle_outline_rounded,
+                      size: 14,
+                      color: AppColors.success,
+                    ),
+                  const SizedBox(width: 5),
+                  Text(
+                    'qada_log_all'.tr,
+                    style: AppFonts.labelSmall.copyWith(
+                      color: isLogging
+                          ? AppColors.textSecondary
+                          : AppColors.success,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
+}
 
-  String _formatTime(DateTime time) {
-    final hour = time.hour > 12 ? time.hour - 12 : time.hour;
-    final minute = time.minute.toString().padLeft(2, '0');
-    final period = time.hour >= 12 ? 'PM' : 'AM';
-    return '$hour:$minute $period';
+class _BottomActions extends StatelessWidget {
+  final MissedPrayersController controller;
+  const _BottomActions({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.fromLTRB(
+        16,
+        12,
+        16,
+        12 + MediaQuery.of(context).padding.bottom,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.07),
+            blurRadius: 20,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          OutlinedButton(
+            onPressed: controller.skip,
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
+              ),
+              side: BorderSide(color: AppColors.divider),
+            ),
+            child: Text(
+              'skip_for_now'.tr,
+              style: AppFonts.labelLarge.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Obx(
+              () => ElevatedButton(
+                onPressed: controller.isSaving.value
+                    ? null
+                    : controller.saveAll,
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  backgroundColor: AppColors.primary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
+                  ),
+                  elevation: 0,
+                  shadowColor: AppColors.primary.withValues(alpha: 0.4),
+                ),
+                child: controller.isSaving.value
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Text(
+                        'save_all'.tr,
+                        style: AppFonts.titleSmall.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

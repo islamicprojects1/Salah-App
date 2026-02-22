@@ -9,6 +9,8 @@ import 'package:salah/features/prayer/controller/qibla_controller.dart';
 import 'package:salah/features/prayer/data/repositories/prayer_repository.dart';
 import 'package:salah/features/prayer/data/services/live_context_service.dart';
 import 'package:salah/features/prayer/data/services/notification_service.dart';
+import 'package:salah/features/prayer/data/services/notification_scheduler.dart';
+import 'package:salah/features/prayer/data/services/prayer_logger.dart';
 import 'package:salah/features/prayer/data/services/prayer_time_service.dart';
 import 'package:salah/features/prayer/data/services/qada_detection_service.dart';
 import 'package:salah/features/settings/controller/settings_controller.dart'
@@ -32,6 +34,8 @@ class DashboardBinding extends Bindings {
         notificationService: sl<NotificationService>(),
         liveContextService: sl<LiveContextService>(),
         qadaService: sl<QadaDetectionService>(),
+        prayerLogger: sl<PrayerLogger>(),
+        notificationScheduler: sl<NotificationScheduler>(),
       ),
       fenix: true,
     );

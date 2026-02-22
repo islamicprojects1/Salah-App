@@ -1,5 +1,13 @@
 # Salah App – Documentation Index
 
+## 🎯 Master Document (ابدأ هنا)
+
+| File | Description |
+|------|-------------|
+| [**MASTER_VISION_AND_ROADMAP.md**](MASTER_VISION_AND_ROADMAP.md) | **وثيقة العمر** — الرؤية الكاملة، الميزات الضرورية، مصفوفة الخدمات، والميزة التالية للعمل عليها |
+| [**PLAN_DASHBOARD_AND_PRAYER.md**](PLAN_DASHBOARD_AND_PRAYER.md) | **الخطة الحالية** — ريفاكتور الداشبورد وتجربة الصلاة (بعد Constants + Auth + Onboarding) |
+| [**PLAN_NOTIFICATIONS_AND_SERVICE_VERIFICATION.md**](PLAN_NOTIFICATIONS_AND_SERVICE_VERIFICATION.md) | **خطة متكاملة** — NotificationService (إشعارات محلية) + المرحلة 4 (التحقق من الخدمات) |
+
 ## Architecture & Structure
 
 | File | Description |

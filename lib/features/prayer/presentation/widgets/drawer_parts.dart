@@ -28,8 +28,9 @@ Widget buildDrawerHeader(AuthService authService) {
               child: CircleAvatar(
                 radius: 30,
                 backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                backgroundImage:
-                    photoUrl != null ? NetworkImage(photoUrl) : null,
+                backgroundImage: photoUrl != null
+                    ? NetworkImage(photoUrl)
+                    : null,
                 child: photoUrl == null
                     ? const Icon(
                         Icons.person,

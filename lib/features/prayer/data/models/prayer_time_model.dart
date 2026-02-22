@@ -3,26 +3,26 @@ import 'package:salah/core/constants/enums.dart';
 /// Model representing a prayer time
 class PrayerTimeModel {
   final String name;
-  final PrayerName? prayerType;
+  final PrayerName prayerType;
   final DateTime dateTime;
   final bool isNotificationEnabled;
 
   const PrayerTimeModel({
     required this.name,
-    this.prayerType,
+    required this.prayerType,
     required this.dateTime,
     this.isNotificationEnabled = true,
   });
 
-  /// Copy with customization
   PrayerTimeModel copyWith({
     String? name,
     DateTime? dateTime,
+    PrayerName? prayerType,
     bool? isNotificationEnabled,
   }) {
     return PrayerTimeModel(
       name: name ?? this.name,
-      prayerType: prayerType ?? prayerType,
+      prayerType: prayerType ?? this.prayerType,
       dateTime: dateTime ?? this.dateTime,
       isNotificationEnabled:
           isNotificationEnabled ?? this.isNotificationEnabled,

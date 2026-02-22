@@ -75,6 +75,9 @@ class StorageKeys {
   /// Minutes before prayer for approaching alert (5 | 10 | 15 | 20 | 30)
   static const String approachingAlertMinutes = 'approaching_alert_minutes';
 
+  /// Minutes before Fajr for approaching alert (default 20, Fajr-specific)
+  static const String approachingFajrMinutes = 'approaching_fajr_minutes';
+
   /// Whether the approaching alert is active
   static const String approachingAlertEnabled = 'approaching_alert_enabled';
 

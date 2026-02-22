@@ -54,7 +54,6 @@ class PrayerLogModel {
   }
 
   /// Convert to Firestore map
-  /// Convert to Firestore map
   Map<String, dynamic> toFirestore() {
     return {
       'oderId': oderId,
@@ -175,31 +174,47 @@ class PrayerLogModel {
   }
 }
 
-/// Daily prayers summary
+/// Daily prayers summary — single source of truth for a day's prayer status.
+///
+/// Replaces the former `DaySummary` from live_context_models.dart.
 class DailyPrayersSummary {
   final DateTime date;
   final Map<PrayerName, PrayerLogModel?> prayers;
 
-  DailyPrayersSummary({required this.date, required this.prayers});
+  const DailyPrayersSummary({required this.date, required this.prayers});
 
-  /// Get completed prayers count
+  /// Completed prayers count.
   int get completedCount => prayers.values.where((p) => p != null).length;
 
-  /// Get total prayers (excluding sunrise)
+  /// Total obligatory prayers (excluding sunrise).
   int get totalPrayers => 5;
 
-  /// Get completion percentage
-  double get completionPercentage => completedCount / totalPrayers;
+  /// Completion as a ratio (0.0 – 1.0).
+  double get completionRatio =>
+      totalPrayers == 0 ? 0 : completedCount / totalPrayers;
 
-  /// Check if all prayers completed
+  /// Completion as a percentage (0.0 – 1.0). Alias for [completionRatio].
+  double get completionPercentage => completionRatio;
+
+  /// Whether all obligatory prayers are completed.
   bool get isComplete => completedCount == totalPrayers;
 
-  /// Get early prayers count
+  /// Number of prayers logged early.
   int get earlyCount => prayers.values
       .where((p) => p != null && p.quality == PrayerQuality.early)
       .length;
 
-  /// Create empty summary for a date
+  /// Number of prayers logged early or on time.
+  int get onTimeCount => prayers.values
+      .where(
+        (p) =>
+            p != null &&
+            (p.quality == PrayerQuality.early ||
+                p.quality == PrayerQuality.onTime),
+      )
+      .length;
+
+  /// Create empty summary for a date.
   factory DailyPrayersSummary.empty(DateTime date) {
     return DailyPrayersSummary(
       date: date,

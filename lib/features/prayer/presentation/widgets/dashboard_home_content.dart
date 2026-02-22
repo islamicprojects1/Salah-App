@@ -35,85 +35,68 @@ class _DashboardHomeContentState extends State<DashboardHomeContent>
           return const AppLoading(message: '');
         }
 
-        return SingleChildScrollView(
+        return Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppDimensions.paddingLG,
+          ),
           child: Column(
             children: [
+              // Location hint — only when using default location
               Obx(
                 () => controller.isUsingDefaultLocation
                     ? LocationHintBanner(onTap: controller.openSelectCity)
                     : const SizedBox.shrink(),
               ),
+
               const SizedBox(height: AppDimensions.paddingMD),
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppDimensions.paddingLG,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    const Expanded(child: DigitalClock()),
-                    Obx(
-                      () => Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.orange.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: AppColors.orange.withValues(alpha: 0.3),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.local_fire_department,
-                              color: AppColors.orange,
-                              size: 16,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '${controller.currentStreak.value} ${'day_unit'.tr}',
-                              style: AppFonts.labelMedium.copyWith(
-                                color: AppColors.orange,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+
+              // Clock + streak row
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const Expanded(child: DigitalClock()),
+                  _StreakBadge(controller: controller),
+                ],
               ),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: AppDimensions.paddingLG),
-                child: DailyReviewCard(),
+
+              // Daily review (only after Isha)
+              const DailyReviewCard(),
+
+              const SizedBox(height: AppDimensions.paddingSM),
+
+              // Main prayer circle — takes available vertical space
+              const Expanded(
+                flex: 3,
+                child: SmartPrayerCircle(),
               ),
-              const SizedBox(height: AppDimensions.paddingXL),
-              const SmartPrayerCircle(),
-              const SizedBox(height: AppDimensions.paddingXL),
+
+              const SizedBox(height: AppDimensions.paddingSM),
+
+              // Connection status
               const ConnectionStatusIndicator(),
-              const SizedBox(height: AppDimensions.paddingMD),
+
+              const SizedBox(height: AppDimensions.paddingSM),
+
+              // Qada review button
               _QadaReviewButton(controller: controller),
-              const SizedBox(height: AppDimensions.paddingMD),
+
+              const SizedBox(height: AppDimensions.paddingSM),
+
+              // Today progress bar
+              buildTodayProgress(context, controller),
+
+              const SizedBox(height: AppDimensions.paddingSM),
+
+              // Quick prayer icons row
               Padding(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: AppDimensions.paddingLG,
-                ),
-                child: buildTodayProgress(context, controller),
-              ),
-              const SizedBox(height: AppDimensions.paddingLG),
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppDimensions.paddingMD,
+                  horizontal: AppDimensions.paddingXS,
                 ),
                 child: buildQuickPrayerIcons(context, controller),
               ),
-              const SizedBox(height: AppDimensions.paddingXL),
+
+              const SizedBox(height: AppDimensions.paddingSM),
             ],
           ),
         );
@@ -122,10 +105,50 @@ class _DashboardHomeContentState extends State<DashboardHomeContent>
   }
 }
 
+/// Streak badge extracted as its own widget to limit Obx rebuild scope
+class _StreakBadge extends StatelessWidget {
+  const _StreakBadge({required this.controller});
+  final DashboardController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(
+      () => Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppDimensions.paddingMD,
+          vertical: AppDimensions.paddingSM,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.orange.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(AppDimensions.radiusXL),
+          border: Border.all(color: AppColors.orange.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.local_fire_department,
+              color: AppColors.orange,
+              size: AppDimensions.iconSM,
+            ),
+            const SizedBox(width: AppDimensions.paddingXS),
+            Text(
+              '${controller.currentStreak.value} ${'day_unit'.tr}',
+              style: AppFonts.labelMedium.copyWith(
+                color: AppColors.orange,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// Visible button to open qada (unlogged prayers) review.
 class _QadaReviewButton extends StatelessWidget {
   const _QadaReviewButton({required this.controller});
-
   final DashboardController controller;
 
   @override
@@ -134,10 +157,11 @@ class _QadaReviewButton extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: AppDimensions.paddingLG),
       child: Obx(() {
         final hasUnlogged = controller.unloggedPrayers.isNotEmpty;
+        if (!hasUnlogged) return const SizedBox.shrink();
         return Material(
-          color: Colors.transparent,
+          color: AppColors.transparent,
           child: InkWell(
-            onTap: () => controller.openQadaReview(),
+            onTap: controller.openQadaReview,
             borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
             child: Container(
               padding: const EdgeInsets.symmetric(
@@ -145,37 +169,26 @@ class _QadaReviewButton extends StatelessWidget {
                 vertical: AppDimensions.paddingSM + 2,
               ),
               decoration: BoxDecoration(
-                color: hasUnlogged
-                    ? AppColors.orange.withValues(alpha: 0.12)
-                    : AppColors.surface.withValues(alpha: 0.6),
+                color: AppColors.orange.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
                 border: Border.all(
-                  color: hasUnlogged
-                      ? AppColors.orange.withValues(alpha: 0.4)
-                      : AppColors.divider.withValues(alpha: 0.5),
+                  color: AppColors.orange.withValues(alpha: 0.4),
                 ),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    hasUnlogged
-                        ? Icons.notifications_active_rounded
-                        : Icons.check_circle_outline_rounded,
-                    size: 18,
-                    color: hasUnlogged
-                        ? AppColors.orange
-                        : AppColors.textSecondary,
+                    Icons.notifications_active_rounded,
+                    size: AppDimensions.iconMD,
+                    color: AppColors.orange,
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppDimensions.paddingSM),
                   Text(
                     'qada_review_action'.tr,
                     style: AppFonts.bodySmall.copyWith(
-                      color: hasUnlogged
-                          ? AppColors.orange
-                          : AppColors.textSecondary,
-                      fontWeight:
-                          hasUnlogged ? FontWeight.bold : FontWeight.w500,
+                      color: AppColors.orange,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ],
@@ -188,9 +201,9 @@ class _QadaReviewButton extends StatelessWidget {
   }
 }
 
+/// Banner shown when using default/fallback location
 class LocationHintBanner extends StatelessWidget {
   const LocationHintBanner({super.key, required this.onTap});
-
   final VoidCallback onTap;
 
   @override
@@ -198,7 +211,7 @@ class LocationHintBanner extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppDimensions.paddingLG),
       child: Material(
-        color: Colors.transparent,
+        color: AppColors.transparent,
         child: InkWell(
           onTap: onTap,
           borderRadius: AppDimensions.borderRadiusLG,
@@ -212,7 +225,6 @@ class LocationHintBanner extends StatelessWidget {
               borderRadius: AppDimensions.borderRadiusLG,
               border: Border.all(
                 color: AppColors.primary.withValues(alpha: 0.2),
-                width: 1,
               ),
               boxShadow: [
                 BoxShadow(
@@ -252,6 +264,7 @@ class LocationHintBanner extends StatelessWidget {
   }
 }
 
+/// Digital clock that updates every second using Timer.periodic
 class DigitalClock extends StatefulWidget {
   const DigitalClock({super.key});
 
@@ -267,12 +280,8 @@ class _DigitalClockState extends State<DigitalClock> {
   void initState() {
     super.initState();
     _now = DateTime.now();
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (mounted) {
-        setState(() {
-          _now = DateTime.now();
-        });
-      }
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() => _now = DateTime.now());
     });
   }
 

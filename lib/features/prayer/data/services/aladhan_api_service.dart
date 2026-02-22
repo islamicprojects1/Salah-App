@@ -10,10 +10,74 @@ import 'package:salah/features/prayer/data/models/prayer_time_model.dart';
 
 /// Fetches prayer times from Aladhan API.
 ///
-/// Calendar endpoint returns full month in one call.
-/// Used by [PrayerTimeService] when online.
+/// Uses api.aladhan.com for timings and qibla.
 class AladhanApiService {
   static const _timeout = Duration(seconds: 15);
+
+  /// Fetch prayer times for a specific date.
+  ///
+  /// [latitude], [longitude] — user location
+  /// [date] — the date to fetch
+  /// [method] — Aladhan method ID (e.g. 3 for Muslim World League)
+  Future<List<PrayerTimeModel>> fetchTimingsForDate({
+    required double latitude,
+    required double longitude,
+    required DateTime date,
+    required int method,
+  }) async {
+    try {
+      final dateStr =
+          '${date.day.toString().padLeft(2, '0')}-${date.month.toString().padLeft(2, '0')}-${date.year}';
+      final uri = Uri.parse('$aladhanBaseUrl/timings/$dateStr').replace(
+        queryParameters: {
+          'latitude': latitude.toString(),
+          'longitude': longitude.toString(),
+          'method': method.toString(),
+        },
+      );
+
+      final response = await http.get(uri).timeout(_timeout);
+      if (response.statusCode != 200) return [];
+
+      final body = json.decode(response.body) as Map<String, dynamic>;
+      final data = body['data'] as Map<String, dynamic>?;
+      final timings = data?['timings'] as Map<String, dynamic>?;
+      if (timings == null) return [];
+
+      final dateObj = data?['date'] as Map<String, dynamic>?;
+      final timestamp =
+          (dateObj?['timestamp'] is int)
+              ? (dateObj!['timestamp'] as int)
+              : int.tryParse(dateObj?['timestamp']?.toString() ?? '');
+
+      final dateKey =
+          '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+      return _parseTimingsToModels(timings, dateKey, timestamp);
+    } catch (e, st) {
+      AppLogger.error('AladhanApiService.fetchTimingsForDate failed', e, st);
+      return [];
+    }
+  }
+
+  /// Fetch qibla direction in degrees from north.
+  Future<double?> fetchQiblaDirection(double lat, double lng) async {
+    try {
+      final uri = Uri.parse(
+        '$aladhanBaseUrl/qibla/$lat/$lng',
+      );
+      final response = await http.get(uri).timeout(_timeout);
+      if (response.statusCode != 200) return null;
+
+      final body = json.decode(response.body) as Map<String, dynamic>;
+      final data = body['data'] as Map<String, dynamic>?;
+      final direction = data?['direction'];
+      if (direction is num) return direction.toDouble();
+      return null;
+    } catch (e, st) {
+      AppLogger.error('AladhanApiService.fetchQibla failed', e, st);
+      return null;
+    }
+  }
 
   /// Fetch prayer times for a full month.
   ///
@@ -65,10 +129,15 @@ class AladhanApiService {
         final timings = dayMap['timings'] as Map<String, dynamic>?;
         if (dateStr == null || timings == null) continue;
 
+        final timestamp =
+            (date?['timestamp'] is int)
+                ? (date!['timestamp'] as int)
+                : int.tryParse(date?['timestamp']?.toString() ?? '');
+
         final dateKey = _parseDateKey(dateStr);
         if (dateKey == null) continue;
 
-        final list = _parseTimingsToModels(timings, dateKey);
+        final list = _parseTimingsToModels(timings, dateKey, timestamp);
         if (list.isNotEmpty) result[dateKey] = list;
       }
 
@@ -89,10 +158,14 @@ class AladhanApiService {
     return '$year-$month-$day';
   }
 
-  /// Parse API timings (e.g. "05:51 (GMT+2)") to List<PrayerTimeModel>
+  /// Parse API timings (e.g. "05:51 (GMT+2)") to List<PrayerTimeModel>.
+  ///
+  /// Uses [timestamp] from API (Unix seconds for midnight in the location's
+  /// timezone) to build correct UTC instants, avoiding device-timezone mismatch.
   List<PrayerTimeModel> _parseTimingsToModels(
     Map<String, dynamic> timings,
     String dateKey,
+    int? timestamp,
   ) {
     final parts = dateKey.split('-');
     if (parts.length != 3) return [];
@@ -107,6 +180,18 @@ class AladhanApiService {
       if (hm.length < 2) return DateTime(year, month, day);
       final h = int.tryParse(hm[0]) ?? 0;
       final m = int.tryParse(hm[1]) ?? 0;
+
+      if (timestamp != null && timestamp > 0) {
+        // API timestamp = midnight in location's timezone
+        // instant = midnight + h hours + m minutes (same timezone)
+        final epochSeconds = timestamp + h * 3600 + m * 60;
+        return DateTime.fromMillisecondsSinceEpoch(
+          epochSeconds * 1000,
+          isUtc: true,
+        ).toLocal();
+      }
+
+      // Fallback when timestamp missing (legacy)
       return DateTime(year, month, day, h, m);
     }
 

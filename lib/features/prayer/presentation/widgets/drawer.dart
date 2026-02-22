@@ -10,6 +10,7 @@ import 'package:salah/features/settings/data/services/localization_service.dart'
 import 'package:salah/features/settings/data/services/theme_service.dart';
 import 'package:salah/features/prayer/presentation/widgets/drawer_expansions.dart';
 import 'package:salah/features/prayer/presentation/widgets/drawer_parts.dart';
+import 'package:salah/core/constants/app_dimensions.dart';
 
 class CustomDrawer extends StatelessWidget {
   const CustomDrawer({super.key});
@@ -46,9 +47,9 @@ class CustomDrawer extends StatelessWidget {
                 buildDrawerHeader(authService),
                 Expanded(
                   child: ListView(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: AppDimensions.paddingLG),
                     children: [
-                      const SizedBox(height: 20),
+                      const SizedBox(height: AppDimensions.spaceXL),
                       buildDrawerSectionHeader('personalization'.tr),
                       buildDrawerLanguageExpansion(sl<LocalizationService>()),
                       buildDrawerThemeExpansion(
@@ -74,11 +75,11 @@ class CustomDrawer extends StatelessWidget {
                         },
                       ),
                       Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        padding: const EdgeInsets.symmetric(vertical: AppDimensions.paddingSM + 2),
                         child: Divider(
-                          color: Theme.of(context).dividerColor.withValues(
-                            alpha: 0.5,
-                          ),
+                          color: Theme.of(
+                            context,
+                          ).dividerColor.withValues(alpha: 0.5),
                         ),
                       ),
                       buildDrawerSectionHeader('integration_sync'.tr),
@@ -100,9 +101,9 @@ class CustomDrawer extends StatelessWidget {
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 10),
                         child: Divider(
-                          color: Theme.of(context).dividerColor.withValues(
-                            alpha: 0.5,
-                          ),
+                          color: Theme.of(
+                            context,
+                          ).dividerColor.withValues(alpha: 0.5),
                         ),
                       ),
                       buildDrawerSectionHeader('support_feedback'.tr),
@@ -130,9 +131,9 @@ class CustomDrawer extends StatelessWidget {
                           settingsCtrl.suggestFeature();
                         },
                       ),
-                      const SizedBox(height: 40),
+                      const SizedBox(height: AppDimensions.spaceHuge),
                       buildDrawerLogoutButton(settingsCtrl, authService),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: AppDimensions.spaceXL),
                     ],
                   ),
                 ),

@@ -158,6 +158,10 @@ class StorageService extends GetxService {
   Future<void> setApproachingAlertMinutes(int minutes) =>
       write(StorageKeys.approachingAlertMinutes, minutes);
 
+  /// دقائق تنبيه الفجر (20 افتراضياً)
+  int get approachingFajrMinutes =>
+      read<int>(StorageKeys.approachingFajrMinutes) ?? 20;
+
   /// تشغيل التكبير عند دخول وقت الصلاة
   bool get takbeerAtPrayerEnabled =>
       read<bool>(StorageKeys.takbeerAtPrayerEnabled) ?? true;

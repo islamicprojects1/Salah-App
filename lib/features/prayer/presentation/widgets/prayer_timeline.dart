@@ -34,9 +34,7 @@ class PrayerTimeline extends StatelessWidget {
   }
 
   Widget _buildPrayerNode(BuildContext context, PrayerTimeModel prayer) {
-    final isCompleted =
-        prayer.prayerType != null &&
-        completedPrayers.contains(prayer.prayerType);
+    final isCompleted = completedPrayers.contains(prayer.prayerType);
     final isCurrent = prayer == currentPrayer;
     final isNext = prayer == nextPrayer;
 

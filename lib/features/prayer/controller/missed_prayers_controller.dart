@@ -24,7 +24,6 @@ class MissedPrayersController extends GetxController {
   // STATE
   // ============================================================
 
-  /// By-day groups (last 7 days).
   final unloggedByDay = <QadaDayGroup>[].obs;
   final statusByKey = <String, PrayerCardStatus>{}.obs;
   final timingByKey = <String, PrayerTimingQuality>{}.obs;
@@ -47,10 +46,9 @@ class MissedPrayersController extends GetxController {
   }
 
   // ============================================================
-  // METHODS
+  // LOAD
   // ============================================================
 
-  /// Load unlogged prayers grouped by day (last 7 days).
   Future<void> loadMissedPrayers() async {
     if (!sl.isRegistered<QadaDetectionService>()) {
       _loadLegacyTodayOnly();
@@ -121,19 +119,26 @@ class MissedPrayersController extends GetxController {
     }
     final first = unloggedByDay.first;
     missedPrayers.assignAll(
-      first.prayers.map((p) => PrayerTimeModel(
-            name: p.displayName,
-            prayerType: p.prayer,
-            dateTime: p.adhanTime,
-          )),
+      first.prayers.map(
+        (p) => PrayerTimeModel(
+          name: p.displayName,
+          prayerType: p.prayer,
+          dateTime: p.adhanTime,
+        ),
+      ),
     );
     prayerStatuses.clear();
     prayerTimings.clear();
     for (final p in first.prayers) {
       prayerStatuses[p.prayer] = statusByKey[p.key] ?? PrayerCardStatus.prayed;
-      prayerTimings[p.prayer] = timingByKey[p.key] ?? PrayerTimingQuality.onTime;
+      prayerTimings[p.prayer] =
+          timingByKey[p.key] ?? PrayerTimingQuality.onTime;
     }
   }
+
+  // ============================================================
+  // STATUS SETTERS
+  // ============================================================
 
   void setPrayerStatusByKey(String key, PrayerCardStatus status) {
     statusByKey[key] = status;
@@ -148,18 +153,21 @@ class MissedPrayersController extends GetxController {
 
   void setPrayerStatus(PrayerName prayer, PrayerCardStatus status) {
     prayerStatuses[prayer] = status;
-    if (status == PrayerCardStatus.missed) {
-      prayerTimings[prayer] = PrayerTimingQuality.missed;
-    } else {
-      prayerTimings[prayer] = PrayerTimingQuality.onTime;
-    }
+    prayerTimings[prayer] = status == PrayerCardStatus.missed
+        ? PrayerTimingQuality.missed
+        : PrayerTimingQuality.onTime;
   }
 
   void setPrayerTiming(PrayerName prayer, PrayerTimingQuality timing) {
     prayerTimings[prayer] = timing;
   }
 
+  // ============================================================
+  // LOG ALL FOR A DAY
+  // ============================================================
+
   /// One-tap: log all prayers for a day as prayed on time.
+  /// FIX: uses Future.wait for parallel execution instead of sequential loop.
   Future<void> logAllForDay(QadaDayGroup group) async {
     final confirm = await AppDialogs.confirm(
       title: 'qada_log_all'.tr,
@@ -171,26 +179,38 @@ class MissedPrayersController extends GetxController {
       cancelText: 'cancel'.tr,
     );
     if (!confirm) return;
+
     final userId = _authService.currentUser.value?.uid ?? '';
     if (userId.isEmpty) return;
+
     try {
       isLoggingDay.value = true;
       bool anyQueued = false;
-      for (final info in group.prayers) {
-        final log = PrayerLogModel(
-          id: '',
-          oderId: userId,
-          prayer: info.prayer,
-          prayedAt: info.adhanTime,
-          adhanTime: info.adhanTime,
-          quality: PrayerQuality.onTime,
-          timingQuality: PrayerTimingQuality.onTime,
-          note: 'Batch logged (qada)',
-        );
-        final synced = await _prayerRepo.addPrayerLog(userId: userId, log: log);
-        if (!synced) anyQueued = true;
-      }
-      final msg = anyQueued ? 'saved_will_sync_later'.tr : 'qada_logged_day_toast'.tr;
+
+      // FIX: run all log operations in parallel instead of sequentially.
+      await Future.wait(
+        group.prayers.map((info) async {
+          final log = PrayerLogModel(
+            id: '',
+            oderId: userId,
+            prayer: info.prayer,
+            prayedAt: info.adhanTime,
+            adhanTime: info.adhanTime,
+            quality: PrayerQuality.onTime,
+            timingQuality: PrayerTimingQuality.onTime,
+            note: 'Batch logged (qada)',
+          );
+          final synced = await _prayerRepo.addPrayerLog(
+            userId: userId,
+            log: log,
+          );
+          if (!synced) anyQueued = true;
+        }),
+      );
+
+      final msg = anyQueued
+          ? 'saved_will_sync_later'.tr
+          : 'qada_logged_day_toast'.tr;
       AppFeedback.showSuccess('done'.tr, msg);
       await loadMissedPrayers();
     } catch (_) {
@@ -200,7 +220,12 @@ class MissedPrayersController extends GetxController {
     }
   }
 
+  // ============================================================
+  // SAVE ALL
+  // ============================================================
+
   /// Save all prayers (all days when using by-day data, or legacy today-only).
+  /// FIX: by-day path now also runs in parallel via Future.wait.
   Future<void> saveAll() async {
     try {
       isSaving.value = true;
@@ -208,91 +233,104 @@ class MissedPrayersController extends GetxController {
       bool anyQueued = false;
 
       if (unloggedByDay.isNotEmpty) {
+        // Flatten all prayers from all days, then run in parallel.
+        final allPairs = <_LogPair>[];
         for (final group in unloggedByDay) {
           for (final info in group.prayers) {
             final status = statusByKey[info.key];
             final timing = timingByKey[info.key];
             if (status == null) continue;
-            final prayedAt = status == PrayerCardStatus.missed
-                ? info.adhanTime.add(const Duration(minutes: 61))
-                : info.adhanTime;
+            allPairs.add(_LogPair(info: info, status: status, timing: timing));
+          }
+        }
+
+        await Future.wait(
+          allPairs.map((pair) async {
+            final prayedAt = pair.status == PrayerCardStatus.missed
+                ? pair.info.adhanTime.add(const Duration(minutes: 61))
+                : pair.info.adhanTime;
             final log = PrayerLogModel(
               id: '',
               oderId: userId,
-              prayer: info.prayer,
+              prayer: pair.info.prayer,
               prayedAt: prayedAt,
-              adhanTime: info.adhanTime,
-              quality: _convertToLegacyQuality(timing ?? PrayerTimingQuality.onTime),
-              timingQuality: timing ?? PrayerTimingQuality.onTime,
-              note: status == PrayerCardStatus.missed ? 'Logged as missed' : 'Batch logged',
+              adhanTime: pair.info.adhanTime,
+              quality: _convertToLegacyQuality(
+                pair.timing ?? PrayerTimingQuality.onTime,
+              ),
+              timingQuality: pair.timing,
+              note: pair.status == PrayerCardStatus.missed
+                  ? 'Logged as missed'
+                  : 'Batch logged',
             );
-            final synced = await _prayerRepo.addPrayerLog(userId: userId, log: log);
+            final synced = await _prayerRepo.addPrayerLog(
+              userId: userId,
+              log: log,
+            );
             if (!synced) anyQueued = true;
-          }
-        }
-        final message = anyQueued ? 'saved_will_sync_later'.tr : 'prayers_saved'.tr;
+          }),
+        );
+
+        final message = anyQueued
+            ? 'saved_will_sync_later'.tr
+            : 'prayers_saved'.tr;
         AppFeedback.showSuccess('success'.tr, message);
         await loadMissedPrayers();
         Get.back();
         return;
       }
 
-      for (final prayer in missedPrayers) {
-        final prayerType = prayer.prayerType;
-        if (prayerType == null) continue;
-
-        final status = prayerStatuses[prayerType];
-        final timing = prayerTimings[prayerType];
-
-        if (status == null) continue;
-
-        // Get prayer time range for quality calculation
-        final todayPrayers = _prayerTimeService.getTodayPrayers();
-        if (todayPrayers.isEmpty) continue;
-
-        final range = PrayerTimeRange.fromPrayerModels(
-          prayers: todayPrayers,
-          prayer: prayerType,
-        );
-
-        if (range == null) continue;
-
-        DateTime prayedAt;
-
-        if (status == PrayerCardStatus.missed) {
-          // If missed, use adhan time (will be marked as missed in quality)
-          prayedAt = prayer.dateTime.add(
-            Duration(minutes: range.totalMinutes + 1),
-          );
-        } else {
-          // If prayed, get suggested time based on selected quality
-          prayedAt = range.getSuggestedTime(
-            timing ?? PrayerTimingQuality.onTime,
-          );
-        }
-
-        // Create prayer log
-        final log = PrayerLogModel(
-          id: '',
-          oderId: userId,
-          prayer: prayerType,
-          prayedAt: prayedAt,
-          adhanTime: prayer.dateTime,
-          quality: _convertToLegacyQuality(
-            timing ?? PrayerTimingQuality.onTime,
-          ),
-          timingQuality: timing,
-          note: status == PrayerCardStatus.missed
-              ? 'Logged as missed'
-              : 'Batch logged',
-        );
-
-        // Save using Repository (handles offline)
-        final synced = await _prayerRepo.addPrayerLog(userId: userId, log: log);
-        if (!synced) anyQueued = true;
+      // Legacy flat list (today-only)
+      final todayPrayers = _prayerTimeService.getTodayPrayers();
+      if (todayPrayers.isEmpty) {
+        Get.back();
+        return;
       }
 
-      final message = anyQueued ? 'saved_will_sync_later'.tr : 'prayers_saved'.tr;
+      await Future.wait(
+        missedPrayers.map((prayer) async {
+          final prayerType = prayer.prayerType;
+          if (prayerType == null) return;
+          final status = prayerStatuses[prayerType];
+          final timing = prayerTimings[prayerType];
+          if (status == null) return;
+
+          final range = PrayerTimeRange.fromPrayerModels(
+            prayers: todayPrayers,
+            prayer: prayerType,
+          );
+          if (range == null) return;
+
+          final prayedAt = status == PrayerCardStatus.missed
+              ? prayer.dateTime.add(Duration(minutes: range.totalMinutes + 1))
+              : range.getSuggestedTime(timing ?? PrayerTimingQuality.onTime);
+
+          final log = PrayerLogModel(
+            id: '',
+            oderId: userId,
+            prayer: prayerType,
+            prayedAt: prayedAt,
+            adhanTime: prayer.dateTime,
+            quality: _convertToLegacyQuality(
+              timing ?? PrayerTimingQuality.onTime,
+            ),
+            timingQuality: timing,
+            note: status == PrayerCardStatus.missed
+                ? 'Logged as missed'
+                : 'Batch logged',
+          );
+
+          final synced = await _prayerRepo.addPrayerLog(
+            userId: userId,
+            log: log,
+          );
+          if (!synced) anyQueued = true;
+        }),
+      );
+
+      final message = anyQueued
+          ? 'saved_will_sync_later'.tr
+          : 'prayers_saved'.tr;
       AppFeedback.showSuccess('success'.tr, message);
       Get.back();
     } catch (_) {
@@ -302,7 +340,7 @@ class MissedPrayersController extends GetxController {
     }
   }
 
-  /// Convert new timing quality to legacy quality (for backward compatibility)
+  /// Convert new timing quality to legacy quality (for backward compatibility).
   PrayerQuality _convertToLegacyQuality(PrayerTimingQuality timing) {
     switch (timing) {
       case PrayerTimingQuality.veryEarly:
@@ -319,8 +357,14 @@ class MissedPrayersController extends GetxController {
     }
   }
 
-  /// Skip for now
-  void skip() {
-    Get.back();
-  }
+  void skip() => Get.back();
+}
+
+/// Internal helper to carry log info through Future.wait without mutating
+/// shared state.
+class _LogPair {
+  final UnloggedPrayerInfo info;
+  final PrayerCardStatus status;
+  final PrayerTimingQuality? timing;
+  const _LogPair({required this.info, required this.status, this.timing});
 }

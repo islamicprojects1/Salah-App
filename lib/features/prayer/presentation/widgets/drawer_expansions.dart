@@ -34,7 +34,11 @@ Widget buildDrawerLanguageExpansion(LocalizationService localization) {
               dense: true,
               title: Text(lang.name),
               trailing: current == lang
-                  ? Icon(Icons.check_rounded, color: AppColors.primary, size: 20)
+                  ? Icon(
+                      Icons.check_rounded,
+                      color: AppColors.primary,
+                      size: 20,
+                    )
                   : null,
               onTap: () => localization.changeLanguage(lang),
             ),
@@ -68,8 +72,8 @@ Widget buildDrawerThemeExpansion(
         current == AppThemeMode.dark
             ? Icons.dark_mode_rounded
             : current == AppThemeMode.light
-                ? Icons.light_mode_rounded
-                : Icons.settings_brightness_rounded,
+            ? Icons.light_mode_rounded
+            : Icons.settings_brightness_rounded,
         color: AppColors.textPrimary,
         size: 22,
       ),
@@ -86,11 +90,23 @@ Widget buildDrawerThemeExpansion(
       ),
       children: [
         _buildThemeOption(
-            themeService, settingsCtrl, 'theme_system'.tr, AppThemeMode.system),
+          themeService,
+          settingsCtrl,
+          'theme_system'.tr,
+          AppThemeMode.system,
+        ),
         _buildThemeOption(
-            themeService, settingsCtrl, 'theme_light'.tr, AppThemeMode.light),
+          themeService,
+          settingsCtrl,
+          'theme_light'.tr,
+          AppThemeMode.light,
+        ),
         _buildThemeOption(
-            themeService, settingsCtrl, 'theme_dark'.tr, AppThemeMode.dark),
+          themeService,
+          settingsCtrl,
+          'theme_dark'.tr,
+          AppThemeMode.dark,
+        ),
       ],
     );
   });
@@ -153,11 +169,20 @@ Widget buildDrawerSoundExpansion(SettingsController settingsCtrl) {
       ),
       children: [
         _buildSoundOption(
-            settingsCtrl, 'sound_adhan'.tr, NotificationSoundMode.adhan),
+          settingsCtrl,
+          'sound_adhan'.tr,
+          NotificationSoundMode.adhan,
+        ),
         _buildSoundOption(
-            settingsCtrl, 'sound_vibrate'.tr, NotificationSoundMode.vibrate),
+          settingsCtrl,
+          'sound_vibrate'.tr,
+          NotificationSoundMode.vibrate,
+        ),
         _buildSoundOption(
-            settingsCtrl, 'sound_silent'.tr, NotificationSoundMode.silent),
+          settingsCtrl,
+          'sound_silent'.tr,
+          NotificationSoundMode.silent,
+        ),
       ],
     );
   });

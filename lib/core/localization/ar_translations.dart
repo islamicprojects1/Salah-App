@@ -204,6 +204,9 @@ const Map<String, String> arTranslations = {
   'takbeer_at_prayer_desc': 'صوت تكبير قصير بدلاً من الأذان الكامل',
   'notification_i_prayed': '✅ صليت',
   'notification_later': '⏰ لاحقاً',
+  'notification_snooze': 'بعد شوي',
+  'notification_will_do_qada': 'سأقضيها',
+  'qada_saved_toast': 'ستظهر في تعويض الصلوات عند فتح التطبيق',
   'prayer_logged_toast': 'سُجّلت صلاتك 🌿',
   'snooze_toast_minutes': 'سيصلك تذكير بعد @minutes دقائق',
   'prayer_logged_from_notif': 'تم تسجيل @prayer من الإشعار',

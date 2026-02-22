@@ -14,10 +14,9 @@ class QiblaController extends GetxController {
   final RxDouble distanceToKaaba = 0.0.obs;
   final RxBool isLoading = true.obs;
   final RxString errorMessage = ''.obs;
-  
-  // Expose LocationService public properties if needed, or helper getters
+
   String get userCity => _locationService.cityName.value;
-  
+
   /// Returns "CityName Bearing°" e.g. "Amman 160°"
   String get locationAndBearing {
     final city = _locationService.cityName.value;
@@ -30,18 +29,17 @@ class QiblaController extends GetxController {
   final RxInt compassAccuracy = 0.obs;
   final RxBool showCalibration = false.obs;
 
-  /// Returns just the current heading string e.g. "84°"
   String get currentHeadingString => heading.value?.toStringAsFixed(0) ?? '--';
 
   // Facing Qibla state with hysteresis (prevents flickering)
   final RxBool isFacingQibla = false.obs;
-  static const double _enterThreshold = 3.0; // Enter green at 3° (strict)
-  static const double _exitThreshold = 6.0; // Exit green at 6°
+  static const double _enterThreshold = 3.0;
+  static const double _exitThreshold = 6.0;
   bool _didHapticForFacing = false;
 
-  // Smoothing: keep last N readings for averaging (more = smoother)
+  // Smoothing buffer
   final List<double> _headingBuffer = [];
-  static const int _smoothingFactor = 12; // Average of last 12 readings
+  static const int _smoothingFactor = 12;
 
   StreamSubscription? _compassSubscription;
 
@@ -55,7 +53,6 @@ class QiblaController extends GetxController {
     try {
       isLoading.value = true;
 
-      // 1. Ensure we have location
       if (_locationService.currentPosition.value == null) {
         await _locationService.init();
       }
@@ -66,27 +63,21 @@ class QiblaController extends GetxController {
         return;
       }
 
-      // 2. Calculate Qibla angle and distance
       qiblaDirection.value = _calculateQiblaAngle(pos.latitude, pos.longitude);
       distanceToKaaba.value = _calculateDistance(pos.latitude, pos.longitude);
 
-      // 3. Start listening to compass with smoothing
       _compassSubscription = FlutterCompass.events?.listen((event) {
         if (event.heading != null) {
-          // Add to buffer for smoothing
           _headingBuffer.add(event.heading!);
           if (_headingBuffer.length > _smoothingFactor) {
             _headingBuffer.removeAt(0);
           }
-
-          // Calculate smoothed heading (circular average for angles)
+          // FIX: _calculateCircularMean returned atan2 raw (-180..180).
+          // Normalised to 0..360 so the heading display is always positive.
           heading.value = _calculateCircularMean(_headingBuffer);
-
-          // Update facing Qibla state with hysteresis
           _updateFacingQiblaState();
         }
 
-        // Track compass accuracy
         if (event.accuracy != null) {
           compassAccuracy.value = event.accuracy!.round().clamp(0, 3);
         }
@@ -98,7 +89,9 @@ class QiblaController extends GetxController {
     }
   }
 
-  /// Calculate circular mean for angles (handles 0°/360° wraparound)
+  /// Circular mean of angles — normalised to [0, 360).
+  /// FIX: atan2 returns values in (-180, 180]. Adding 360 and modding ensures
+  /// a non-negative result regardless of quadrant.
   double _calculateCircularMean(List<double> angles) {
     if (angles.isEmpty) return 0;
 
@@ -106,16 +99,16 @@ class QiblaController extends GetxController {
     double cosSum = 0;
 
     for (final angle in angles) {
-      sinSum += math.sin(angle * math.pi / 180);
-      cosSum += math.cos(angle * math.pi / 180);
+      final rad = angle * math.pi / 180;
+      sinSum += math.sin(rad);
+      cosSum += math.cos(rad);
     }
 
-    return math.atan2(sinSum / angles.length, cosSum / angles.length) *
-        180 /
-        math.pi;
+    final meanRad = math.atan2(sinSum / angles.length, cosSum / angles.length);
+    // Normalise to 0..360
+    return (meanRad * 180 / math.pi + 360) % 360;
   }
 
-  /// Update facing Qibla state with hysteresis; haptic when first facing.
   void _updateFacingQiblaState() {
     if (heading.value == null || qiblaDirection.value == null) return;
 
@@ -140,7 +133,8 @@ class QiblaController extends GetxController {
     }
   }
 
-  /// Signed angle from current heading to Qibla (-180..180). Positive = turn right.
+  /// Signed angle from current heading to Qibla (-180..180).
+  /// Positive = turn right, negative = turn left.
   double? get angleToQiblaDegrees {
     final h = heading.value;
     final q = qiblaDirection.value;
@@ -151,9 +145,10 @@ class QiblaController extends GetxController {
     return diff;
   }
 
-  /// Refresh qibla direction (called from retry button)
   Future<void> refreshQibla() async {
     errorMessage.value = '';
+    _headingBuffer.clear();
+    _compassSubscription?.cancel();
     await _initQibla();
   }
 
@@ -171,16 +166,15 @@ class QiblaController extends GetxController {
         math.cos(phi1) * math.tan(phi2) -
         math.sin(phi1) * math.cos(deltaLambda);
 
-    double qiblaRad = math.atan2(y, x);
-    double degrees = qiblaRad * (180.0 / math.pi);
-    return (degrees + 360) % 360; // normalize to 0–360
+    final degrees = math.atan2(y, x) * (180.0 / math.pi);
+    return (degrees + 360) % 360;
   }
 
-  /// Calculate distance to Kaaba using Haversine formula
+  /// Distance to Kaaba via Haversine formula (km).
   double _calculateDistance(double lat, double lon) {
     const mLat = 21.4225;
     const mLon = 39.8262;
-    const earthRadius = 6371.0; // km
+    const earthRadius = 6371.0;
 
     final dLat = (mLat - lat) * (math.pi / 180.0);
     final dLon = (mLon - lon) * (math.pi / 180.0);

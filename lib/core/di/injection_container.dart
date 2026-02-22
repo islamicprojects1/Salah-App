@@ -24,6 +24,8 @@ import 'package:salah/core/services/shake_service.dart';
 import 'package:salah/features/prayer/data/services/qada_detection_service.dart';
 import 'package:salah/features/prayer/data/services/live_context_service.dart';
 import 'package:salah/features/prayer/data/services/smart_notification_service.dart';
+import 'package:salah/features/prayer/data/services/prayer_logger.dart';
+import 'package:salah/features/prayer/data/services/notification_scheduler.dart';
 
 // ============================================================
 // Data Layer
@@ -152,6 +154,26 @@ Future<void> initInjection() async {
     () => LiveContextService(
       prayerTimeService: sl<PrayerTimeService>(),
       prayerRepository: sl<PrayerRepository>(),
+      authService: sl<AuthService>(),
+    ),
+  );
+
+  // Prayer Logger (depends on Auth, PrayerRepo, Notification, LiveContext, Qada)
+  sl.registerLazySingleton<PrayerLogger>(
+    () => PrayerLogger(
+      authService: sl<AuthService>(),
+      prayerRepo: sl<PrayerRepository>(),
+      notificationService: sl<NotificationService>(),
+      liveContextService: sl<LiveContextService>(),
+      qadaService: sl<QadaDetectionService>(),
+    ),
+  );
+
+  // Notification Scheduler (depends on Notification, PrayerRepo, Auth)
+  sl.registerLazySingleton<NotificationScheduler>(
+    () => NotificationScheduler(
+      notificationService: sl<NotificationService>(),
+      prayerRepo: sl<PrayerRepository>(),
       authService: sl<AuthService>(),
     ),
   );

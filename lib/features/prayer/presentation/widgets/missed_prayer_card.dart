@@ -4,9 +4,11 @@ import 'package:get/get.dart';
 import 'package:salah/core/constants/enums.dart';
 import 'package:salah/core/helpers/prayer_timing_helper.dart';
 import 'package:salah/core/theme/app_colors.dart';
+import 'package:salah/core/theme/app_fonts.dart';
 import 'package:salah/features/prayer/data/models/prayer_time_model.dart';
 
-/// Premium missed prayer card with smooth animations and swipe gestures
+/// Premium missed prayer card with smooth animations and swipe gestures.
+/// Supports RTL layout and uses theme colors instead of hardcoded white.
 class MissedPrayerCard extends StatefulWidget {
   final PrayerTimeModel prayer;
   final PrayerCardStatus status;
@@ -58,7 +60,6 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
 
     _animationController.forward();
 
-    // Auto-expand if prayed
     if (widget.status == PrayerCardStatus.prayed) {
       _isExpanded = true;
     }
@@ -87,24 +88,24 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
       child: FadeTransition(
         opacity: _fadeAnimation,
         child: Dismissible(
-          key: Key(widget.prayer.prayerType?.name ?? 'prayer'),
+          key: Key(widget.prayer.prayerType.name),
           direction: DismissDirection.endToStart,
-          confirmDismiss: (direction) async {
+          confirmDismiss: (_) async {
             HapticFeedback.mediumImpact();
-            return await _showSkipConfirmation();
+            return _showSkipConfirmation();
           },
           onDismissed: (_) => widget.onDismissed?.call(),
-          background: _buildDismissBackground(),
-          child: _buildCard(),
+          background: _buildDismissBackground(context),
+          child: _buildCard(context),
         ),
       ),
     );
   }
 
-  Widget _buildDismissBackground() {
+  Widget _buildDismissBackground(BuildContext context) {
     return Container(
-      alignment: Alignment.centerRight,
-      padding: const EdgeInsets.only(right: 24),
+      alignment: AlignmentDirectional.centerEnd,
+      padding: const EdgeInsetsDirectional.only(end: 24),
       decoration: BoxDecoration(
         color: AppColors.error.withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(20),
@@ -112,12 +113,12 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.skip_next, color: AppColors.white, size: 28),
+          const Icon(Icons.skip_next, color: Colors.white, size: 28),
           const SizedBox(height: 4),
           Text(
             'skip'.tr,
             style: const TextStyle(
-              color: AppColors.white,
+              color: Colors.white,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -126,8 +127,8 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
     );
   }
 
-  Future<bool?> _showSkipConfirmation() async {
-    return await Get.dialog<bool>(
+  Future<bool?> _showSkipConfirmation() {
+    return Get.dialog<bool>(
       AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
@@ -146,17 +147,15 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
           ElevatedButton(
             onPressed: () => Get.back(result: true),
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.warning),
-            child: Text(
-              'skip'.tr,
-              style: const TextStyle(color: AppColors.white),
-            ),
+            child: Text('skip'.tr, style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildCard() {
+  Widget _buildCard(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -164,7 +163,7 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppColors.white,
+            theme.colorScheme.surface,
             _getCardGradientColor().withValues(alpha: 0.05),
           ],
         ),
@@ -185,15 +184,15 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
         borderRadius: BorderRadius.circular(20),
         child: Column(
           children: [
-            _buildHeader(),
-            _buildStatusButtons(),
+            _buildHeader(context),
+            _buildStatusButtons(context),
             AnimatedCrossFade(
               duration: const Duration(milliseconds: 300),
               crossFadeState: _isExpanded
                   ? CrossFadeState.showSecond
                   : CrossFadeState.showFirst,
               firstChild: const SizedBox.shrink(),
-              secondChild: _buildTimingSelection(),
+              secondChild: _buildTimingSelection(context),
             ),
           ],
         ),
@@ -201,14 +200,17 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
     );
   }
 
-  Widget _buildHeader() {
-    final prayerType = widget.prayer.prayerType ?? PrayerName.fajr;
+  Widget _buildHeader(BuildContext context) {
+    final theme = Theme.of(context);
+    final prayerType = widget.prayer.prayerType;
+    final prayerColor = _getPrayerColor(prayerType);
+    final isQada = widget.pastDate != null;
 
     return Container(
       padding: const EdgeInsets.all(16),
       child: Row(
         children: [
-          // Prayer Icon with animated background
+          // Prayer icon
           Hero(
             tag: 'prayer_icon_${prayerType.name}',
             child: Container(
@@ -218,15 +220,12 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    _getPrayerColor(prayerType),
-                    _getPrayerColor(prayerType).withValues(alpha: 0.7),
-                  ],
+                  colors: [prayerColor, prayerColor.withValues(alpha: 0.7)],
                 ),
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: _getPrayerColor(prayerType).withValues(alpha: 0.3),
+                    color: prayerColor.withValues(alpha: 0.3),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -234,25 +233,51 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
               ),
               child: Icon(
                 _getPrayerIcon(prayerType),
-                color: AppColors.white,
+                color: Colors.white,
                 size: 28,
               ),
             ),
           ),
           const SizedBox(width: 16),
 
-          // Prayer Info
+          // Prayer info
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  widget.prayer.name,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: -0.5,
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      widget.prayer.name,
+                      style: AppFonts.titleLarge.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                    ),
+                    if (isQada) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.orange.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: AppColors.orange.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: Text(
+                          _formatDateLabel(widget.pastDate!),
+                          style: AppFonts.labelSmall.copyWith(
+                            color: AppColors.orange,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
                 const SizedBox(height: 4),
                 Row(
@@ -260,39 +285,20 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
                     Icon(
                       Icons.access_time_rounded,
                       size: 14,
-                      color: AppColors.textSecondary,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                     ),
                     const SizedBox(width: 4),
                     Text(
                       _formatTime(widget.prayer.dateTime),
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: AppColors.textSecondary,
-                        fontWeight: FontWeight.w500,
+                      style: AppFonts.bodySmall.copyWith(
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.6,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
-                    // Show date label for past days, or time-ago badge for today
-                    if (widget.pastDate != null)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.warning.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          _formatDateLabel(widget.pastDate!),
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: AppColors.warning,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      )
-                    else
+                    // Time ago badge
+                    if (widget.pastDate == null) ...[
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 8,
@@ -304,50 +310,25 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
                         ),
                         child: Text(
                           _getTimeAgo(),
-                          style: TextStyle(
-                            fontSize: 11,
+                          style: AppFonts.labelSmall.copyWith(
                             color: _getTimeAgoColor(),
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
+                    ],
                   ],
                 ),
               ],
             ),
           ),
-
-          // Status indicator
-          _buildStatusIndicator(),
         ],
       ),
     );
   }
 
-  Widget _buildStatusIndicator() {
-    if (widget.status == PrayerCardStatus.prayed) {
-      return Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: AppColors.success.withValues(alpha: 0.1),
-          shape: BoxShape.circle,
-        ),
-        child: Icon(Icons.check_circle, color: AppColors.success, size: 24),
-      );
-    } else if (widget.status == PrayerCardStatus.missed) {
-      return Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: AppColors.error.withValues(alpha: 0.1),
-          shape: BoxShape.circle,
-        ),
-        child: Icon(Icons.cancel, color: AppColors.error, size: 24),
-      );
-    }
-    return const SizedBox.shrink();
-  }
-
-  Widget _buildStatusButtons() {
+  Widget _buildStatusButtons(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       child: Row(
@@ -355,7 +336,7 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
           Expanded(
             child: _buildStatusButton(
               label: 'i_prayed'.tr,
-              icon: Icons.check_circle_outline,
+              icon: Icons.check_circle_outline_rounded,
               isSelected: widget.status == PrayerCardStatus.prayed,
               color: AppColors.success,
               onTap: () {
@@ -370,7 +351,7 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
               label: 'i_missed'.tr,
               icon: Icons.cancel_outlined,
               isSelected: widget.status == PrayerCardStatus.missed,
-              color: AppColors.error,
+              color: colorScheme.error,
               onTap: () {
                 HapticFeedback.lightImpact();
                 widget.onStatusChanged(PrayerCardStatus.missed);
@@ -390,7 +371,7 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
     required VoidCallback onTap,
   }) {
     return Material(
-      color: AppColors.transparent,
+      color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(14),
@@ -417,14 +398,13 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: isSelected ? AppColors.white : color, size: 22),
+              Icon(icon, color: isSelected ? Colors.white : color, size: 22),
               const SizedBox(width: 8),
               Text(
                 label,
-                style: TextStyle(
-                  color: isSelected ? AppColors.white : color,
+                style: AppFonts.bodyMedium.copyWith(
+                  color: isSelected ? Colors.white : color,
                   fontWeight: FontWeight.bold,
-                  fontSize: 15,
                 ),
               ),
             ],
@@ -434,18 +414,18 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
     );
   }
 
-  Widget _buildTimingSelection() {
+  Widget _buildTimingSelection(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Divider(),
+          Divider(color: theme.dividerColor.withValues(alpha: 0.5)),
           const SizedBox(height: 8),
           Text(
             'when_did_you_pray'.tr,
-            style: TextStyle(
-              fontSize: 14,
+            style: AppFonts.bodySmall.copyWith(
               color: AppColors.textSecondary,
               fontWeight: FontWeight.w600,
             ),
@@ -499,7 +479,7 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
         : PrayerTimingHelper.getQualityColor(quality);
 
     return Material(
-      color: AppColors.transparent,
+      color: Colors.transparent,
       child: InkWell(
         onTap: () {
           HapticFeedback.selectionClick();
@@ -524,10 +504,9 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
               const SizedBox(width: 6),
               Text(
                 label,
-                style: TextStyle(
-                  color: isSelected ? AppColors.white : color,
+                style: AppFonts.bodySmall.copyWith(
+                  color: isSelected ? Colors.white : color,
                   fontWeight: FontWeight.w600,
-                  fontSize: 13,
                 ),
               ),
             ],
@@ -538,39 +517,45 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
   }
 
   // ============================================================
-  // HELPER METHODS
+  // HELPERS
   // ============================================================
 
   Color _getCardGradientColor() {
-    if (widget.status == PrayerCardStatus.prayed) return AppColors.success;
-    if (widget.status == PrayerCardStatus.missed) return AppColors.error;
-    return AppColors.primary;
+    switch (widget.status) {
+      case PrayerCardStatus.prayed:
+        return AppColors.success;
+      case PrayerCardStatus.missed:
+        return AppColors.error;
+      default:
+        return AppColors.primary;
+    }
   }
 
-  Color _getCardShadowColor() {
-    if (widget.status == PrayerCardStatus.prayed) return AppColors.success;
-    if (widget.status == PrayerCardStatus.missed) return AppColors.error;
-    return AppColors.primary;
-  }
+  Color _getCardShadowColor() => _getCardGradientColor();
 
   Color _getCardBorderColor() {
-    if (widget.status == PrayerCardStatus.prayed) return AppColors.success;
-    if (widget.status == PrayerCardStatus.missed) return AppColors.error;
-    return AppColors.grey400;
+    switch (widget.status) {
+      case PrayerCardStatus.prayed:
+        return AppColors.success;
+      case PrayerCardStatus.missed:
+        return AppColors.error;
+      default:
+        return AppColors.grey400;
+    }
   }
 
   Color _getPrayerColor(PrayerName prayer) {
     switch (prayer) {
       case PrayerName.fajr:
-        return AppColors.feature1; // Indigo
+        return AppColors.feature1;
       case PrayerName.dhuhr:
-        return AppColors.feature3; // Amber
+        return AppColors.feature3;
       case PrayerName.asr:
-        return AppColors.orange; // Orange
+        return AppColors.orange;
       case PrayerName.maghrib:
-        return AppColors.pink; // Pink
+        return AppColors.pink;
       case PrayerName.isha:
-        return AppColors.purple; // Purple
+        return AppColors.purple;
       default:
         return AppColors.primary;
     }
@@ -606,14 +591,11 @@ class _MissedPrayerCardState extends State<MissedPrayerCard>
     final duration = DateTime.now().difference(widget.prayer.dateTime);
     if (duration.inMinutes < 60) {
       return '${'ago'.tr} ${duration.inMinutes} ${'minutes'.tr}';
-    } else {
-      final hours = duration.inHours;
-      final mins = duration.inMinutes % 60;
-      if (mins == 0) {
-        return '${'ago'.tr} $hours ${'hours'.tr}';
-      }
-      return '${'ago'.tr} $hours:${mins.toString().padLeft(2, '0')}';
     }
+    final hours = duration.inHours;
+    final mins = duration.inMinutes % 60;
+    if (mins == 0) return '${'ago'.tr} $hours ${'hours'.tr}';
+    return '${'ago'.tr} $hours:${mins.toString().padLeft(2, '0')}';
   }
 
   String _formatTime(DateTime time) {

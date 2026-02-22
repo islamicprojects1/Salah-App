@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:salah/core/constants/app_dimensions.dart';
 import 'package:salah/core/di/injection_container.dart';
 import 'package:salah/core/constants/enums.dart';
+import 'package:salah/core/theme/app_colors.dart';
 import 'package:salah/core/feedback/app_feedback.dart';
 import 'package:salah/features/auth/data/services/auth_service.dart';
 import 'package:salah/features/prayer/data/models/prayer_log_model.dart';
@@ -11,14 +13,11 @@ import 'package:salah/features/prayer/data/services/qada_detection_service.dart'
 
 /// Bottom sheet for reviewing and bulk-logging unlogged prayers (qada).
 ///
-/// Shows today's and yesterday's unlogged prayers with quick actions:
-/// - "I Prayed" â†’ logs the prayer
-/// - "I Missed" â†’ dismisses (user acknowledges)
-/// - "Log All" â†’ batch log all shown prayers
+/// FIX: _logAll now runs in parallel (Future.wait) instead of sequential
+/// await-in-loop which was slow when logging multiple prayers.
 class QadaReviewBottomSheet extends StatefulWidget {
   const QadaReviewBottomSheet({super.key});
 
-  /// Show the bottom sheet â€” call this from DashboardController or a button.
   static Future<void> show() async {
     if (!Get.isRegistered<QadaDetectionService>()) return;
     final qadaService = sl<QadaDetectionService>();
@@ -28,7 +27,7 @@ class QadaReviewBottomSheet extends StatefulWidget {
       isScrollControlled: true,
       isDismissible: true,
       enableDrag: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppColors.transparent,
     );
   }
 
@@ -56,26 +55,30 @@ class _QadaReviewBottomSheetState extends State<QadaReviewBottomSheet> {
       ),
       decoration: BoxDecoration(
         color: colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(AppDimensions.radiusXXL),
+        ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           // Handle bar
-          const SizedBox(height: 12),
+          const SizedBox(height: AppDimensions.paddingMD),
           Container(
             width: 40,
             height: 4,
             decoration: BoxDecoration(
               color: colorScheme.onSurface.withAlpha(50),
-              borderRadius: BorderRadius.circular(2),
+              borderRadius: BorderRadius.circular(AppDimensions.radiusXS),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppDimensions.paddingLG),
 
           // Title
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppDimensions.paddingXXL,
+            ),
             child: Column(
               children: [
                 Text(
@@ -84,17 +87,18 @@ class _QadaReviewBottomSheetState extends State<QadaReviewBottomSheet> {
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: AppDimensions.paddingXS),
                 Text(
                   'qada_sheet_subtitle'.tr,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: colorScheme.onSurface.withAlpha(153),
                   ),
+                  textAlign: TextAlign.center,
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppDimensions.paddingLG),
 
           // Prayer list
           Flexible(
@@ -108,21 +112,20 @@ class _QadaReviewBottomSheetState extends State<QadaReviewBottomSheet> {
                   .toList();
 
               if (items.isEmpty) {
-                // All handled â€” close after a moment
                 Future.delayed(const Duration(milliseconds: 800), () {
                   if (mounted) Get.back();
                 });
                 return Padding(
-                  padding: const EdgeInsets.all(32),
+                  padding: const EdgeInsets.all(AppDimensions.paddingXXXL),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
                         Icons.check_circle_rounded,
-                        size: 56,
+                        size: AppDimensions.iconHero,
                         color: colorScheme.primary,
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: AppDimensions.paddingMD),
                       Text(
                         'all_prayers_complete'.tr,
                         style: theme.textTheme.titleMedium?.copyWith(
@@ -137,15 +140,18 @@ class _QadaReviewBottomSheetState extends State<QadaReviewBottomSheet> {
 
               return ListView.separated(
                 shrinkWrap: true,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppDimensions.paddingLG,
+                ),
                 itemCount: items.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 8),
+                separatorBuilder: (_, __) =>
+                    const SizedBox(height: AppDimensions.paddingSM),
                 itemBuilder: (ctx, i) => _buildPrayerCard(ctx, items[i]),
               );
             }),
           ),
 
-          // Bottom actions
+          // Log all button
           Obx(() {
             final remaining = _qadaService.allPendingQada
                 .where(
@@ -154,29 +160,41 @@ class _QadaReviewBottomSheetState extends State<QadaReviewBottomSheet> {
                       !_dismissedKeys.contains(p.key),
                 )
                 .toList();
-            if (remaining.isEmpty) return const SizedBox(height: 16);
+
+            if (remaining.isEmpty) {
+              return const SizedBox(height: AppDimensions.paddingLG);
+            }
 
             return SafeArea(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                padding: const EdgeInsets.fromLTRB(
+                  AppDimensions.paddingLG,
+                  AppDimensions.paddingSM,
+                  AppDimensions.paddingLG,
+                  AppDimensions.paddingLG,
+                ),
                 child: SizedBox(
                   width: double.infinity,
-                  height: 48,
+                  height: AppDimensions.buttonHeightLG,
                   child: FilledButton.icon(
                     onPressed: _isLogging.value
                         ? null
                         : () => _logAll(remaining),
                     icon: _isLogging.value
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
+                        ? SizedBox(
+                            width: AppDimensions.iconMD,
+                            height: AppDimensions.iconMD,
+                            child: const CircularProgressIndicator(
+                              strokeWidth: 2,
+                            ),
                           )
                         : const Icon(Icons.check_circle_outline_rounded),
                     label: Text('qada_log_all'.tr),
                     style: FilledButton.styleFrom(
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(
+                          AppDimensions.radiusMD,
+                        ),
                       ),
                     ),
                   ),
@@ -195,10 +213,13 @@ class _QadaReviewBottomSheetState extends State<QadaReviewBottomSheet> {
     final isYesterday = prayer.date.day != DateTime.now().day;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppDimensions.paddingLG,
+        vertical: AppDimensions.paddingMD,
+      ),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withAlpha(120),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
         border: Border.all(
           color: isYesterday
               ? colorScheme.error.withAlpha(40)
@@ -209,8 +230,8 @@ class _QadaReviewBottomSheetState extends State<QadaReviewBottomSheet> {
         children: [
           // Prayer icon
           Container(
-            width: 44,
-            height: 44,
+            width: AppDimensions.buttonHeightLG,
+            height: AppDimensions.buttonHeightLG,
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: isYesterday
@@ -223,15 +244,15 @@ class _QadaReviewBottomSheetState extends State<QadaReviewBottomSheet> {
                         colorScheme.primary.withAlpha(20),
                       ],
               ),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
             ),
             child: Icon(
               _prayerIcon(prayer.prayer),
               color: isYesterday ? colorScheme.error : colorScheme.primary,
-              size: 22,
+              size: AppDimensions.iconLG,
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppDimensions.paddingMD),
 
           // Prayer info
           Expanded(
@@ -258,14 +279,12 @@ class _QadaReviewBottomSheetState extends State<QadaReviewBottomSheet> {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // I Prayed
               _ActionChip(
                 label: 'qada_i_prayed'.tr,
                 color: colorScheme.primary,
                 onTap: () => _logSingle(prayer),
               ),
-              const SizedBox(width: 6),
-              // I Missed
+              const SizedBox(width: AppDimensions.paddingSM),
               _ActionChip(
                 label: 'qada_i_missed'.tr,
                 color: colorScheme.onSurface.withAlpha(100),
@@ -307,15 +326,12 @@ class _QadaReviewBottomSheetState extends State<QadaReviewBottomSheet> {
     }
   }
 
-  void _dismiss(UnloggedPrayerInfo prayer) {
-    _dismissedKeys.add(prayer.key);
-  }
+  void _dismiss(UnloggedPrayerInfo prayer) => _dismissedKeys.add(prayer.key);
 
+  /// FIX: Run all logs in parallel instead of sequential await-in-loop
   Future<void> _logAll(List<UnloggedPrayerInfo> prayers) async {
     _isLogging.value = true;
-    for (final prayer in prayers) {
-      await _logSingle(prayer);
-    }
+    await Future.wait(prayers.map(_logSingle));
     _isLogging.value = false;
   }
 
@@ -351,23 +367,32 @@ class _ActionChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: AppDimensions.borderRadiusSM,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppDimensions.paddingSM + 2,
+          vertical: AppDimensions.paddingSM,
+        ),
         decoration: BoxDecoration(
           color: color.withAlpha(25),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: AppDimensions.borderRadiusSM,
           border: Border.all(color: color.withAlpha(60)),
         ),
         child: Text(
           label,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            color: color,
-          ),
+          style:
+              theme.textTheme.labelSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: color,
+              ) ??
+              TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
         ),
       ),
     );

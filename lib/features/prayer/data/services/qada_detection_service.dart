@@ -320,7 +320,7 @@ class QadaDetectionService extends GetxService {
   }
 
   /// Increment snooze count and return new delay duration.
-  /// Escalation: 5min → 15min → 30min → marks as unlogged (returns null).
+  /// Max 2 snoozes: 1st → 10 min, 2nd → 30 min (final reminder with سأقضيها), 3rd+ → null.
   Duration? incrementSnoozeAndGetDelay(PrayerName prayer) {
     final key = '${StorageKeys.userPatternPrefix}snooze_${prayer.name}';
     final current = getSnoozeCount(prayer);
@@ -329,16 +329,16 @@ class QadaDetectionService extends GetxService {
 
     switch (newCount) {
       case 1:
-        return const Duration(minutes: 5);
+        return const Duration(minutes: 10);
       case 2:
-        return const Duration(minutes: 15);
-      case 3:
         return const Duration(minutes: 30);
       default:
-        // Too many snoozes — stop reminding
         return null;
     }
   }
+
+  /// True if next reminder should show "سأقضيها" (after 2nd snooze).
+  bool isNextReminderFinal(PrayerName prayer) => getSnoozeCount(prayer) >= 2;
 
   /// Reset snooze count for a prayer (called when prayer is logged).
   void resetSnoozeCount(PrayerName prayer) {

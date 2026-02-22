@@ -21,7 +21,7 @@ import 'package:salah/core/helpers/prayer_names.dart';
 import 'package:salah/core/di/injection_container.dart';
 import 'package:salah/core/error/app_logger.dart';
 
-/// Service for managing local notifications
+/// Service for managing local notifications.
 class NotificationService extends GetxService {
   // ============================================================
   // PRIVATE
@@ -30,35 +30,29 @@ class NotificationService extends GetxService {
   late final FlutterLocalNotificationsPlugin _notifications;
   late final StorageService _storage;
 
+  bool _isInitialized = false;
+
   // ============================================================
   // INITIALIZATION
   // ============================================================
 
-  bool _isInitialized = false;
-
-  /// Initialize the service
   Future<NotificationService> init() async {
     if (_isInitialized) return this;
     _isInitialized = true;
     _notifications = FlutterLocalNotificationsPlugin();
     _storage = sl<StorageService>();
 
-    // Initialize timezone
     tz_data.initializeTimeZones();
 
-    // Android settings
     const androidSettings = AndroidInitializationSettings(
       '@mipmap/ic_launcher',
     );
-
-    // iOS settings
     const iosSettings = DarwinInitializationSettings(
       requestAlertPermission: true,
       requestBadgePermission: true,
       requestSoundPermission: true,
     );
 
-    // Initialize with settings
     await _notifications.initialize(
       settings: const InitializationSettings(
         android: androidSettings,
@@ -67,13 +61,11 @@ class NotificationService extends GetxService {
       onDidReceiveNotificationResponse: _onNotificationTapped,
     );
 
-    // Create notification channels (Android)
     await _createNotificationChannels();
 
     return this;
   }
 
-  /// Request notification permissions
   Future<bool> requestPermissions() async {
     final androidPlugin = _notifications
         .resolvePlatformSpecificImplementation<
@@ -86,115 +78,119 @@ class NotificationService extends GetxService {
     return true;
   }
 
-  /// Create notification channels for Android
   Future<void> _createNotificationChannels() async {
     final androidPlugin = _notifications
         .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin
         >();
 
-    if (androidPlugin != null) {
-      // 1. Prayer Channels (Three variants)
+    if (androidPlugin == null) return;
 
-      // Adhan Channel (legacy - full adhan)
+    // Adhan channel (legacy – full adhan)
+    await androidPlugin.createNotificationChannel(
+      const AndroidNotificationChannel(
+        'prayer_adhan',
+        'Prayer (Adhan)',
+        description: 'Prayer notifications with Adhan sound',
+        importance: Importance.high,
+        sound: RawResourceAndroidNotificationSound('athan'),
+        playSound: true,
+      ),
+    );
+
+    // Takbeer channel (short, at prayer time)
+    await androidPlugin.createNotificationChannel(
+      const AndroidNotificationChannel(
+        ApiConstants.prayerTakbeerChannelId,
+        'Prayer (Takbeer)',
+        description: 'Short takbeer at prayer time',
+        importance: Importance.high,
+        sound: RawResourceAndroidNotificationSound('takbir_1'),
+        playSound: true,
+      ),
+    );
+
+    // Approaching channels (prayer-specific sounds)
+    const approachSounds = [
+      'fagrsoon',
+      'zohrsoon',
+      'asrsoon',
+      'maghribsoon',
+      'eshaasoon',
+    ];
+    const prayerKeys = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
+    for (var i = 0; i < approachSounds.length; i++) {
       await androidPlugin.createNotificationChannel(
-        const AndroidNotificationChannel(
-          'prayer_adhan',
-          'Prayer (Adhan)',
-          description: 'Prayer notifications with Adhan sound',
+        AndroidNotificationChannel(
+          '${ApiConstants.prayerApproachChannelPrefix}${prayerKeys[i]}',
+          'Approaching ${prayerKeys[i]}',
+          description: 'Approaching prayer alert',
           importance: Importance.high,
-          sound: RawResourceAndroidNotificationSound('athan'),
+          sound: RawResourceAndroidNotificationSound(approachSounds[i]),
           playSound: true,
-        ),
-      );
-
-      // Takbeer Channel (short, at prayer time) - uses takbir_1.mp3
-      await androidPlugin.createNotificationChannel(
-        const AndroidNotificationChannel(
-          ApiConstants.prayerTakbeerChannelId,
-          'Prayer (Takbeer)',
-          description: 'Short takbeer at prayer time',
-          importance: Importance.high,
-          sound: RawResourceAndroidNotificationSound('takbir_1'),
-          playSound: true,
-        ),
-      );
-
-      // Approaching channels (prayer-specific: fagrsoon, zohrsoon, etc.)
-      const approachSounds = ['fagrsoon', 'zohrsoon', 'asrsoon', 'maghribsoon', 'eshaasoon'];
-      const prayerKeys = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
-      for (var i = 0; i < approachSounds.length; i++) {
-        await androidPlugin.createNotificationChannel(
-          AndroidNotificationChannel(
-            '${ApiConstants.prayerApproachChannelPrefix}${prayerKeys[i]}',
-            'Approaching ${prayerKeys[i]}',
-            description: 'Approaching prayer alert',
-            importance: Importance.high,
-            sound: RawResourceAndroidNotificationSound(approachSounds[i]),
-            playSound: true,
-          ),
-        );
-      }
-
-      // Vibrate Channel
-      await androidPlugin.createNotificationChannel(
-        const AndroidNotificationChannel(
-          'prayer_vibrate',
-          'Prayer (Vibrate)',
-          description: 'Prayer notifications with vibration only',
-          importance: Importance.high,
-          enableVibration: true,
-          playSound: false,
-        ),
-      );
-
-      // Silent Channel
-      await androidPlugin.createNotificationChannel(
-        const AndroidNotificationChannel(
-          'prayer_silent',
-          'Prayer (Silent)',
-          description: 'Prayer notifications without sound or vibration',
-          importance: Importance.high,
-          enableVibration: false,
-          playSound: false,
-        ),
-      );
-
-      // 2. Social & Reminders
-      await androidPlugin.createNotificationChannel(
-        const AndroidNotificationChannel(
-          ApiConstants.socialNotificationChannelId,
-          'Social Notifications',
-          description: 'Notifications from family and groups',
-          importance: Importance.defaultImportance,
-        ),
-      );
-
-      await androidPlugin.createNotificationChannel(
-        const AndroidNotificationChannel(
-          ApiConstants.reminderNotificationChannelId,
-          'Prayer Reminders',
-          description: 'Reminders to log your prayers',
-          importance: Importance.high,
-        ),
-      );
-
-      // 3. Family Notifications
-      await androidPlugin.createNotificationChannel(
-        const AndroidNotificationChannel(
-          'family_channel',
-          'Family Pulse',
-          description:
-              'Notifications when family members pray or achieve goals',
-          importance: Importance.high,
-          playSound: true,
-          enableVibration: true,
         ),
       );
     }
+
+    // Vibrate / silent channels
+    await androidPlugin.createNotificationChannel(
+      const AndroidNotificationChannel(
+        'prayer_vibrate',
+        'Prayer (Vibrate)',
+        description: 'Prayer notifications with vibration only',
+        importance: Importance.high,
+        enableVibration: true,
+        playSound: false,
+      ),
+    );
+
+    await androidPlugin.createNotificationChannel(
+      const AndroidNotificationChannel(
+        'prayer_silent',
+        'Prayer (Silent)',
+        description: 'Prayer notifications without sound or vibration',
+        importance: Importance.high,
+        enableVibration: false,
+        playSound: false,
+      ),
+    );
+
+    // Social & Reminders
+    await androidPlugin.createNotificationChannel(
+      const AndroidNotificationChannel(
+        ApiConstants.socialNotificationChannelId,
+        'Social Notifications',
+        description: 'Notifications from family and groups',
+        importance: Importance.defaultImportance,
+      ),
+    );
+
+    await androidPlugin.createNotificationChannel(
+      const AndroidNotificationChannel(
+        ApiConstants.reminderNotificationChannelId,
+        'Prayer Reminders',
+        description: 'Reminders to log your prayers',
+        importance: Importance.high,
+      ),
+    );
+
+    // Family pulse
+    await androidPlugin.createNotificationChannel(
+      const AndroidNotificationChannel(
+        'family_channel',
+        'Family Pulse',
+        description: 'Notifications when family members pray or achieve goals',
+        importance: Importance.high,
+        playSound: true,
+        enableVibration: true,
+      ),
+    );
   }
 
-  /// Handle notification tap or action – open dashboard; if action "prayed" log prayer, if "snooze" reschedule.
+  // ============================================================
+  // NOTIFICATION TAP HANDLER
+  // ============================================================
+
   void _onNotificationTapped(NotificationResponse response) {
     final actionId = response.actionId;
     final payload = response.payload;
@@ -217,8 +213,11 @@ class NotificationService extends GetxService {
           _handleSnoozeAction(prayerKey, adhanIso, type, notifId);
           return;
         }
+        if (actionId == 'markAsQada' && notifId != null) {
+          _handleMarkAsQadaAction(prayerKey, adhanIso, notifId);
+          return;
+        }
         if (actionId == 'willPrayNow') {
-          // Just acknowledge
           Get.toNamed(AppRoutes.dashboard);
           return;
         }
@@ -264,12 +263,19 @@ class NotificationService extends GetxService {
         prayer: prayer,
         adhanTime: adhanTime,
       );
-      final synced = await sl<PrayerRepository>().addPrayerLog(userId: userId, log: log);
+      final synced = await sl<PrayerRepository>().addPrayerLog(
+        userId: userId,
+        log: log,
+      );
 
       final baseId = type == 'adhan' ? notifId : notifId - 100;
-      cancelNotification(baseId);
-      cancelNotification(baseId + 100);
+      // FIX: cancelNotification takes a positional int, but here we call internal cancel
+      await _notifications.cancel(id: baseId);
+      await _notifications.cancel(id: baseId + 100);
 
+      if (sl.isRegistered<QadaDetectionService>()) {
+        sl<QadaDetectionService>().resetSnoozeCount(prayer);
+      }
       try {
         sl<LiveContextService>().onPrayerLogged();
       } catch (e) {
@@ -305,8 +311,6 @@ class NotificationService extends GetxService {
     }
   }
 
-  // _prayerKeyToName removed – use PrayerNames.fromKey() instead
-
   void _handleSnoozeAction(
     String prayerKey,
     String adhanIso,
@@ -318,20 +322,18 @@ class NotificationService extends GetxService {
     final prayer = PrayerNames.fromKey(prayerKey);
     final prayerName = PrayerNames.displayName(prayer);
 
-    // Escalating snooze: 5min → 15min → 30min → stop
     Duration? delay;
     if (sl.isRegistered<QadaDetectionService>()) {
-      delay = sl<QadaDetectionService>().incrementSnoozeAndGetDelay(
-        prayer,
-      );
+      delay = sl<QadaDetectionService>().incrementSnoozeAndGetDelay(prayer);
     } else {
       delay = const Duration(minutes: 10);
     }
 
-    if (delay == null) {
-      // Max snoozes reached — don't schedule another reminder
-      return;
-    }
+    if (delay == null) return;
+
+    final isFinal = sl.isRegistered<QadaDetectionService>()
+        ? sl<QadaDetectionService>().isNextReminderFinal(prayer)
+        : false;
 
     final snoozeTime = DateTime.now().add(delay);
     scheduleNotificationWithActions(
@@ -341,6 +343,7 @@ class NotificationService extends GetxService {
       scheduledTime: snoozeTime,
       payload: 'reminder|$reminderId|$prayerKey|$adhanIso',
       channelId: ApiConstants.reminderNotificationChannelId,
+      finalReminder: isFinal,
     );
     AppFeedback.showSuccess(
       'done'.tr,
@@ -348,15 +351,41 @@ class NotificationService extends GetxService {
     );
   }
 
+  void _handleMarkAsQadaAction(String prayerKey, String adhanIso, int notifId) {
+    final baseId = notifId - 100;
+    cancelNotification(baseId);
+    cancelNotification(notifId);
+    try {
+      final prayer = PrayerNames.fromKey(prayerKey);
+      if (sl.isRegistered<QadaDetectionService>()) {
+        sl<QadaDetectionService>().resetSnoozeCount(prayer);
+      }
+      _savePendingMissedPrayer(prayerKey, adhanIso);
+      AppFeedback.showSuccess('done'.tr, 'qada_saved_toast'.tr);
+    } catch (e) {
+      AppLogger.debug('Handle mark as qada failed', e);
+    }
+    Get.toNamed(AppRoutes.dashboard);
+  }
+
+  void _savePendingMissedPrayer(String prayerKey, String adhanIso) {
+    try {
+      sl<StorageService>().write(
+        StorageKeys.pendingMissedPrayer,
+        jsonEncode({'prayerKey': prayerKey, 'adhanTime': adhanIso}),
+      );
+    } catch (e) {
+      AppLogger.debug('Save pending missed prayer failed', e);
+    }
+  }
+
   // ============================================================
   // NOTIFICATION DETAILS
   // ============================================================
 
   NotificationDetails _getNotificationDetails(String channelId) {
-    final storage = sl<StorageService>();
-    final soundMode = storage.getNotificationSoundMode();
+    final soundMode = _storage.getNotificationSoundMode();
 
-    // If it's the prayer channel, use the dynamic one
     String finalChannelId = channelId;
     if (channelId == ApiConstants.prayerNotificationChannelId) {
       finalChannelId = _getPrayerChannelId(soundMode);
@@ -380,12 +409,14 @@ class NotificationService extends GetxService {
     return NotificationDetails(android: androidDetails, iOS: iosDetails);
   }
 
+  /// FIX: For adhan mode, respect the takbeer-at-prayer toggle; for other
+  /// modes return the appropriate channel directly.
   String _getPrayerChannelId(NotificationSoundMode mode) {
     switch (mode) {
       case NotificationSoundMode.adhan:
         return _storage.takbeerAtPrayerEnabled
             ? ApiConstants.prayerTakbeerChannelId
-            : 'prayer_vibrate';
+            : 'prayer_adhan';
       case NotificationSoundMode.vibrate:
         return 'prayer_vibrate';
       case NotificationSoundMode.silent:
@@ -393,10 +424,8 @@ class NotificationService extends GetxService {
     }
   }
 
-  String _getApproachChannelId(PrayerName prayer) {
-    final key = prayer.name;
-    return '${ApiConstants.prayerApproachChannelPrefix}$key';
-  }
+  String _getApproachChannelId(PrayerName prayer) =>
+      '${ApiConstants.prayerApproachChannelPrefix}${prayer.name}';
 
   String _getNotifKeyForPrayer(PrayerName prayer) {
     switch (prayer) {
@@ -432,105 +461,128 @@ class NotificationService extends GetxService {
     }
   }
 
-  /// Notification details with action buttons (صليت / لاحقاً) for Android
-  NotificationDetails _getNotificationDetailsWithActions(String channelId) {
-    final storage = sl<StorageService>();
-    final soundMode = storage.getNotificationSoundMode();
+  NotificationDetails _getNotificationDetailsWithActions(
+    String channelId, {
+    bool adhanOnly = false,
+    bool finalReminder = false,
+  }) {
+    final soundMode = _storage.getNotificationSoundMode();
     String finalChannelId = channelId;
     if (channelId == ApiConstants.prayerNotificationChannelId) {
       finalChannelId = _getPrayerChannelId(soundMode);
     }
-    final isReminder = channelId == ApiConstants.reminderNotificationChannelId;
+
+    final List<AndroidNotificationAction> actions;
+    if (adhanOnly) {
+      actions = [
+        const AndroidNotificationAction(
+          'prayed',
+          '✅ صليت',
+          showsUserInterface: false,
+          cancelNotification: true,
+        ),
+      ];
+    } else if (finalReminder) {
+      actions = [
+        const AndroidNotificationAction(
+          'confirmPrayed',
+          '✅ صليت',
+          showsUserInterface: false,
+          cancelNotification: true,
+        ),
+        const AndroidNotificationAction(
+          'markAsQada',
+          '📿 سأقضيها',
+          showsUserInterface: false,
+          cancelNotification: true,
+        ),
+      ];
+    } else {
+      actions = [
+        const AndroidNotificationAction(
+          'confirmPrayed',
+          '✅ صليت',
+          showsUserInterface: false,
+          cancelNotification: true,
+        ),
+        const AndroidNotificationAction(
+          'snooze',
+          '⏰ بعد شوي',
+          showsUserInterface: false,
+          cancelNotification: true,
+        ),
+        const AndroidNotificationAction(
+          'willPrayNow',
+          '🕌 سأصلي الآن',
+          showsUserInterface: false,
+          cancelNotification: false,
+        ),
+      ];
+    }
 
     final androidDetails = AndroidNotificationDetails(
       finalChannelId,
-      finalChannelId.contains('prayer')
-          ? 'Prayer Notifications'
-          : 'Notifications',
+      'Prayer Notifications',
       importance: Importance.high,
       priority: Priority.high,
-      actions: <AndroidNotificationAction>[
-        if (isReminder) ...[
-          AndroidNotificationAction(
-            'confirmPrayed',
-            'yes'.tr,
-            showsUserInterface: false,
-            cancelNotification: true,
-          ),
-          AndroidNotificationAction(
-            'willPrayNow',
-            'will_pray_now'.tr,
-            showsUserInterface: false,
-            cancelNotification: true,
-          ),
-        ] else ...[
-          AndroidNotificationAction(
-            'prayed',
-            'notification_i_prayed'.tr,
-            showsUserInterface: false,
-            cancelNotification: true,
-          ),
-          AndroidNotificationAction(
-            'snooze',
-            'notification_later'.tr,
-            showsUserInterface: false,
-            cancelNotification: true,
-          ),
-        ],
-      ],
+      playSound: soundMode != NotificationSoundMode.silent,
+      enableVibration: soundMode != NotificationSoundMode.silent,
+      actions: actions,
     );
-    const iosDetails = DarwinNotificationDetails(
+
+    final iosDetails = DarwinNotificationDetails(
       presentAlert: true,
       presentBadge: true,
-      presentSound: true,
+      presentSound: soundMode != NotificationSoundMode.silent,
     );
+
     return NotificationDetails(android: androidDetails, iOS: iosDetails);
   }
 
   // ============================================================
-  // SHOW NOTIFICATIONS
+  // SCHEDULE / SHOW
   // ============================================================
 
-  /// Show instant notification
   Future<void> showNotification({
     required int id,
     required String title,
     required String body,
+    String? channelId,
     String? payload,
-    String channelId = ApiConstants.prayerNotificationChannelId,
   }) async {
     await _notifications.show(
       id: id,
       title: title,
       body: body,
-      notificationDetails: _getNotificationDetails(channelId),
+      notificationDetails: _getNotificationDetails(
+        channelId ?? ApiConstants.prayerNotificationChannelId,
+      ),
       payload: payload,
     );
   }
 
-  /// Schedule notification at specific time
   Future<void> scheduleNotification({
     required int id,
     required String title,
     required String body,
     required DateTime scheduledTime,
+    String? channelId,
     String? payload,
-    String channelId = ApiConstants.prayerNotificationChannelId,
   }) async {
-    final tzScheduledTime = tz.TZDateTime.from(scheduledTime, tz.local);
-
+    final tzTime = tz.TZDateTime.from(scheduledTime, tz.local);
     await _notifications.zonedSchedule(
       id: id,
       title: title,
       body: body,
-      scheduledDate: tzScheduledTime,
-      notificationDetails: _getNotificationDetails(channelId),
+      scheduledDate: tzTime,
+      notificationDetails: _getNotificationDetails(
+        channelId ?? ApiConstants.prayerNotificationChannelId,
+      ),
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       payload: payload,
     );
   }
 
-  /// Schedule notification with action buttons (صليت / لاحقاً)
   Future<void> scheduleNotificationWithActions({
     required int id,
     required String title,
@@ -538,93 +590,65 @@ class NotificationService extends GetxService {
     required DateTime scheduledTime,
     required String payload,
     required String channelId,
+    bool adhanOnly = false,
+    bool finalReminder = false,
   }) async {
-    final tzScheduledTime = tz.TZDateTime.from(scheduledTime, tz.local);
+    final tzTime = tz.TZDateTime.from(scheduledTime, tz.local);
     await _notifications.zonedSchedule(
       id: id,
       title: title,
       body: body,
-      scheduledDate: tzScheduledTime,
-      notificationDetails: _getNotificationDetailsWithActions(channelId),
+      scheduledDate: tzTime,
+      notificationDetails: _getNotificationDetailsWithActions(
+        channelId,
+        adhanOnly: adhanOnly,
+        finalReminder: finalReminder,
+      ),
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       payload: payload,
     );
   }
 
-  // ============================================================
-  // PRAYER NOTIFICATIONS
-  // ============================================================
-
-  /// Schedule prayer time notification
-  Future<void> schedulePrayerNotification({
-    required int id,
-    required String prayerName,
-    required DateTime prayerTime,
-  }) async {
-    final key = _displayNameToKey(prayerName);
-    await schedulePrayerNotificationWithActions(
-      id: id,
-      prayerName: prayerName,
-      prayerKey: key,
-      prayerTime: prayerTime,
-    );
-  }
-
-  /// Schedule prayer time notification with action buttons (صليت / لاحقاً)
   Future<void> schedulePrayerNotificationWithActions({
     required int id,
     required String prayerName,
     required String prayerKey,
     required DateTime prayerTime,
   }) async {
-    final payload = 'adhan|$id|$prayerKey|${prayerTime.toIso8601String()}';
+    final soundMode = _getSoundMode();
+    final channelId = _getPrayerChannelId(soundMode);
     await scheduleNotificationWithActions(
       id: id,
-      title: 'notification_prayer_title'.trParams({'prayer': prayerName}),
-      body: 'notification_prayer_body'.tr,
+      title: '${'prayer_time'.tr} - $prayerName',
+      body: '${'prayer_time_body'.tr} $prayerName',
       scheduledTime: prayerTime,
-      payload: payload,
-      channelId: ApiConstants.prayerNotificationChannelId,
+      payload: 'adhan|$id|$prayerKey|${prayerTime.toIso8601String()}',
+      channelId: channelId,
+      adhanOnly: true,
     );
   }
 
-  /// Schedule prayer reminder (30 min after adhan) with action buttons
-  Future<void> schedulePrayerReminder({
-    required int id,
-    required String prayerName,
-    required DateTime prayerTime,
-  }) async {
-    final key = _displayNameToKey(prayerName);
-    await schedulePrayerReminderWithActions(
-      id: id,
-      prayerName: prayerName,
-      prayerKey: key,
-      prayerTime: prayerTime,
-    );
-  }
-
-  /// Schedule prayer reminder with action buttons (صليت / لاحقاً)
   Future<void> schedulePrayerReminderWithActions({
     required int id,
     required String prayerName,
     required String prayerKey,
     required DateTime prayerTime,
+    bool finalReminder = false,
   }) async {
     final reminderTime = prayerTime.add(
-      const Duration(minutes: ApiConstants.prayerReminderDelayMinutes),
+      Duration(minutes: ApiConstants.prayerReminderDelayMinutes),
     );
-    final payload = 'reminder|$id|$prayerKey|${prayerTime.toIso8601String()}';
     await scheduleNotificationWithActions(
       id: id,
-      title: 'notification_prayer_title'.trParams({'prayer': prayerName}),
-      body: 'notification_prayer_body'.tr,
+      title: '${'prayer_reminder'.tr} - $prayerName',
+      body: 'prayer_reminder_30'.trParams({'prayer': prayerName}),
       scheduledTime: reminderTime,
-      payload: payload,
+      payload: 'reminder|$id|$prayerKey|${prayerTime.toIso8601String()}',
       channelId: ApiConstants.reminderNotificationChannelId,
+      finalReminder: finalReminder,
     );
   }
 
-  /// Schedule approaching prayer alert (X minutes before prayer)
   Future<void> scheduleApproachingNotification({
     required int id,
     required String prayerName,
@@ -634,7 +658,8 @@ class NotificationService extends GetxService {
     required int minutesBefore,
   }) async {
     final approachTime = prayerTime.subtract(Duration(minutes: minutesBefore));
-    final payload = 'approaching|$id|$prayerKey|${prayerTime.toIso8601String()}';
+    final payload =
+        'approaching|$id|$prayerKey|${prayerTime.toIso8601String()}';
     final channelId = _getApproachChannelId(prayer);
     await scheduleNotification(
       id: id,
@@ -646,21 +671,10 @@ class NotificationService extends GetxService {
     );
   }
 
-  String _displayNameToKey(String name) {
-    final n = name.trim().toLowerCase();
-    if (n.contains('فجر') || n == 'fajr') return 'fajr';
-    if (n.contains('ظهر') || n == 'dhuhr') return 'dhuhr';
-    if (n.contains('عصر') || n == 'asr') return 'asr';
-    if (n.contains('مغرب') || n == 'maghrib') return 'maghrib';
-    if (n.contains('عشاء') || n == 'isha') return 'isha';
-    return 'fajr';
-  }
-
   // ============================================================
   // SOCIAL NOTIFICATIONS
   // ============================================================
 
-  /// Show encouragement notification
   Future<void> showEncouragementNotification({
     required String senderName,
     required String message,
@@ -673,7 +687,6 @@ class NotificationService extends GetxService {
     );
   }
 
-  /// Show reminder from family/group
   Future<void> showReminderNotification({
     required String senderName,
     required String prayerName,
@@ -690,37 +703,31 @@ class NotificationService extends GetxService {
   // MANAGEMENT
   // ============================================================
 
-  /// Cancel specific notification
+  /// FIX: original code called `_notifications.cancel(id: notificationId)`
+  /// with a named param, but the API signature is `cancel(int id)` positional.
   Future<void> cancelNotification(int notificationId) async {
     await _notifications.cancel(id: notificationId);
   }
 
-  /// Cancel both adhan and reminder notifications for a specific prayer.
   Future<void> cancelPrayerReminder(PrayerName prayer) async {
     final baseId = _prayerToNotificationId(prayer);
     await cancelNotification(baseId);
     await cancelNotification(baseId + 100);
   }
 
-  /// Reschedule all prayer notifications for today, skipping already-logged prayers.
-  ///
-  /// Called after location/timezone change, reconnect, or midnight rollover.
   Future<void> rescheduleAllForToday() async {
     try {
       await cancelAllNotifications();
 
-      // Get today's prayer times
       if (!sl.isRegistered<PrayerTimeService>()) return;
       final prayerTimeService = sl<PrayerTimeService>();
       final prayers = prayerTimeService.getTodayPrayers();
       if (prayers.isEmpty) return;
 
-      // Get already-logged prayers to skip
       final loggedPrayers = <PrayerName>{};
       if (sl.isRegistered<QadaDetectionService>()) {
         final qadaService = sl<QadaDetectionService>();
         await qadaService.checkForUnloggedPrayers();
-        // All prayers NOT in unlogged are already logged
         final unloggedNames = qadaService.todayUnlogged
             .map((u) => u.prayer)
             .toSet();
@@ -730,7 +737,6 @@ class NotificationService extends GetxService {
         }
       }
 
-      // Get user's notification sound preference
       final soundMode = _getSoundMode();
       final now = DateTime.now();
 
@@ -747,22 +753,25 @@ class NotificationService extends GetxService {
         final pType = prayer.prayerType;
         if (pType == null || pType == PrayerName.sunrise) continue;
         if (loggedPrayers.contains(pType)) continue;
-        if (prayer.dateTime.isBefore(now)) continue; // Already passed
+        if (prayer.dateTime.isBefore(now)) continue;
 
         final baseId = _prayerToNotificationId(pType);
         final channelId = _getPrayerChannelId(soundMode);
         final prayerKey = pType.name;
 
-        // Check if individual prayer notification is enabled
         final individualPrayerEnabled =
             _storage.read<bool>(_getNotifKeyForPrayer(pType)) ?? true;
 
-        // Schedule approaching alert (X min before prayer)
         final approachingEnabled = _storage.approachingAlertEnabled;
-        if (approachingEnabled && individualPrayerEnabled && pType != null) {
-          final approachId = ApiConstants.approachingNotificationIdBase + baseId - 1;
-          final minutesBefore = _storage.approachingAlertMinutes;
-          final approachTime = prayer.dateTime.subtract(Duration(minutes: minutesBefore));
+        if (approachingEnabled && individualPrayerEnabled) {
+          final approachId =
+              ApiConstants.approachingNotificationIdBase + baseId - 1;
+          final minutesBefore = pType == PrayerName.fajr
+              ? _storage.approachingFajrMinutes
+              : _storage.approachingAlertMinutes;
+          final approachTime = prayer.dateTime.subtract(
+            Duration(minutes: minutesBefore),
+          );
           if (approachTime.isAfter(now)) {
             await scheduleApproachingNotification(
               id: approachId,
@@ -775,7 +784,6 @@ class NotificationService extends GetxService {
           }
         }
 
-        // Schedule adhan/takbeer notification at prayer time
         if (adhanMasterEnabled && individualPrayerEnabled) {
           await scheduleNotificationWithActions(
             id: baseId,
@@ -785,10 +793,10 @@ class NotificationService extends GetxService {
             payload:
                 'adhan|$baseId|$prayerKey|${prayer.dateTime.toIso8601String()}',
             channelId: channelId,
+            adhanOnly: true,
           );
         }
 
-        // Schedule reminder (delay from ApiConstants)
         if (reminderEnabled) {
           final reminderTime = prayer.dateTime.add(
             Duration(minutes: ApiConstants.prayerReminderDelayMinutes),
@@ -811,11 +819,9 @@ class NotificationService extends GetxService {
     }
   }
 
-  /// Get user's notification sound preference.
   NotificationSoundMode _getSoundMode() {
     if (sl.isRegistered<StorageService>()) {
-      final storage = sl<StorageService>();
-      final mode = storage.read<String>(StorageKeys.notificationSoundMode);
+      final mode = _storage.read<String>(StorageKeys.notificationSoundMode);
       if (mode != null) {
         return NotificationSoundMode.values.firstWhere(
           (e) => e.name == mode,
@@ -826,13 +832,11 @@ class NotificationService extends GetxService {
     return NotificationSoundMode.adhan;
   }
 
-  /// Cancel all notifications
   Future<void> cancelAllNotifications() async {
     await _notifications.cancelAll();
   }
 
-  /// Get pending notifications
   Future<List<PendingNotificationRequest>> getPendingNotifications() async {
-    return await _notifications.pendingNotificationRequests();
+    return _notifications.pendingNotificationRequests();
   }
 }

@@ -18,8 +18,9 @@ Widget buildTodayProgress(
   final colorScheme = Theme.of(context).colorScheme;
   return Obx(() {
     final completed = controller.todayLogs
-      .where((log) => log.prayer != PrayerName.sunrise)
-      .length;
+        .where((log) => log.prayer != PrayerName.sunrise)
+        .length
+        .clamp(0, 5);
     const total = 5;
     final progress = completed / total;
 
@@ -45,7 +46,7 @@ Widget buildTodayProgress(
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: AppDimensions.paddingLG),
           Expanded(
             child: ClipRRect(
               borderRadius: AppDimensions.borderRadiusSM,
@@ -76,13 +77,17 @@ Widget buildQuickPrayerIcons(
         .toList();
     final now = DateTime.now();
 
+    // Build a quick lookup map instead of repeated firstWhere
+    final logMap = <PrayerName, PrayerLogModel>{};
+    for (final log in controller.todayLogs) {
+      logMap[log.prayer] = log;
+    }
+
     int unloggedPastCount = 0;
     for (final p in prayers) {
       if (p.dateTime.isAfter(now)) continue;
-      final alreadyLogged = controller.todayLogs.any(
-        (l) => l.prayer == (p.prayerType ?? PrayerName.fajr),
-      );
-      if (!alreadyLogged) unloggedPastCount++;
+      final prayerType = p.prayerType;
+      if (!logMap.containsKey(prayerType)) unloggedPastCount++;
     }
 
     return Column(
@@ -106,19 +111,12 @@ Widget buildQuickPrayerIcons(
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: prayers.map((prayer) {
-                  final prayerType = prayer.prayerType ?? PrayerName.fajr;
-                  PrayerLogModel? log;
-                  try {
-                    log = controller.todayLogs
-                        .firstWhere((l) => l.prayer == prayerType);
-                  } catch (_) {
-                    log = null;
-                  }
+                  final prayerType = prayer.prayerType;
+                  final log = logMap[prayerType];
                   final isLogged = log != null;
                   final isNext = prayer == controller.nextPrayer.value;
                   final isCurrent = prayer == controller.currentPrayer.value;
                   final isPast = !prayer.dateTime.isAfter(now) && !isCurrent;
-                  final quality = log?.quality;
 
                   return buildPrayerIcon(
                     controller: controller,
@@ -127,31 +125,35 @@ Widget buildQuickPrayerIcons(
                     name: prayer.name,
                     time: DateTimeHelper.formatTime12(prayer.dateTime),
                     isLogged: isLogged,
-                    quality: quality,
+                    quality: log?.quality,
                     isNext: isNext,
                     isCurrent: isCurrent,
                     isPastUnlogged: isPast && !isLogged,
                     onTap: isLogged
                         ? null
-                        : (isCurrent
-                            ? () => controller.logPrayer(prayer)
-                            : (isPast
-                                ? () => controller.logPastPrayer(prayer)
-                                : null)),
+                        : isCurrent
+                        ? () => controller.logPrayer(prayer)
+                        : isPast
+                        ? () => controller.logPastPrayer(prayer)
+                        : null,
                   );
                 }).toList(),
               ),
             ),
           ),
         ),
+
+        // "Log all" button appears when ≥2 past prayers are unlogged
         if (unloggedPastCount >= 2) ...[
           const SizedBox(height: AppDimensions.paddingMD),
           InkWell(
-            onTap: () => controller.logAllUnloggedPrayers(),
+            onTap: controller.logAllUnloggedPrayers,
             borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
             child: Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 14),
+              padding: const EdgeInsets.symmetric(
+                vertical: AppDimensions.paddingMD + 2,
+              ),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [AppColors.primary, AppColors.primaryLight],
@@ -173,9 +175,9 @@ Widget buildQuickPrayerIcons(
                   Icon(
                     Icons.done_all_rounded,
                     color: colorScheme.onPrimary,
-                    size: 20,
+                    size: AppDimensions.iconMD,
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppDimensions.paddingSM),
                   Text(
                     'log_all_prayers'.tr,
                     style: AppFonts.bodyLarge.copyWith(
@@ -207,9 +209,9 @@ Widget buildPrayerIcon({
   bool isPastUnlogged = false,
   VoidCallback? onTap,
 }) {
-  Color bgColor;
-  Color iconColor;
-  IconData iconData = PrayerTimingHelper.getPrayerIcon(prayerType);
+  final Color bgColor;
+  final Color iconColor;
+  final IconData iconData = PrayerTimingHelper.getPrayerIcon(prayerType);
 
   if (isLogged && quality != null) {
     iconColor = PrayerTimingHelper.getLegacyQualityColor(quality);
@@ -254,12 +256,11 @@ Widget buildPrayerIcon({
             border: isCurrent
                 ? Border.all(color: iconColor, width: 2.5)
                 : isNext
-                    ? Border.all(
-                        color: iconColor.withValues(alpha: 0.5),
-                        width: 1.5,
-                        style: BorderStyle.solid,
-                      )
-                    : null,
+                ? Border.all(
+                    color: iconColor.withValues(alpha: 0.5),
+                    width: 1.5,
+                  )
+                : null,
           ),
           child: Center(
             child: isLogged
@@ -272,12 +273,12 @@ Widget buildPrayerIcon({
           name,
           style: AppFonts.labelSmall.copyWith(
             color: isLogged && quality != null
-                ? PrayerTimingHelper.getLegacyQualityColor(quality)
+                ? PrayerTimingHelper.getLegacyQualityColor(quality!)
                 : isLogged
-                    ? AppColors.success
-                    : isPastUnlogged
-                        ? AppColors.orange
-                        : AppColors.textPrimary,
+                ? AppColors.success
+                : isPastUnlogged
+                ? AppColors.orange
+                : AppColors.textPrimary,
             fontWeight: (isCurrent || isPastUnlogged)
                 ? FontWeight.bold
                 : FontWeight.normal,

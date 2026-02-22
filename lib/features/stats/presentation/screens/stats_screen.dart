@@ -4,6 +4,7 @@ import 'package:lottie/lottie.dart';
 import 'package:salah/core/theme/app_colors.dart';
 import 'package:salah/core/theme/app_fonts.dart';
 import 'package:salah/core/constants/app_dimensions.dart';
+import 'package:salah/core/constants/image_assets.dart';
 import 'package:salah/features/stats/controller/stats_controller.dart';
 
 /// Personal prayer stats: streak, completion %, heatmap for the month.
@@ -22,7 +23,7 @@ class StatsScreen extends GetView<StatsController> {
         if (controller.isLoading.value) {
           return Center(
             child: Lottie.asset(
-              'assets/animations/loading.json',
+              ImageAssets.loadingAnimation,
               width: 120,
               height: 120,
             ),

@@ -6,7 +6,8 @@ import 'package:salah/core/constants/app_dimensions.dart';
 import 'package:salah/core/theme/app_colors.dart';
 import 'package:salah/core/helpers/date_time_helper.dart';
 
-/// Prayer card widget showing prayer time and status
+/// Prayer card widget showing prayer time and status.
+/// Uses theme-aware colors and avoids magic numbers.
 class PrayerCard extends StatelessWidget {
   final PrayerName prayer;
   final DateTime prayerTime;
@@ -29,12 +30,17 @@ class PrayerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final qualityColor = _getQualityColor(colorScheme);
+    final prayerColor = _getPrayerColor();
+
     return Card(
       elevation: isCurrentPrayer ? 4 : 1,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
         side: isCurrentPrayer
-            ? BorderSide(color: _getPrayerColor(), width: 2)
+            ? BorderSide(color: prayerColor, width: 2)
             : BorderSide.none,
       ),
       child: InkWell(
@@ -44,23 +50,21 @@ class PrayerCard extends StatelessWidget {
           padding: const EdgeInsets.all(AppDimensions.paddingMD),
           child: Row(
             children: [
-              // Prayer icon/status indicator
+              // Prayer icon / status indicator
               Container(
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
                   color: isPrayed
-                      ? _getQualityColor().withValues(alpha: 0.15)
-                      : Theme.of(context).colorScheme.surfaceContainerHighest,
+                      ? qualityColor.withValues(alpha: 0.15)
+                      : colorScheme.surfaceContainerHighest,
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  isPrayed ? Icons.check : _getPrayerIcon(),
+                  isPrayed ? Icons.check_circle_rounded : _getPrayerIcon(),
                   color: isPrayed
-                      ? _getQualityColor()
-                      : Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withValues(alpha: 0.6),
+                      ? qualityColor
+                      : colorScheme.onSurface.withValues(alpha: 0.6),
                   size: 24,
                 ),
               ),
@@ -74,7 +78,7 @@ class PrayerCard extends StatelessWidget {
                   children: [
                     Text(
                       PrayerNames.displayName(prayer),
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: isCurrentPrayer
                             ? FontWeight.bold
                             : FontWeight.w500,
@@ -83,17 +87,15 @@ class PrayerCard extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       DateTimeHelper.formatTime12(prayerTime),
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withValues(alpha: 0.6),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                     ),
                   ],
                 ),
               ),
 
-              // Action/Status
+              // Action / status
               if (!isPrayed && onMarkPrayed != null)
                 IconButton(
                   onPressed: onMarkPrayed,
@@ -102,7 +104,7 @@ class PrayerCard extends StatelessWidget {
                   tooltip: 'log_prayer_tooltip'.tr,
                 )
               else if (isPrayed && quality != null)
-                _buildQualityBadge(context),
+                _buildQualityBadge(context, qualityColor),
             ],
           ),
         ),
@@ -110,8 +112,8 @@ class PrayerCard extends StatelessWidget {
     );
   }
 
-  Widget _buildQualityBadge(BuildContext context) {
-    String label;
+  Widget _buildQualityBadge(BuildContext context, Color color) {
+    final String label;
     switch (quality!) {
       case PrayerQuality.early:
         label = 'prayer_early'.tr;
@@ -133,7 +135,7 @@ class PrayerCard extends StatelessWidget {
         vertical: 4,
       ),
       decoration: BoxDecoration(
-        color: _getQualityColor().withValues(alpha: 0.15),
+        color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(AppDimensions.radiusSM),
       ),
       child: Text(
@@ -141,7 +143,7 @@ class PrayerCard extends StatelessWidget {
         style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w500,
-          color: _getQualityColor(),
+          color: color,
         ),
       ),
     );
@@ -164,17 +166,17 @@ class PrayerCard extends StatelessWidget {
     }
   }
 
-  Color _getQualityColor() {
+  Color _getQualityColor(ColorScheme colorScheme) {
     if (quality == null) return AppColors.success;
     switch (quality!) {
       case PrayerQuality.early:
-        return AppColors.success; // Green
+        return AppColors.success;
       case PrayerQuality.onTime:
-        return AppColors.secondary; // Gold
+        return AppColors.secondary;
       case PrayerQuality.late:
-        return AppColors.warning; // Orange
+        return AppColors.warning;
       case PrayerQuality.missed:
-        return AppColors.error; // Red
+        return colorScheme.error;
     }
   }
 
@@ -194,6 +196,4 @@ class PrayerCard extends StatelessWidget {
         return Icons.nights_stay;
     }
   }
-
 }
-

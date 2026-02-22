@@ -16,6 +16,7 @@ class AppColors {
   static const Color secondary = Color(0xFFD4AF37);
   static const Color secondaryLight = Color(0xFFFFE066);
   static const Color secondaryDark = Color(0xFFA07F00);
+  static const Color gold = secondary;
 
   // ==================== Light Theme Colors ====================
 
