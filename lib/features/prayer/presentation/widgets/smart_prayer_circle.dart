@@ -141,7 +141,7 @@ class _SmartPrayerCircleState extends State<SmartPrayerCircle>
 
                     // --- BOTTOM (6:00 Position): Contextual Info ---
                     Positioned(
-                      bottom: actualSize * 0.15, // Dynamic positioning
+                      bottom: actualSize * 0.15,
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(15),
                         child: BackdropFilter(
@@ -155,98 +155,36 @@ class _SmartPrayerCircleState extends State<SmartPrayerCircle>
                               color: AppColors.surface.withValues(alpha: 0.4),
                               borderRadius: BorderRadius.circular(15),
                               border: Border.all(
-                                color: AppColors.primary.withValues(
-                                  alpha: 0.05,
-                                ),
+                                color: AppColors.primary.withValues(alpha: 0.05),
                               ),
                             ),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                if (isLogged) ...[
-                                  const Icon(
-                                    Icons.check_circle_rounded,
-                                    color: AppColors.success,
-                                    size: 24,
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    'god_accept_prayers'.tr,
-                                    style: AppFonts.labelLarge.copyWith(
-                                      color: AppColors.success,
-                                      fontWeight: FontWeight.bold,
+                            child: AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 350),
+                              transitionBuilder: (child, anim) => FadeTransition(
+                                opacity: anim,
+                                child: SlideTransition(
+                                  position: Tween<Offset>(
+                                    begin: const Offset(0, 0.15),
+                                    end: Offset.zero,
+                                  ).animate(anim),
+                                  child: child,
+                                ),
+                              ),
+                              child: isLogged
+                                  ? _LoggedState(
+                                      key: const ValueKey('logged'),
+                                      prayerName: currentPrayer?.name ?? '',
+                                    )
+                                  : isPrayerTime
+                                  ? _PrayingNowState(
+                                      key: const ValueKey('praying'),
+                                      prayerName: currentPrayer.name,
+                                    )
+                                  : _NextPrayerState(
+                                      key: const ValueKey('next'),
+                                      controller: controller,
+                                      nextPrayer: nextPrayer,
                                     ),
-                                  ),
-                                  Text(
-                                    'prayer_logged_success'.trParams({
-                                      'prayer': currentPrayer?.name ?? '',
-                                    }),
-                                    style: AppFonts.labelSmall.copyWith(
-                                      fontSize: 9,
-                                      color: AppColors.textSecondary,
-                                    ),
-                                  ),
-                                ] else if (isPrayerTime) ...[
-                                  // Pulsing Call to Action
-                                  TweenAnimationBuilder<double>(
-                                    tween: Tween(begin: 1.0, end: 1.2),
-                                    duration: const Duration(seconds: 1),
-                                    curve: Curves.easeInOut,
-                                    builder: (context, value, child) =>
-                                        Transform.scale(
-                                          scale: value,
-                                          child: child,
-                                        ),
-                                    child: const Icon(
-                                      Icons.touch_app_rounded,
-                                      color: AppColors.primary,
-                                      size: 24,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-
-                                  Text(
-                                    currentPrayer.name,
-                                    style: AppFonts.titleSmall.copyWith(
-                                      color: AppColors.primary,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ] else ...[
-                                  // Next Prayer Info
-                                  Text(
-                                    'next_prayer_at'.trParams({
-                                      'prayer': nextPrayer?.name ?? '',
-                                    }),
-                                    style: AppFonts.labelSmall.copyWith(
-                                      color: AppColors.textSecondary,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                      vertical: 2,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.primary.withValues(
-                                        alpha: 0.1,
-                                      ),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Obx(
-                                      () => Text(
-                                        controller.timeUntilNextPrayer.value,
-                                        style: AppFonts.labelMedium.copyWith(
-                                          color: AppColors.primary,
-                                          fontWeight: FontWeight.bold,
-                                          fontFamily: 'monospace',
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ],
                             ),
                           ),
                         ),
@@ -285,6 +223,115 @@ class _SmartPrayerCircleState extends State<SmartPrayerCircle>
         },
       );
     });
+  }
+}
+
+// ─────────────────────────────────────────────
+// Status panel sub-widgets (used by AnimatedSwitcher)
+// ─────────────────────────────────────────────
+
+class _LoggedState extends StatelessWidget {
+  const _LoggedState({super.key, required this.prayerName});
+  final String prayerName;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 24),
+        const SizedBox(height: 2),
+        Text(
+          'god_accept_prayers'.tr,
+          style: AppFonts.labelLarge.copyWith(
+            color: AppColors.success,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        Text(
+          'prayer_logged_success'.trParams({'prayer': prayerName}),
+          style: AppFonts.labelSmall.copyWith(
+            fontSize: 9,
+            color: AppColors.textSecondary,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PrayingNowState extends StatelessWidget {
+  const _PrayingNowState({super.key, required this.prayerName});
+  final String prayerName;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        TweenAnimationBuilder<double>(
+          tween: Tween(begin: 1.0, end: 1.2),
+          duration: const Duration(seconds: 1),
+          curve: Curves.easeInOut,
+          builder: (context, value, child) =>
+              Transform.scale(scale: value, child: child),
+          child: const Icon(
+            Icons.touch_app_rounded,
+            color: AppColors.primary,
+            size: 24,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          prayerName,
+          style: AppFonts.titleSmall.copyWith(
+            color: AppColors.primary,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _NextPrayerState extends StatelessWidget {
+  const _NextPrayerState({
+    super.key,
+    required this.controller,
+    required this.nextPrayer,
+  });
+  final DashboardController controller;
+  final dynamic nextPrayer;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          'next_prayer_at'.trParams({'prayer': nextPrayer?.name ?? ''}),
+          style: AppFonts.labelSmall.copyWith(color: AppColors.textSecondary),
+        ),
+        const SizedBox(height: 2),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Obx(
+            () => Text(
+              controller.timeUntilNextPrayer.value,
+              style: AppFonts.labelMedium.copyWith(
+                color: AppColors.primary,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'monospace',
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
 

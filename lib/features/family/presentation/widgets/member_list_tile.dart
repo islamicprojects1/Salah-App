@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:salah/core/theme/app_colors.dart';
+import 'package:salah/core/theme/app_fonts.dart';
 import 'package:salah/features/family/controller/family_controller.dart';
 import 'package:salah/features/family/data/models/member_model.dart';
 
@@ -63,7 +65,23 @@ class MemberListTile extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 2),
-            if (!member.isShadow) _PrayerDotsRow(member: member),
+            // حالة الصلاة الآنية (prayingNow / waitingFor)
+            if (!member.isShadow && member.prayingNow != null)
+              _StatusChip(
+                icon: Icons.self_improvement_rounded,
+                label: _prayingNowLabel(member.prayingNow!),
+                color: AppColors.primary,
+                pulse: true,
+              )
+            else if (!member.isShadow && member.waitingFor != null)
+              _StatusChip(
+                icon: Icons.hourglass_top_rounded,
+                label: 'ينتظر ${_prayerAr(member.waitingFor!)}',
+                color: const Color(0xFFE65100),
+                pulse: false,
+              )
+            else if (!member.isShadow)
+              _PrayerDotsRow(member: member),
             if (member.isShadow)
               Text(
                 'group_member'.tr,
@@ -76,6 +94,95 @@ class MemberListTile extends StatelessWidget {
             : null,
       ),
     );
+  }
+
+  String _prayingNowLabel(Map<String, dynamic> prayingNow) {
+    final name = prayingNow['prayerName'] as String? ?? '';
+    return 'يصلّي ${_prayerAr(name)} الآن';
+  }
+
+  String _prayerAr(String name) {
+    const map = {
+      'fajr': 'الفجر',
+      'dhuhr': 'الظهر',
+      'asr': 'العصر',
+      'maghrib': 'المغرب',
+      'isha': 'العشاء',
+    };
+    return map[name.toLowerCase()] ?? name;
+  }
+}
+
+// ── حالة الصلاة الفورية ───────────────────────────────────────────────────────
+
+class _StatusChip extends StatefulWidget {
+  const _StatusChip({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.pulse,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color color;
+  final bool pulse;
+
+  @override
+  State<_StatusChip> createState() => _StatusChipState();
+}
+
+class _StatusChipState extends State<_StatusChip>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _opacity;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
+    _opacity = Tween<double>(begin: 0.5, end: 1.0).animate(
+      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
+    );
+    if (widget.pulse) _ctrl.repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final chip = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: widget.color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: widget.color.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(widget.icon, size: 11, color: widget.color),
+          const SizedBox(width: 4),
+          Text(
+            widget.label,
+            style: AppFonts.labelSmall.copyWith(
+              color: widget.color,
+              fontWeight: FontWeight.w600,
+              fontSize: 11,
+            ),
+          ),
+        ],
+      ),
+    );
+    if (!widget.pulse) return chip;
+    return FadeTransition(opacity: _opacity, child: chip);
   }
 }
 

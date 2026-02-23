@@ -16,6 +16,9 @@ class MemberModel {
   // Per-member prayer status for today (reset daily)
   final String? todayPrayersDate; // "YYYY-MM-DD"
   final List<String> todayPrayers; // ['fajr', 'dhuhr', ...]
+  // Real-time status — set/cleared by the app during prayer
+  final Map<String, dynamic>? prayingNow; // { 'prayerName': 'fajr', 'startedAt': Timestamp }
+  final String? waitingFor; // prayer name user is waiting to pray with family
 
   const MemberModel({
     required this.userId,
@@ -27,6 +30,8 @@ class MemberModel {
     this.isActive = true,
     this.todayPrayersDate,
     this.todayPrayers = const [],
+    this.prayingNow,
+    this.waitingFor,
   });
 
   bool get isAdmin => role == 'admin';
@@ -51,6 +56,8 @@ class MemberModel {
               ?.map((e) => e.toString())
               .toList() ??
           const [],
+      prayingNow: map['prayingNow'] as Map<String, dynamic>?,
+      waitingFor: map['waitingFor'] as String?,
     );
   }
 
@@ -84,6 +91,8 @@ class MemberModel {
     bool? isActive,
     String? todayPrayersDate,
     List<String>? todayPrayers,
+    Map<String, dynamic>? prayingNow,
+    String? waitingFor,
   }) {
     return MemberModel(
       userId: userId,
@@ -95,6 +104,8 @@ class MemberModel {
       isActive: isActive ?? this.isActive,
       todayPrayersDate: todayPrayersDate ?? this.todayPrayersDate,
       todayPrayers: todayPrayers ?? this.todayPrayers,
+      prayingNow: prayingNow ?? this.prayingNow,
+      waitingFor: waitingFor ?? this.waitingFor,
     );
   }
 

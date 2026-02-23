@@ -387,19 +387,64 @@ class _OrDivider extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Expanded(child: Divider(color: AppColors.divider)),
-        Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppDimensions.paddingLG,
+        Expanded(child: _DottedLine()),
+        Container(
+          margin: const EdgeInsets.symmetric(
+            horizontal: AppDimensions.paddingMD,
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: AppColors.divider.withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
             'or'.tr,
-            style: AppFonts.bodySmall.copyWith(color: AppColors.textSecondary),
+            style: AppFonts.labelSmall.copyWith(
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
-        Expanded(child: Divider(color: AppColors.divider)),
+        Expanded(child: _DottedLine()),
       ],
     );
   }
+}
+
+class _DottedLine extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: _DottedLinePainter(color: AppColors.divider),
+      child: const SizedBox(height: 1),
+    );
+  }
+}
+
+class _DottedLinePainter extends CustomPainter {
+  final Color color;
+  const _DottedLinePainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.2
+      ..strokeCap = StrokeCap.round;
+    const dashWidth = 4.0;
+    const dashSpace = 4.0;
+    double x = 0;
+    while (x < size.width) {
+      canvas.drawLine(
+        Offset(x, size.height / 2),
+        Offset(x + dashWidth, size.height / 2),
+        paint,
+      );
+      x += dashWidth + dashSpace;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DottedLinePainter old) => old.color != color;
 }
 

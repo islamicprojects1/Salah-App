@@ -11,6 +11,7 @@ import 'package:salah/features/prayer/controller/dashboard_controller.dart';
 import 'package:salah/features/prayer/presentation/widgets/dashboard_progress_widgets.dart';
 import 'package:salah/features/prayer/presentation/widgets/daily_review_card.dart';
 import 'package:salah/features/prayer/presentation/widgets/smart_prayer_circle.dart';
+import 'package:salah/features/family/presentation/widgets/praying_now_banner.dart';
 
 class DashboardHomeContent extends StatefulWidget {
   const DashboardHomeContent({super.key});
@@ -49,6 +50,9 @@ class _DashboardHomeContentState extends State<DashboardHomeContent>
                       : const SizedBox.shrink(),
                 ),
               ),
+
+              // بنر "يصلّون الآن" من العائلة — يظهر فقط عند وجود نشاط
+              const SliverToBoxAdapter(child: PrayingNowBanner()),
 
               const SliverToBoxAdapter(
                 child: SizedBox(height: AppDimensions.paddingMD),

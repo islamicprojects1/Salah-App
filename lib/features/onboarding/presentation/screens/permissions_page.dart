@@ -23,27 +23,31 @@ class PermissionsPage extends GetView<OnboardingController> {
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Column(
             children: [
-              // ── Location card (display only; CTA handles both) ──
+              // ── Location card ──
               StaggeredFeatureItem(
                 index: 0,
-                child: Obx(
-                  () => _PermissionCard(
+                child: Obx(() {
+                  final granted = controller.locationPermissionGranted.value;
+                  final denied = controller.isLocationPermanentlyDenied.value;
+                  return _PermissionCard(
                     icon: Icons.location_on_rounded,
                     gradientColors: const [
                       Color(0xFF43CBFF),
                       Color(0xFF9708CC),
                     ],
                     title: 'permission_location_title'.tr,
-                    subtitle: 'permission_location_desc'.tr,
-                    isGranted: controller.locationPermissionGranted.value,
+                    subtitle: denied
+                        ? 'permission_location_open_settings'.tr
+                        : 'permission_location_desc'.tr,
+                    isGranted: granted,
+                    isPermanentlyDenied: denied,
                     isLoading:
-                        controller.isLoading.value &&
-                        !controller.locationPermissionGranted.value,
-                    onTap: !controller.locationPermissionGranted.value
+                        controller.isLoading.value && !granted,
+                    onTap: !granted
                         ? controller.requestLocationPermission
                         : null,
-                  ),
-                ),
+                  );
+                }),
               ),
               const SizedBox(height: 14),
 
@@ -115,13 +119,14 @@ class PermissionsPage extends GetView<OnboardingController> {
   }
 }
 
-class _PermissionCard extends StatelessWidget {
+class _PermissionCard extends StatefulWidget {
   final IconData icon;
   final List<Color> gradientColors;
   final String title;
   final String subtitle;
   final bool isGranted;
   final bool isLoading;
+  final bool isPermanentlyDenied;
   final VoidCallback? onTap;
 
   const _PermissionCard({
@@ -131,37 +136,87 @@ class _PermissionCard extends StatelessWidget {
     required this.subtitle,
     required this.isGranted,
     required this.isLoading,
+    this.isPermanentlyDenied = false,
     this.onTap,
   });
 
   @override
+  State<_PermissionCard> createState() => _PermissionCardState();
+}
+
+class _PermissionCardState extends State<_PermissionCard>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulseCtrl;
+  late final Animation<double> _pulseAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+    _pulseAnim = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeOut),
+    );
+    if (widget.isGranted) _pulseCtrl.repeat(reverse: true);
+  }
+
+  @override
+  void didUpdateWidget(_PermissionCard old) {
+    super.didUpdateWidget(old);
+    if (!old.isGranted && widget.isGranted) {
+      _pulseCtrl.repeat(reverse: true);
+    } else if (old.isGranted && !widget.isGranted) {
+      _pulseCtrl.stop();
+    }
+  }
+
+  @override
+  void dispose() {
+    _pulseCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 350),
-      curve: Curves.easeInOut,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: isGranted
-              ? AppColors.success.withValues(alpha: 0.4)
-              : gradientColors.first.withValues(alpha: 0.25),
-          width: isGranted ? 1.5 : 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: (isGranted ? AppColors.success : gradientColors.first)
-                .withValues(alpha: 0.12),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
+    return AnimatedBuilder(
+      animation: _pulseAnim,
+      builder: (context, child) {
+        final glowSpread = widget.isGranted ? _pulseAnim.value * 6 : 0.0;
+        final glowAlpha = widget.isGranted
+            ? 0.10 + (_pulseAnim.value * 0.15)
+            : 0.12;
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 350),
+          curve: Curves.easeInOut,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: widget.isGranted
+                  ? AppColors.success.withValues(alpha: 0.4 + _pulseAnim.value * 0.3)
+                  : widget.gradientColors.first.withValues(alpha: 0.25),
+              width: widget.isGranted ? 1.5 : 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: (widget.isGranted ? AppColors.success : widget.gradientColors.first)
+                    .withValues(alpha: glowAlpha),
+                blurRadius: 16 + glowSpread * 2,
+                spreadRadius: glowSpread,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-        ],
-      ),
+          child: child,
+        );
+      },
       child: Material(
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(18),
         child: InkWell(
-          onTap: onTap,
+          onTap: widget.onTap,
           borderRadius: BorderRadius.circular(18),
           child: Padding(
             padding: const EdgeInsets.all(18),
@@ -172,7 +227,7 @@ class _PermissionCard extends StatelessWidget {
                   width: 56,
                   height: 56,
                   decoration: BoxDecoration(
-                    gradient: isGranted
+                    gradient: widget.isGranted
                         ? LinearGradient(
                             colors: [
                               AppColors.success,
@@ -180,25 +235,24 @@ class _PermissionCard extends StatelessWidget {
                             ],
                           )
                         : LinearGradient(
-                            colors: gradientColors,
+                            colors: widget.gradientColors,
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color:
-                            (isGranted
-                                    ? AppColors.success
-                                    : gradientColors.first)
-                                .withValues(alpha: 0.3),
+                        color: (widget.isGranted
+                                ? AppColors.success
+                                : widget.gradientColors.first)
+                            .withValues(alpha: 0.3),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
                     ],
                   ),
                   child: Icon(
-                    isGranted ? Icons.check_rounded : icon,
+                    widget.isGranted ? Icons.check_rounded : widget.icon,
                     color: Colors.white,
                     size: 28,
                   ),
@@ -211,7 +265,7 @@ class _PermissionCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        title,
+                        widget.title,
                         style: AppFonts.bodyLarge.copyWith(
                           fontWeight: FontWeight.w700,
                           color: AppColors.textPrimary,
@@ -219,7 +273,7 @@ class _PermissionCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        subtitle,
+                        widget.subtitle,
                         style: AppFonts.bodySmall.copyWith(
                           color: AppColors.textSecondary,
                           height: 1.4,
@@ -231,20 +285,25 @@ class _PermissionCard extends StatelessWidget {
                 const SizedBox(width: 12),
 
                 // Action badge
-                if (isLoading)
+                if (widget.isLoading)
                   const SizedBox(
                     width: 24,
                     height: 24,
                     child: CircularProgressIndicator(strokeWidth: 2.5),
                   )
-                else if (isGranted)
+                else if (widget.isGranted)
                   Icon(
                     Icons.verified_rounded,
                     color: AppColors.success,
                     size: 28,
                   )
+                else if (widget.isPermanentlyDenied)
+                  _GrantBadge(
+                    gradient: const [Color(0xFFFF6B35), Color(0xFFFF9A3E)],
+                    icon: Icons.settings_rounded,
+                  )
                 else
-                  _GrantBadge(gradient: gradientColors),
+                  _GrantBadge(gradient: widget.gradientColors),
               ],
             ),
           ),
@@ -256,7 +315,8 @@ class _PermissionCard extends StatelessWidget {
 
 class _GrantBadge extends StatelessWidget {
   final List<Color> gradient;
-  const _GrantBadge({required this.gradient});
+  final IconData? icon;
+  const _GrantBadge({required this.gradient, this.icon});
 
   @override
   Widget build(BuildContext context) {
@@ -277,14 +337,16 @@ class _GrantBadge extends StatelessWidget {
           ),
         ],
       ),
-      child: Text(
-        'grant'.tr,
-        style: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w700,
-          fontSize: 12,
-        ),
-      ),
+      child: icon != null
+          ? Icon(icon, color: Colors.white, size: 18)
+          : Text(
+              'grant'.tr,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 12,
+              ),
+            ),
     );
   }
 }

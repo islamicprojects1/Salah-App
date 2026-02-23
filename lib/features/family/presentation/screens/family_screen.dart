@@ -8,6 +8,8 @@ import 'package:salah/features/family/presentation/widgets/family_summary_card.d
 import 'package:salah/features/family/presentation/widgets/invite_share_card.dart';
 import 'package:salah/features/family/presentation/widgets/member_list_tile.dart';
 import 'package:salah/features/family/presentation/widgets/add_shadow_member_sheet.dart';
+import 'package:salah/features/family/presentation/widgets/praying_now_banner.dart';
+import 'package:salah/features/family/presentation/widgets/waiting_room_section.dart';
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // FAMILY SCREEN
@@ -256,6 +258,13 @@ class _GroupView extends GetView<FamilyController> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // بنر "يصلّون الآن" — يظهر فقط عند وجود نشاط
+              const Padding(
+                padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
+                child: PrayingNowBanner(),
+              ),
+              // قسم "ينتظرون الصلاة معاً"
+              const WaitingRoomSection(),
               const FamilySummaryCard(),
               const InviteShareCard(),
               Padding(

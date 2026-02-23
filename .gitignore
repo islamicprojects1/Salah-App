@@ -7,6 +7,8 @@ node_modules/
 .env
 .env.*
 *.env
+**/serviceAccount*.json
+**/backend/node_modules/
 *.pyc
 *.swp
 .DS_Store

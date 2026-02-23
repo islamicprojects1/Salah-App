@@ -376,6 +376,64 @@ class FamilyRepository {
   }
 
   // ══════════════════════════════════════════════════════════════
+  // REAL-TIME STATUS — prayingNow / waitingFor
+  // ══════════════════════════════════════════════════════════════
+
+  /// يُعيَّن عندما يبدأ المستخدم الصلاة (الضغط على زر "بدأت الصلاة")
+  Future<void> setPrayingNow(String groupId, String prayerName) async {
+    final uid = _userId;
+    if (uid == null) return;
+    try {
+      await _firestore
+          .collection(_groupsCol)
+          .doc(groupId)
+          .collection(_membersCol)
+          .doc(uid)
+          .update({
+        'prayingNow': {
+          'prayerName': prayerName,
+          'startedAt': FieldValue.serverTimestamp(),
+        },
+        'waitingFor': null,
+      });
+    } catch (e) {
+      Get.log('[FamilyRepo] setPrayingNow: $e', isError: true);
+    }
+  }
+
+  /// يُمسَح بعد تسجيل الصلاة أو مرور 20 دقيقة (يُمسَح من الـ backend أيضاً)
+  Future<void> clearPrayingNow(String groupId) async {
+    final uid = _userId;
+    if (uid == null) return;
+    try {
+      await _firestore
+          .collection(_groupsCol)
+          .doc(groupId)
+          .collection(_membersCol)
+          .doc(uid)
+          .update({'prayingNow': null});
+    } catch (e) {
+      Get.log('[FamilyRepo] clearPrayingNow: $e', isError: true);
+    }
+  }
+
+  /// يُعيَّن عندما يضغط المستخدم "أنا مستعد" — null يمسحه
+  Future<void> setWaitingFor(String groupId, String? prayerName) async {
+    final uid = _userId;
+    if (uid == null) return;
+    try {
+      await _firestore
+          .collection(_groupsCol)
+          .doc(groupId)
+          .collection(_membersCol)
+          .doc(uid)
+          .update({'waitingFor': prayerName});
+    } catch (e) {
+      Get.log('[FamilyRepo] setWaitingFor: $e', isError: true);
+    }
+  }
+
+  // ══════════════════════════════════════════════════════════════
   // SHADOW MEMBERS
   // ══════════════════════════════════════════════════════════════
 

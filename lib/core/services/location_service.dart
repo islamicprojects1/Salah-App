@@ -40,8 +40,10 @@ class LocationService extends GetxService {
     if (_isInitialized) return this;
     _isInitialized = true;
 
-    // If user skipped location in onboarding, don't auto-request again
     final skippedLocation = sl<StorageService>().locationSkippedInOnboarding;
+    // Don't auto-request during onboarding — let the onboarding flow handle first-ask.
+    // This prevents the system dialog appearing behind the splash/onboarding screens.
+    final onboardingDone = sl<StorageService>().isOnboardingCompleted();
 
     // 1. Try last-known position instantly (no network, no GPS wait)
     final lastKnown = await getLastKnownLocation();
@@ -52,7 +54,9 @@ class LocationService extends GetxService {
       _getDefaultLocation();
     }
 
-    // 2. Refresh with accurate GPS in background — but NOT if user skipped in onboarding
+    // 2. Refresh with accurate GPS in background — only if onboarding completed
+    //    and user didn't permanently skip location.
+    if (!onboardingDone) return this; // let onboarding handle the first permission ask
     final permission = await Geolocator.checkPermission();
     final shouldRequest = !skippedLocation ||
         permission == LocationPermission.whileInUse ||

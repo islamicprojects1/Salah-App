@@ -481,6 +481,7 @@ const Map<String, String> arTranslations = {
   'onboarding_subtitle_permissions': 'نحتاج بعض الصلاحيات لنقدم لك أفضل تجربة',
   'permission_location_title': 'الموقع الجغرافي',
   'permission_location_desc': 'ضروري لحساب مواقيت الصلاة والقبلة بدقة.',
+  'permission_location_open_settings': 'الإذن محجوب — اضغط لفتح إعدادات التطبيق.',
   'permission_notification_title': 'الإشعارات',
   'permission_notification_desc': 'لتذكيرك بدخول وقت الصلاة حتى لا تفوتك.',
   'onboarding_title_profile': 'أخبرنا عنك',

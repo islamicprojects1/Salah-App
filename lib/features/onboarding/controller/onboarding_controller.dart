@@ -204,6 +204,10 @@ class OnboardingController extends GetxController
   // ============================================================
   // PERMISSIONS
   // ============================================================
+  /// True when OS blocked all future location dialogs (user denied twice / "Don't ask again").
+  /// In this case the ONLY way to grant permission is through App Settings.
+  final isLocationPermanentlyDenied = false.obs;
+
   Future<void> _checkPermissionsStatus() async {
     try {
       // Location: actual permission, not just coords (Mecca = no real permission)
@@ -211,6 +215,8 @@ class OnboardingController extends GetxController
       locationPermissionGranted.value =
           loc == LocationPermission.whileInUse ||
           loc == LocationPermission.always;
+      isLocationPermanentlyDenied.value =
+          loc == LocationPermission.deniedForever;
       // Notification: permission_handler status
       final notif = await Permission.notification.status;
       notificationPermissionGranted.value = notif.isGranted;
@@ -224,6 +230,22 @@ class OnboardingController extends GetxController
     try {
       isLoading.value = true;
       HapticFeedback.mediumImpact();
+
+      // Pre-check: if OS blocked dialogs, open App Settings instead
+      final perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.deniedForever) {
+        isLocationPermanentlyDenied.value = true;
+        await _locationService.openAppSettings();
+        // Re-check after the user returns from Settings
+        await Future.delayed(const Duration(milliseconds: 500));
+        locationPermissionGranted.value =
+            await _locationService.isLocationPermissionGranted;
+        isLocationPermanentlyDenied.value =
+            !(locationPermissionGranted.value);
+        if (locationPermissionGranted.value) HapticFeedback.heavyImpact();
+        return;
+      }
+
       await _locationService.getCurrentLocation();
       locationPermissionGranted.value =
           await _locationService.isLocationPermissionGranted;

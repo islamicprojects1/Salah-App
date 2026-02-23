@@ -494,6 +494,8 @@ const Map<String, String> enTranslations = {
   'permission_location_title': 'Location Access',
   'permission_location_desc':
       'Needed for accurate prayer times and Qibla direction.',
+  'permission_location_open_settings':
+      'Permission blocked — tap to open App Settings.',
   'permission_notification_title': 'Notifications',
   'permission_notification_desc': 'So you never miss a prayer.',
   'onboarding_title_profile': 'Tell Us About You',

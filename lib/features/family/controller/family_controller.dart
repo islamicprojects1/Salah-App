@@ -52,6 +52,40 @@ class FamilyController extends GetxController {
     return 'https://qurb.app/join/$code';
   }
 
+  /// أعضاء يصلّون الآن (يستثني الظل والمستخدم الحالي)
+  List<MemberModel> get prayingNowMembers => members
+      .where((m) => m.prayingNow != null && !m.isShadow)
+      .toList();
+
+  /// أعضاء ينتظرون الصلاة معاً — مجمّعون حسب اسم الصلاة
+  /// يرجع `Map<prayerName, List<MemberModel>>`
+  Map<String, List<MemberModel>> get waitingByPrayer {
+    final result = <String, List<MemberModel>>{};
+    for (final m in members) {
+      if (m.waitingFor == null || m.isShadow) continue;
+      result.putIfAbsent(m.waitingFor!, () => []).add(m);
+    }
+    return result;
+  }
+
+  /// هل المستخدم الحالي يصلّي الآن
+  bool get iSelfPrayingNow {
+    final uid = currentUserId;
+    if (uid == null) return false;
+    return members.any((m) => m.userId == uid && m.prayingNow != null);
+  }
+
+  /// ما الصلاة التي ينتظرها المستخدم الحالي (null إن لم ينتظر)
+  String? get selfWaitingFor {
+    final uid = currentUserId;
+    if (uid == null) return null;
+    try {
+      return members.firstWhere((m) => m.userId == uid).waitingFor;
+    } catch (_) {
+      return null;
+    }
+  }
+
   // ══════════════════════════════════════════════════════════════
   // LIFECYCLE
   // ══════════════════════════════════════════════════════════════
@@ -304,12 +338,36 @@ class FamilyController extends GetxController {
   }
 
   // ══════════════════════════════════════════════════════════════
+  // REAL-TIME STATUS — prayingNow / waitingFor
+  // ══════════════════════════════════════════════════════════════
+
+  Future<void> setPrayingNow(PrayerName prayer) async {
+    final groupId = group.value?.groupId;
+    if (groupId == null) return;
+    await _repo.setPrayingNow(groupId, prayer.name);
+  }
+
+  Future<void> clearPrayingNow() async {
+    final groupId = group.value?.groupId;
+    if (groupId == null) return;
+    await _repo.clearPrayingNow(groupId);
+  }
+
+  Future<void> setWaitingFor(PrayerName? prayer) async {
+    final groupId = group.value?.groupId;
+    if (groupId == null) return;
+    await _repo.setWaitingFor(groupId, prayer?.name);
+  }
+
+  // ══════════════════════════════════════════════════════════════
   // PRAYER HOOK — يُستدعى من PrayerRepository
   // ══════════════════════════════════════════════════════════════
 
   Future<void> onPrayerLogged(PrayerName prayer) async {
     final groupId = group.value?.groupId;
     if (groupId == null) return;
+    // مسح prayingNow عند تسجيل الصلاة
+    await _repo.clearPrayingNow(groupId);
     await _repo.onPrayerLogged(groupId, prayer.name);
   }
 }
