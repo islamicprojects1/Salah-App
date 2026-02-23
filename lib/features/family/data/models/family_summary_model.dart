@@ -24,11 +24,17 @@ class FamilySummaryModel {
   bool get isAllPrayed => totalMembers > 0 && prayedCount >= totalMembers;
 
   factory FamilySummaryModel.fromMap(Map<String, dynamic> map, String date) {
+    DateTime? parseDate(dynamic v) {
+      if (v is Timestamp) return v.toDate();
+      if (v is String) return DateTime.tryParse(v);
+      return null;
+    }
+
     return FamilySummaryModel(
       date: date,
       prayedCount: (map['prayedCount'] as num?)?.toInt() ?? 0,
       totalMembers: (map['totalMembers'] as num?)?.toInt() ?? 0,
-      updatedAt: (map['updatedAt'] as Timestamp?)?.toDate(),
+      updatedAt: parseDate(map['updatedAt']),
     );
   }
 
@@ -37,6 +43,14 @@ class FamilySummaryModel {
       'prayedCount': prayedCount,
       'totalMembers': totalMembers,
       'updatedAt': FieldValue.serverTimestamp(),
+    };
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'prayedCount': prayedCount,
+      'totalMembers': totalMembers,
+      'updatedAt': updatedAt?.toIso8601String(),
     };
   }
 }

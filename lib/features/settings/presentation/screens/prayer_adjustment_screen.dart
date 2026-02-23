@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:salah/core/constants/app_dimensions.dart';
+import 'package:salah/core/constants/enums.dart';
 import 'package:salah/core/theme/app_colors.dart';
 import 'package:salah/core/theme/app_fonts.dart';
 import 'package:salah/features/settings/controller/settings_controller.dart';
@@ -28,41 +29,16 @@ class PrayerAdjustmentScreen extends GetView<SettingsController> {
           children: [
             _buildInfoCard(),
             const SizedBox(height: 24),
-            _buildAdjustmentTile(
-              context,
-              'fajr'.tr,
-              'fajr',
-              offsets['fajr'] ?? 0,
-            ),
-            const SizedBox(height: 12),
-            _buildAdjustmentTile(
-              context,
-              'sunrise'.tr,
-              'sunrise',
-              offsets['sunrise'] ?? 0,
-            ),
-            const SizedBox(height: 12),
-            _buildAdjustmentTile(
-              context,
-              'dhuhr'.tr,
-              'dhuhr',
-              offsets['dhuhr'] ?? 0,
-            ),
-            const SizedBox(height: 12),
-            _buildAdjustmentTile(context, 'asr'.tr, 'asr', offsets['asr'] ?? 0),
-            const SizedBox(height: 12),
-            _buildAdjustmentTile(
-              context,
-              'maghrib'.tr,
-              'maghrib',
-              offsets['maghrib'] ?? 0,
-            ),
-            const SizedBox(height: 12),
-            _buildAdjustmentTile(
-              context,
-              'isha'.tr,
-              'isha',
-              offsets['isha'] ?? 0,
+            ...PrayerName.values.expand(
+              (prayer) => [
+                _buildAdjustmentTile(
+                  context,
+                  prayer.name.tr,
+                  prayer,
+                  offsets[prayer.name] ?? 0,
+                ),
+                const SizedBox(height: 12),
+              ],
             ),
           ],
         );
@@ -96,7 +72,7 @@ class PrayerAdjustmentScreen extends GetView<SettingsController> {
   Widget _buildAdjustmentTile(
     BuildContext context,
     String name,
-    String key,
+    PrayerName key,
     int currentOffset,
   ) {
     return Container(

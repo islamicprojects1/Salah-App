@@ -1,7 +1,8 @@
 /// English translations for the Salah app
 const Map<String, String> enTranslations = {
   // ==================== General ====================
-  'app_name': 'Salah',
+  'app_name': 'Qurb',
+  'app_tagline': 'Grow closer to Allah every day',
   'app_title': 'Qurb',
   'prayer_times_subtitle': 'Track your prayers and grow closer to Allah',
   'loading_msg': 'One moment...',
@@ -158,6 +159,7 @@ const Map<String, String> enTranslations = {
 
   // ==================== Qibla ====================
   'qibla_direction': 'Qibla Direction',
+  'qibla_mecca_notice': 'Qibla calculated from Mecca — grant location for accuracy',
   'compass_calibration': 'Please calibrate your compass',
   'rotate_device': 'Move your device to find the Qibla',
   'distance_to_kaaba': 'Distance to the Kaaba',
@@ -393,7 +395,7 @@ const Map<String, String> enTranslations = {
   'login': 'Sign In',
   'register': 'Create Account',
   'register_subtitle': 'Create your account and start your journey',
-  'login_title': 'Welcome Back',
+  'login_title': 'Welcome ',
   'login_subtitle': 'Sign in to continue',
   'register_title': 'Join Qurb',
   'password': 'Password',
@@ -429,6 +431,8 @@ const Map<String, String> enTranslations = {
   'auth_error_requires_recent_login': 'Please sign in again',
   'auth_error_default': 'Something went wrong. Please try again',
   'auth_error_google_cancelled': 'Sign in with Google was cancelled',
+  'auth_error_google_developer':
+      'Google Sign-In not configured. Add SHA-1 fingerprint in Firebase Console.',
 
   // ==================== Onboarding ====================
   'welcome': 'Welcome',
@@ -626,7 +630,8 @@ const Map<String, String> enTranslations = {
       'The code is 8 characters\nYou can find it in your group chat',
   'code_required': 'Please enter the code',
   'code_invalid_length': 'Code must be exactly 8 characters',
-  'code_not_found': 'Code not found or expired',
+  'code_not_found': 'Code not found',
+  'invite_code_expired': 'This invite code has expired — ask the admin to renew it',
   'you_are_blocked': 'You cannot join this group',
   'join_error_generic': 'An error occurred. Please try again.',
 

@@ -21,9 +21,7 @@ class WelcomePage extends GetView<OnboardingController> {
       title: data.localizedTitle,
       subtitle: data.localizedSubtitle,
       children: [
-        // ── Language switcher ──
-        const _LanguageSwitcher(),
-        const SizedBox(height: 32),
+        const SizedBox(height: 16),
 
         // ── CTA button ──
         Padding(

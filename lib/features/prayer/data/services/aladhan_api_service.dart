@@ -175,13 +175,38 @@ class AladhanApiService {
     if (year == 0 || month == 0 || day == 0) return [];
 
     DateTime parseTime(String value) {
-      final t = (value as String).split(' ').first.trim();
+      final valueParts = value.split(' ');
+      final t = valueParts.first.trim();
       final hm = t.split(':');
       if (hm.length < 2) return DateTime(year, month, day);
       final h = int.tryParse(hm[0]) ?? 0;
       final m = int.tryParse(hm[1]) ?? 0;
 
-      // Returning local DateTime ensures the displayed time matches the API's h:m string.
+      // Extract location's GMT offset from e.g. "(GMT+3)" or "(GMT-5)" or "(GMT+5:30)"
+      // so we can build the correct UTC instant and then convert to device-local time.
+      int? locationOffsetMinutes;
+      for (final part in valueParts.skip(1)) {
+        final match = RegExp(r'GMT([+-]?\d+(?::\d+)?)').firstMatch(part);
+        if (match != null) {
+          final offsetStr = match.group(1)!;
+          final offsetParts = offsetStr.split(':');
+          final hours = int.tryParse(offsetParts[0]) ?? 0;
+          final mins = offsetParts.length > 1
+              ? int.tryParse(offsetParts[1]) ?? 0
+              : 0;
+          locationOffsetMinutes = hours * 60 + (hours.isNegative ? -mins : mins);
+          break;
+        }
+      }
+
+      if (locationOffsetMinutes != null) {
+        // Build the correct UTC time and convert to device-local
+        final utc = DateTime.utc(year, month, day, h, m)
+            .subtract(Duration(minutes: locationOffsetMinutes));
+        return utc.toLocal();
+      }
+
+      // Fallback: no GMT info found — treat as device-local (legacy behavior)
       return DateTime(year, month, day, h, m);
     }
 

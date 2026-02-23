@@ -31,6 +31,9 @@ class QiblaController extends GetxController {
 
   String get currentHeadingString => heading.value?.toStringAsFixed(0) ?? '--';
 
+  /// True when using Mecca as fallback (GPS permission not granted)
+  RxBool get isUsingDefaultLocation => _locationService.isUsingDefaultLocation;
+
   // Facing Qibla state with hysteresis (prevents flickering)
   final RxBool isFacingQibla = false.obs;
   static const double _enterThreshold = 3.0;

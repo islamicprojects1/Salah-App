@@ -266,7 +266,7 @@ bool get isFirstPage;
 'grant_permission': 'منح الإذن',
 'setup_profile_title': 'أخبرنا عنك',
 'start_journey': 'ابدأ رحلتك',
-'login_title': 'مرحباً بعودتك',
+'login_title': 'مرحباً ',
 'login_subtitle': 'سجّل دخولك للمتابعة',
 'register_title': 'انضم إلى قُرب',
 'register_subtitle': 'أنشئ حسابك الآن',

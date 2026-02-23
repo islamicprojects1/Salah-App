@@ -183,6 +183,7 @@ class _SmartPrayerCircleState extends State<SmartPrayerCircle>
                                     }),
                                     style: AppFonts.labelSmall.copyWith(
                                       fontSize: 9,
+                                      color: AppColors.textSecondary,
                                     ),
                                   ),
                                 ] else if (isPrayerTime) ...[

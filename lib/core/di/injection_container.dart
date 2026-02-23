@@ -210,6 +210,11 @@ Future<void> initLateServices() async {
   // Live Context Engine (current prayer, countdown, today summary)
   await sl<LiveContextService>().init();
 
+  // Re-init LiveContextService when user logs in (after logout)
+  sl<AuthService>().currentUser.listen((user) {
+    if (user != null) sl<LiveContextService>().init();
+  });
+
   // Audio (lazy init after first frame)
   await sl<AudioService>().init();
 

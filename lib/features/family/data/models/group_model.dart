@@ -36,6 +36,7 @@ class GroupModel {
   final String name;
   final GroupType type;
   final String inviteCode;
+  final DateTime? inviteCodeExpiresAt;
   final DateTime createdAt;
   final String createdBy;
   final String adminId;
@@ -49,6 +50,7 @@ class GroupModel {
     required this.name,
     required this.type,
     required this.inviteCode,
+    this.inviteCodeExpiresAt,
     required this.createdAt,
     required this.createdBy,
     required this.adminId,
@@ -58,16 +60,32 @@ class GroupModel {
     this.memberCount = 0,
   });
 
+  /// كود الدعوة منتهي الصلاحية؟ (null = لا ينتهي — للمجموعات القديمة)
+  bool get isInviteCodeExpired =>
+      inviteCodeExpiresAt != null &&
+      DateTime.now().isAfter(inviteCodeExpiresAt!);
+
   factory GroupModel.fromMap(Map<String, dynamic> map, String id) {
+    DateTime parseDate(dynamic v) {
+      if (v is Timestamp) return v.toDate();
+      if (v is String) return DateTime.tryParse(v) ?? DateTime.now();
+      return DateTime.now();
+    }
+
     return GroupModel(
       groupId: id,
       name: map['name'] as String? ?? '',
       type: GroupTypeX.fromString(map['type'] as String?),
       inviteCode: map['inviteCode'] as String? ?? '',
-      createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      inviteCodeExpiresAt: map['inviteCodeExpiresAt'] != null
+          ? parseDate(map['inviteCodeExpiresAt'])
+          : null,
+      createdAt: parseDate(map['createdAt']),
       createdBy: map['createdBy'] as String? ?? '',
       adminId: map['adminId'] as String? ?? '',
-      lastAdminActivity: (map['lastAdminActivity'] as Timestamp?)?.toDate(),
+      lastAdminActivity: map['lastAdminActivity'] != null
+          ? parseDate(map['lastAdminActivity'])
+          : null,
       blockedUserIds: List<String>.from(map['blockedUserIds'] ?? []),
       memberIds: List<String>.from(map['memberIds'] ?? []),
       memberCount: (map['memberCount'] as num?)?.toInt() ?? 0,
@@ -79,6 +97,9 @@ class GroupModel {
       'name': name,
       'type': type.value,
       'inviteCode': inviteCode,
+      'inviteCodeExpiresAt': inviteCodeExpiresAt != null
+          ? Timestamp.fromDate(inviteCodeExpiresAt!)
+          : null,
       'createdAt': Timestamp.fromDate(createdAt),
       'createdBy': createdBy,
       'adminId': adminId,
@@ -91,10 +112,27 @@ class GroupModel {
     };
   }
 
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'type': type.value,
+      'inviteCode': inviteCode,
+      'inviteCodeExpiresAt': inviteCodeExpiresAt?.toIso8601String(),
+      'createdAt': createdAt.toIso8601String(),
+      'createdBy': createdBy,
+      'adminId': adminId,
+      'lastAdminActivity': lastAdminActivity?.toIso8601String(),
+      'blockedUserIds': blockedUserIds,
+      'memberIds': memberIds,
+      'memberCount': memberCount,
+    };
+  }
+
   GroupModel copyWith({
     String? name,
     GroupType? type,
     String? inviteCode,
+    DateTime? inviteCodeExpiresAt,
     String? adminId,
     DateTime? lastAdminActivity,
     List<String>? blockedUserIds,
@@ -106,6 +144,7 @@ class GroupModel {
       name: name ?? this.name,
       type: type ?? this.type,
       inviteCode: inviteCode ?? this.inviteCode,
+      inviteCodeExpiresAt: inviteCodeExpiresAt ?? this.inviteCodeExpiresAt,
       createdAt: createdAt,
       createdBy: createdBy,
       adminId: adminId ?? this.adminId,

@@ -2,6 +2,9 @@ import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
+import 'package:salah/core/constants/aladhan_constants.dart';
+import 'package:salah/core/di/injection_container.dart';
+import 'package:salah/core/services/storage_service.dart';
 import 'package:salah/features/prayer/data/services/prayer_time_service.dart';
 
 /// Service for managing location
@@ -28,11 +31,36 @@ class LocationService extends GetxService {
   // INITIALIZATION
   // ============================================================
 
-  /// Initialize the service
+  /// Initialize the service.
+  ///
+  /// Uses last-known position immediately (fast) so the app doesn't freeze
+  /// waiting for GPS on the splash screen. Then refreshes in the background.
+  /// If user skipped location in onboarding, does NOT auto-request again.
   Future<LocationService> init() async {
     if (_isInitialized) return this;
     _isInitialized = true;
-    await getCurrentLocation();
+
+    // If user skipped location in onboarding, don't auto-request again
+    final skippedLocation = sl<StorageService>().locationSkippedInOnboarding;
+
+    // 1. Try last-known position instantly (no network, no GPS wait)
+    final lastKnown = await getLastKnownLocation();
+    if (lastKnown != null) {
+      isUsingDefaultLocation.value = false;
+      _reverseGeocode(lastKnown.latitude, lastKnown.longitude);
+    } else {
+      _getDefaultLocation();
+    }
+
+    // 2. Refresh with accurate GPS in background — but NOT if user skipped in onboarding
+    final permission = await Geolocator.checkPermission();
+    final shouldRequest = !skippedLocation ||
+        permission == LocationPermission.whileInUse ||
+        permission == LocationPermission.always;
+    if (shouldRequest) {
+      getCurrentLocation().ignore();
+    }
+
     return this;
   }
 
@@ -46,8 +74,15 @@ class LocationService extends GetxService {
   /// Get current longitude
   double? get longitude => currentPosition.value?.longitude;
 
-  /// Check if location is available
+  /// Check if location is available (has coordinates, including Mecca fallback)
   bool get hasLocation => currentPosition.value != null;
+
+  /// Check if user granted location permission (actual permission, not coords)
+  Future<bool> get isLocationPermissionGranted async {
+    final p = await Geolocator.checkPermission();
+    return p == LocationPermission.whileInUse ||
+        p == LocationPermission.always;
+  }
 
   /// Display string for UI: real city when GPS worked, or clear fallback message.
   String get currentCity =>
@@ -72,14 +107,7 @@ class LocationService extends GetxService {
       isLoading.value = true;
       errorMessage.value = '';
 
-      // Check if location services are enabled
-      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        errorMessage.value = 'location_services_disabled';
-        return _getDefaultLocation();
-      }
-
-      // Check permission
+      // 1. Request permission FIRST so the dialog always shows (even if GPS is off)
       var permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
@@ -97,7 +125,14 @@ class LocationService extends GetxService {
 
       isPermanentlyDenied.value = false;
 
-      // Get position
+      // 2. Then check if location services (GPS) are enabled
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        errorMessage.value = 'location_services_disabled';
+        return _getDefaultLocation();
+      }
+
+      // 3. Get position
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.high,
@@ -160,8 +195,8 @@ class LocationService extends GetxService {
   /// Default location (Mecca) if GPS fails — used only for prayer times, not as "user's city".
   Position _getDefaultLocation() {
     final defaultPos = Position(
-      latitude: 21.4225,
-      longitude: 39.8262,
+      latitude: kMeccaLatitude,
+      longitude: kMeccaLongitude,
       timestamp: DateTime.now(),
       accuracy: 0,
       altitude: 0,
@@ -254,6 +289,37 @@ class LocationService extends GetxService {
   // REVERSE GEOCODING
   // ============================================================
 
+  static String _countryFromCode(String? code) {
+    if (code == null || code.isEmpty) return '';
+    switch (code.toUpperCase()) {
+      case 'JO': return 'Jordan';
+      case 'SA': return 'Saudi Arabia';
+      case 'EG': return 'Egypt';
+      case 'AE': return 'United Arab Emirates';
+      case 'KW': return 'Kuwait';
+      case 'QA': return 'Qatar';
+      case 'BH': return 'Bahrain';
+      case 'OM': return 'Oman';
+      case 'PK': return 'Pakistan';
+      case 'TR': return 'Turkey';
+      case 'MY': return 'Malaysia';
+      case 'SG': return 'Singapore';
+      case 'ID': return 'Indonesia';
+      case 'MA': return 'Morocco';
+      case 'TN': return 'Tunisia';
+      case 'DZ': return 'Algeria';
+      case 'IR': return 'Iran';
+      case 'US': return 'United States';
+      case 'CA': return 'Canada';
+      case 'GB': case 'UK': return 'United Kingdom';
+      case 'FR': return 'France';
+      case 'DE': return 'Germany';
+      case 'PT': return 'Portugal';
+      case 'RU': return 'Russia';
+      default: return code;
+    }
+  }
+
   /// Get city name from coordinates using OpenStreetMap Nominatim API
   Future<void> _reverseGeocode(double lat, double lng) async {
     try {
@@ -286,7 +352,9 @@ class LocationService extends GetxService {
               address['county'] ?? // Fallback
               '';
 
-          countryName.value = address['country'] ?? '';
+          countryName.value =
+              address['country'] as String? ??
+              _countryFromCode(address['country_code'] as String?);
         }
       }
     } catch (e) {

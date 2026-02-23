@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -180,6 +181,22 @@ class AuthService extends GetxService {
     } on FirebaseAuthException catch (e) {
       errorMessage.value = AuthErrorMessages.fromCode(e.code);
       AppLogger.warning('signInWithGoogle Firebase error: ${e.code}', e);
+      return null;
+    } on PlatformException catch (e) {
+      final code = e.code;
+      final msg = e.message ?? '';
+      if (code == 'sign_in_failed' &&
+          (msg.contains('10') || msg.contains('DEVELOPER_ERROR'))) {
+        errorMessage.value = 'auth_error_google_developer'.tr;
+        AppLogger.warning('signInWithGoogle DEVELOPER_ERROR: add SHA-1 to Firebase Console', e);
+      } else if (msg.contains('canceled') ||
+          msg.contains('cancelled') ||
+          msg.contains('12501')) {
+        errorMessage.value = '';
+      } else {
+        errorMessage.value = 'auth_error_default'.tr;
+        AppLogger.warning('signInWithGoogle PlatformException: $code', e);
+      }
       return null;
     } catch (e) {
       // Check for user cancellation

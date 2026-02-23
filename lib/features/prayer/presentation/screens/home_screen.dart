@@ -131,7 +131,7 @@ class HomeScreen extends StatelessWidget {
                           _LocationChip(),
                         ],
                       ),
-                      const Spacer(),
+                      const Expanded(child: SizedBox.shrink()),
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [

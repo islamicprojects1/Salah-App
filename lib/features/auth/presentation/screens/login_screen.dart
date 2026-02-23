@@ -60,7 +60,7 @@ class _LoginScreenState extends State<LoginScreen>
     }
     final controller = Get.find<AuthController>();
     final topPadding = MediaQuery.paddingOf(context).top;
-    final headerHeight = MediaQuery.sizeOf(context).height * 0.28;
+    final headerHeight = MediaQuery.sizeOf(context).height * 0.32;
 
     return Scaffold(
       backgroundColor: AppColors.primary,
@@ -75,26 +75,67 @@ class _LoginScreenState extends State<LoginScreen>
                 height: headerHeight + topPadding,
                 child: Stack(
                   children: [
+                    // Gradient background
                     Positioned.fill(
                       child: Container(
-                        decoration: BoxDecoration(
+                        decoration: const BoxDecoration(
                           gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
                             colors: [
                               AppColors.primary,
+                              Color(0xFF1A6B4A),
                               AppColors.primaryDark,
                             ],
                           ),
                         ),
                       ),
                     ),
+                    // Decorative circles (Islamic-inspired)
+                    Positioned(
+                      top: -50,
+                      right: -50,
+                      child: AuthDecorCircle(size: 220, opacity: 0.07),
+                    ),
+                    Positioned(
+                      bottom: -30,
+                      left: -40,
+                      child: AuthDecorCircle(size: 160, opacity: 0.05),
+                    ),
+                    Positioned(
+                      top: topPadding + 20,
+                      left: 30,
+                      child: AuthDecorCircle(size: 60, opacity: 0.04),
+                    ),
+                    // Logo + app name centred
                     Center(
                       child: Padding(
                         padding: EdgeInsets.only(top: topPadding),
                         child: FadeTransition(
                           opacity: _fadeAnim,
-                          child: _buildLogo(),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _buildLogo(),
+                              const SizedBox(height: 14),
+                              Text(
+                                'app_name'.tr,
+                                style: AppFonts.headlineMedium.copyWith(
+                                  color: AppColors.white,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'app_tagline'.tr,
+                                style: AppFonts.bodySmall.copyWith(
+                                  color: AppColors.white70,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -238,8 +279,8 @@ class _LoginScreenState extends State<LoginScreen>
                                     FocusScope.of(context).unfocus();
                                     if (_formKey.currentState?.validate() ??
                                         false) {
-                                      final success =
-                                          await controller.loginWithEmail();
+                                      final success = await controller
+                                          .loginWithEmail();
                                       if (success && context.mounted) {
                                         Get.offAllNamed(AppRoutes.dashboard);
                                       }
@@ -257,10 +298,16 @@ class _LoginScreenState extends State<LoginScreen>
                                 () => GoogleSignInButton(
                                   onPressed: () async {
                                     FocusScope.of(context).unfocus();
-                                    final success =
-                                        await controller.loginWithGoogle();
+                                    final success = await controller
+                                        .loginWithGoogle();
                                     if (success && context.mounted) {
-                                      Get.offAllNamed(AppRoutes.dashboard);
+                                      if (controller.isNewGoogleUser.value) {
+                                        // New user → profile setup
+                                        Get.offAllNamed(AppRoutes.profileSetup);
+                                      } else {
+                                        // Returning user → dashboard
+                                        Get.offAllNamed(AppRoutes.dashboard);
+                                      }
                                     }
                                   },
                                   isLoading: controller.isGoogleLoading.value,
@@ -314,16 +361,21 @@ class _LoginScreenState extends State<LoginScreen>
       padding: const EdgeInsets.all(AppDimensions.paddingLG),
       decoration: BoxDecoration(
         color: AppColors.white.withValues(alpha: 0.15),
-        shape: BoxShape.circle,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusXXL),
+        border: Border.all(
+          color: AppColors.white.withValues(alpha: 0.3),
+          width: 2,
+        ),
       ),
-      child: Image.asset(
-        ImageAssets.appLogo,
-        height: AppDimensions.sizeLogo,
-        filterQuality: FilterQuality.high,
-        errorBuilder: (context, error, stackTrace) => Icon(
-          Icons.mosque_rounded,
-          size: AppDimensions.iconHero,
-          color: AppColors.white,
+
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16), // change radius here
+        child: Image.asset(
+          ImageAssets.appLogo,
+          height: AppDimensions.sizeLogo,
+          filterQuality: FilterQuality.high,
+          errorBuilder: (context, error, stackTrace) =>
+              Icon(Icons.mosque_rounded, size: AppDimensions.iconHero),
         ),
       ),
     );
@@ -342,9 +394,7 @@ class _OrDivider extends StatelessWidget {
           ),
           child: Text(
             'or'.tr,
-            style: AppFonts.bodySmall.copyWith(
-              color: AppColors.textSecondary,
-            ),
+            style: AppFonts.bodySmall.copyWith(color: AppColors.textSecondary),
           ),
         ),
         Expanded(child: Divider(color: AppColors.divider)),
@@ -352,3 +402,4 @@ class _OrDivider extends StatelessWidget {
     );
   }
 }
+

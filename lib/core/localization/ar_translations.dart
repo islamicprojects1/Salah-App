@@ -1,7 +1,8 @@
 /// Arabic translations for the Salah app
 const Map<String, String> arTranslations = {
   // ==================== عام ====================
-  'app_name': 'صلاة',
+  'app_name': 'قُرب',
+  'app_tagline': 'تقرّب من الله كل يوم',
   'app_title': 'قُرب',
   'prayer_times_subtitle': 'سجّل صلاتك وتقرّب من الله كل يوم',
   'loading_msg': 'لحظة...',
@@ -158,6 +159,7 @@ const Map<String, String> arTranslations = {
 
   // ==================== القبلة ====================
   'qibla_direction': 'اتجاه القبلة',
+  'qibla_mecca_notice': 'يتم احتساب القبلة من مكة — امنح إذن الموقع لدقة أعلى',
   'compass_calibration': 'يرجى معايرة البوصلة',
   'rotate_device': 'حرّك الجهاز لمعرفة اتجاه القبلة',
   'distance_to_kaaba': 'المسافة للكعبة المشرفة',
@@ -387,7 +389,7 @@ const Map<String, String> arTranslations = {
   'login': 'دخول',
   'register': 'إنشاء حساب',
   'register_subtitle': 'أنشئ حسابك وابدأ رحلتك',
-  'login_title': 'مرحباً بعودتك',
+  'login_title': 'مرحباً ',
   'login_subtitle': 'سجّل دخولك للمتابعة',
   'register_title': 'انضم إلى قُرب',
   'password': 'كلمة المرور',
@@ -424,6 +426,8 @@ const Map<String, String> arTranslations = {
   'auth_error_requires_recent_login': 'يرجى إعادة تسجيل الدخول',
   'auth_error_default': 'حدث خطأ، حاول مرة أخرى',
   'auth_error_google_cancelled': 'تم إلغاء الدخول مع Google',
+  'auth_error_google_developer':
+      'إعدادات Google غير صحيحة. أضف بصمة SHA-1 في Firebase Console.',
 
   // ==================== الإعداد الأولي ====================
   'welcome': 'أهلاً',
@@ -617,7 +621,8 @@ const Map<String, String> arTranslations = {
       'الكود مكوّن من 8 أحرف\nستجده في مجموعة الواتساب أو عند الشيخ',
   'code_required': 'الرجاء إدخال الكود',
   'code_invalid_length': 'الكود يجب أن يكون 8 أحرف بالضبط',
-  'code_not_found': 'الكود غير موجود أو منتهي الصلاحية',
+  'code_not_found': 'الكود غير موجود',
+  'invite_code_expired': 'رمز الدعوة منتهي الصلاحية — اطلب من المشرف تجديده',
   'you_are_blocked': 'لا يمكنك الانضمام لهذه المجموعة',
   'join_error_generic': 'حدث خطأ. حاول مجدداً.',
 

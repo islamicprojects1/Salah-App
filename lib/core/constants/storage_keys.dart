@@ -24,6 +24,9 @@ class StorageKeys {
   /// True once onboarding is finished
   static const String onboardingCompleted = 'onboarding_completed';
 
+  /// True when user completed onboarding without granting location (OK with Mecca)
+  static const String locationSkippedInOnboarding = 'location_skipped_in_onboarding';
+
   // ============================================================
   // PRAYER TIMES CACHE
   // ============================================================

@@ -2,11 +2,13 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:salah/core/services/connectivity_service.dart';
 import 'package:salah/core/di/injection_container.dart';
 import 'package:salah/features/family/data/models/group_model.dart';
 import 'package:salah/features/family/data/models/member_model.dart';
 import 'package:salah/features/family/data/models/family_summary_model.dart';
+import 'package:salah/core/constants/enums.dart' hide GroupType;
 import 'package:salah/features/family/data/models/repositories/family_repository.dart';
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -134,6 +136,7 @@ class FamilyController extends GetxController {
       group.value = g;
       viewState.value = FamilyViewState.hasGroup;
       _startStreams(g.groupId);
+      await FirebaseMessaging.instance.subscribeToTopic('family_${g.groupId}');
       return true;
     } finally {
       isActionLoading.value = false;
@@ -152,6 +155,10 @@ class FamilyController extends GetxController {
       final result = await _repo.joinByCode(code);
       if (result == 'success' || result == 'already_member') {
         await loadGroup();
+        final groupId = group.value?.groupId;
+        if (groupId != null) {
+          await FirebaseMessaging.instance.subscribeToTopic('family_$groupId');
+        }
       }
       return result;
     } finally {
@@ -252,7 +259,10 @@ class FamilyController extends GetxController {
     isActionLoading.value = true;
     try {
       final ok = await _repo.leaveGroup(groupId);
-      if (ok) _resetState();
+      if (ok) {
+        await FirebaseMessaging.instance.unsubscribeFromTopic('family_$groupId');
+        _resetState();
+      }
       return ok;
     } finally {
       isActionLoading.value = false;
@@ -265,7 +275,10 @@ class FamilyController extends GetxController {
     isActionLoading.value = true;
     try {
       final ok = await _repo.dissolveGroup(groupId);
-      if (ok) _resetState();
+      if (ok) {
+        await FirebaseMessaging.instance.unsubscribeFromTopic('family_$groupId');
+        _resetState();
+      }
       return ok;
     } finally {
       isActionLoading.value = false;
@@ -294,9 +307,9 @@ class FamilyController extends GetxController {
   // PRAYER HOOK — يُستدعى من PrayerRepository
   // ══════════════════════════════════════════════════════════════
 
-  Future<void> onPrayerLogged() async {
+  Future<void> onPrayerLogged(PrayerName prayer) async {
     final groupId = group.value?.groupId;
     if (groupId == null) return;
-    await _repo.onPrayerLogged(groupId);
+    await _repo.onPrayerLogged(groupId, prayer.name);
   }
 }

@@ -12,6 +12,8 @@ import 'package:salah/features/auth/data/models/user_privacy_settings.dart';
 import 'package:salah/features/auth/data/repositories/user_repository.dart';
 import 'package:salah/features/auth/data/services/auth_service.dart';
 import 'package:salah/features/family/controller/family_controller.dart';
+import 'package:salah/features/prayer/controller/dashboard_controller.dart';
+import 'package:salah/features/prayer/data/services/live_context_service.dart';
 import 'package:salah/features/prayer/data/services/notification_service.dart';
 import 'package:salah/features/prayer/data/services/prayer_time_service.dart';
 import 'package:salah/features/settings/data/services/localization_service.dart';
@@ -178,7 +180,7 @@ class SettingsController extends GetxController with SettingsSupportMixin {
     }
   }
 
-  Future<void> updatePrayerOffset(String prayerName, int minutes) async {
+  Future<void> updatePrayerOffset(PrayerName prayer, int minutes) async {
     final uid = _authService.userId;
     if (uid == null) return;
 
@@ -192,7 +194,7 @@ class SettingsController extends GetxController with SettingsSupportMixin {
       final currentOffsets = Map<String, int>.from(
         userModel.value?.prayerOffsets ?? {},
       );
-      currentOffsets[prayerName] = minutes;
+      currentOffsets[prayer.name] = minutes;
 
       await _userRepository.updateUserProfile(
         userId: uid,
@@ -277,6 +279,12 @@ class SettingsController extends GetxController with SettingsSupportMixin {
     if (Get.isRegistered<FamilyController>()) {
       Get.find<FamilyController>().cancelStreamsForLogout();
     }
+    if (Get.isRegistered<DashboardController>()) {
+      Get.find<DashboardController>().cancelStreamsForLogout();
+    }
+    if (sl.isRegistered<LiveContextService>()) {
+      sl<LiveContextService>().stopForLogout();
+    }
     await _authService.signOut();
     Get.offAllNamed(AppRoutes.login);
   }
@@ -351,7 +359,7 @@ class SettingsController extends GetxController with SettingsSupportMixin {
       AppFeedback.showSuccess('success'.tr, 'profile_updated'.tr);
     } catch (e) {
       AppDialogs.hideLoading();
-      AppFeedback.showError('error'.tr, 'update_failed'.tr);
+      AppFeedback.showError('error'.tr, 'profile_update_error_msg'.tr);
     }
   }
 

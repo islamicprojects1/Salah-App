@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:get/get.dart';
 
@@ -103,9 +104,25 @@ class ConnectivityService extends GetxService {
   // ══════════════════════════════════════════════════════════════
 
   /// فحص الاتصال الآن (مفيد عند الضغط على "إعادة المحاولة")
+  /// يتحقق من الشبكة أولاً، ثم يجري DNS lookup للتأكد من الاتصال الفعلي.
   Future<bool> checkConnection() async {
     await _checkConnectivity();
-    return isConnected.value;
+    if (!isConnected.value) return false;
+    final hasInternet = await verifyInternetAccess();
+    isConnected.value = hasInternet;
+    return hasInternet;
+  }
+
+  /// التحقق من وجود اتصال فعلي بالإنترنت عبر DNS lookup.
+  /// connectivity_plus تكشف الشبكة فقط — هذا يتحقق من الإنترنت الحقيقي.
+  Future<bool> verifyInternetAccess() async {
+    try {
+      final result = await InternetAddress.lookup('google.com')
+          .timeout(const Duration(seconds: 5));
+      return result.isNotEmpty && result.first.rawAddress.isNotEmpty;
+    } catch (_) {
+      return false;
+    }
   }
 
   // ══════════════════════════════════════════════════════════════

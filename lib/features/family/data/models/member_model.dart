@@ -13,6 +13,9 @@ class MemberModel {
   final bool isShadow;
   final String? shadowContactHint;
   final bool isActive;
+  // Per-member prayer status for today (reset daily)
+  final String? todayPrayersDate; // "YYYY-MM-DD"
+  final List<String> todayPrayers; // ['fajr', 'dhuhr', ...]
 
   const MemberModel({
     required this.userId,
@@ -22,19 +25,32 @@ class MemberModel {
     this.isShadow = false,
     this.shadowContactHint,
     this.isActive = true,
+    this.todayPrayersDate,
+    this.todayPrayers = const [],
   });
 
   bool get isAdmin => role == 'admin';
 
   factory MemberModel.fromMap(Map<String, dynamic> map, String id) {
+    DateTime parseDate(dynamic v) {
+      if (v is Timestamp) return v.toDate();
+      if (v is String) return DateTime.tryParse(v) ?? DateTime.now();
+      return DateTime.now();
+    }
+
     return MemberModel(
       userId: id,
       role: map['role'] as String? ?? 'member',
       displayName: map['displayName'] as String? ?? '',
-      joinedAt: (map['joinedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      joinedAt: parseDate(map['joinedAt']),
       isShadow: map['isShadow'] as bool? ?? false,
       shadowContactHint: map['shadowContactHint'] as String?,
       isActive: map['isActive'] as bool? ?? true,
+      todayPrayersDate: map['todayPrayersDate'] as String?,
+      todayPrayers: (map['todayPrayers'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          const [],
     );
   }
 
@@ -49,12 +65,25 @@ class MemberModel {
     };
   }
 
+  Map<String, dynamic> toJson() {
+    return {
+      'role': role,
+      'displayName': displayName,
+      'joinedAt': joinedAt.toIso8601String(),
+      'isShadow': isShadow,
+      if (shadowContactHint != null) 'shadowContactHint': shadowContactHint,
+      'isActive': isActive,
+    };
+  }
+
   MemberModel copyWith({
     String? role,
     String? displayName,
     bool? isShadow,
     String? shadowContactHint,
     bool? isActive,
+    String? todayPrayersDate,
+    List<String>? todayPrayers,
   }) {
     return MemberModel(
       userId: userId,
@@ -64,6 +93,15 @@ class MemberModel {
       isShadow: isShadow ?? this.isShadow,
       shadowContactHint: shadowContactHint ?? this.shadowContactHint,
       isActive: isActive ?? this.isActive,
+      todayPrayersDate: todayPrayersDate ?? this.todayPrayersDate,
+      todayPrayers: todayPrayers ?? this.todayPrayers,
     );
+  }
+
+  /// Returns today's prayers if `todayPrayersDate` matches [today],
+  /// otherwise returns empty (date has changed = stale data).
+  List<String> getTodayPrayers(String today) {
+    if (todayPrayersDate != today) return const [];
+    return todayPrayers;
   }
 }

@@ -298,7 +298,7 @@ class _NavRow extends StatelessWidget {
     return Row(
       children: [
         OnboardingSecondaryButton(
-          icon: Icons.arrow_back_rounded,
+          icon: Icons.arrow_back_ios_new_rounded,
           onTap: controller.previousStep,
         ),
         const Spacer(),
@@ -306,7 +306,7 @@ class _NavRow extends StatelessWidget {
           fullWidth: false,
           text: controller.buttonText,
           onTap: controller.nextStep,
-          icon: Icons.arrow_forward_rounded,
+          icon: Icons.arrow_forward_ios_rounded,
         ),
       ],
     );

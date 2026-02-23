@@ -1,6 +1,8 @@
-﻿import 'package:flutter/material.dart';
+﻿import 'dart:ui';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:salah/app.dart';
 import 'package:salah/core/di/injection_container.dart';
 import 'package:salah/core/error/app_logger.dart';
@@ -19,7 +21,7 @@ import 'package:salah/firebase_options.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Centralized error logging (debug + optional Crashlytics in release)
+  // Flutter framework errors (widget build, layout, etc.)
   FlutterError.onError = (details) {
     AppLogger.error(
       details.exceptionAsString(),
@@ -27,6 +29,12 @@ void main() async {
       details.stack,
     );
     FlutterError.presentError(details);
+  };
+
+  // Uncaught async / platform-channel errors not routed through FlutterError
+  PlatformDispatcher.instance.onError = (error, stack) {
+    AppLogger.error('Uncaught platform error', error, stack);
+    return true; // prevents the app from crashing
   };
 
   // Initialize Firebase
@@ -37,6 +45,10 @@ void main() async {
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
+
+  // Initialize intl date formatting for ar/en (required before DateFormat with locale)
+  await initializeDateFormatting('ar');
+  await initializeDateFormatting('en');
 
   // Initialize core dependencies (GetIt)
   await initInjection();

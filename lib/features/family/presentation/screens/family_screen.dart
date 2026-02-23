@@ -46,8 +46,8 @@ class _LoadingView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: CircularProgressIndicator(color: Color(0xFF1A6B4A))),
+    return const Center(
+      child: CircularProgressIndicator(color: Color(0xFF1A6B4A)),
     );
   }
 }
@@ -113,8 +113,8 @@ class _NoGroupView extends StatelessWidget {
               decoration: BoxDecoration(
                 gradient: RadialGradient(
                   colors: [
-                    const Color(0xFF1A6B4A).withOpacity(0.12),
-                    const Color(0xFF1A6B4A).withOpacity(0.02),
+                const Color(0xFF1A6B4A).withValues(alpha: 0.12),
+                    const Color(0xFF1A6B4A).withValues(alpha: 0.02),
                   ],
                 ),
                 shape: BoxShape.circle,
@@ -189,13 +189,13 @@ class _NoGroupView extends StatelessWidget {
               ),
             ),
 
-            const Spacer(),
+            const Expanded(child: SizedBox.shrink()),
 
             // ── ملاحظة خصوصية ─────────────────────────────────────
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: Colors.grey.withOpacity(0.06),
+                color: Colors.grey.withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
@@ -349,8 +349,9 @@ class _GroupMenu extends GetView<FamilyController> {
 
   @override
   Widget build(BuildContext context) {
-    return Obx(
-      () => PopupMenuButton<String>(
+    return Obx(() {
+      final isAdmin = controller.isAdmin; // Read observable during Obx build
+      return PopupMenuButton<String>(
         icon: const Icon(Icons.more_vert),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         onSelected: (v) async {
@@ -372,7 +373,7 @@ class _GroupMenu extends GetView<FamilyController> {
               ],
             ),
           ),
-          if (controller.isAdmin)
+          if (isAdmin)
             PopupMenuItem(
               value: 'dissolve',
               child: Row(
@@ -391,8 +392,8 @@ class _GroupMenu extends GetView<FamilyController> {
               ),
             ),
         ],
-      ),
-    );
+      );
+    });
   }
 
   Future<void> _handleLeave(BuildContext context) async {

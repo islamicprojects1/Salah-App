@@ -1,5 +1,5 @@
 rules_version = '2';
-// Salah App – Firestore Security Rules
+// Salah App - Firestore Security Rules
 // Users can only read/write their own user doc, their prayer_logs and notifications,
 // and family data for families they belong to.
 
@@ -38,10 +38,7 @@ service cloud.firestore {
     // Backward compat: if memberIds empty/missing, allow adminId (creator) until migration
     function isInFamily(familyData) {
       let ids = familyData.get('memberIds', []);
-      if (ids.size() > 0) {
-        return request.auth.uid in ids;
-      }
-      return request.auth.uid == familyData.get('adminId', '');
+      return ids.size() > 0 ? request.auth.uid in ids : request.auth.uid == familyData.get('adminId', '');
     }
 
     match /families/{familyId} {
@@ -59,20 +56,25 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // Groups: create by any signed-in user; read/update/delete only if member
+    // Groups: create by any signed-in user; read/update/delete if admin or member
+    // (members live in groups/{groupId}/members; no memberIds on group doc)
     match /groups/{groupId} {
       allow create: if isSignedIn();
-      // Allow 'list' so users can query the group by inviteCode (during join or unique check)
-      allow list: if isSignedIn();
-      // Allow 'get' if the user is a member or the admin
-      allow get, update, delete: if isSignedIn() &&
-        (request.auth.uid == resource.data.adminId || request.auth.uid in resource.data.get('memberIds', []));
+      allow read, update, delete: if isSignedIn() && (
+        resource.data.get('adminId') == request.auth.uid ||
+        exists(/databases/$(database)/documents/groups/$(groupId)/members/$(request.auth.uid))
+      );
 
-      // Members subcollection
       match /members/{memberId} {
-        allow read: if isSignedIn();
+        // Members can read the full roster (needed to display family screen)
+        allow read: if isSignedIn() &&
+          exists(/databases/$(database)/documents/groups/$(groupId)/members/$(request.auth.uid));
         allow create: if isSignedIn() && memberId == request.auth.uid;
-        allow update, delete: if isSignedIn();
+        // Only the member themselves OR the group admin can update/delete a member record
+        allow update, delete: if isSignedIn() && (
+          memberId == request.auth.uid ||
+          get(/databases/$(database)/documents/groups/$(groupId)).data.adminId == request.auth.uid
+        );
       }
     }
 
@@ -88,6 +90,7 @@ service cloud.firestore {
       allow create: if isSignedIn();
       allow update, delete: if isSignedIn();
     }
+
     // Achievements (definitions): read-only for all authenticated
     match /achievements/{achievementId} {
       allow read: if isSignedIn();

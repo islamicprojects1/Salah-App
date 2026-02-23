@@ -1,7 +1,5 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:salah/core/constants/app_dimensions.dart';
 import 'package:salah/core/theme/app_colors.dart';
 import 'package:salah/core/theme/app_fonts.dart';
 import 'package:salah/features/onboarding/controller/onboarding_controller.dart';
@@ -108,7 +106,7 @@ class ProfileSetupPage extends GetView<OnboardingController> {
                   ),
                 ),
               ),
-              const SizedBox(height: 60),
+              const SizedBox(height: 20),
             ],
           ),
         ),
@@ -118,25 +116,25 @@ class ProfileSetupPage extends GetView<OnboardingController> {
 
   Future<void> _showDatePicker(BuildContext context) async {
     final initialDate = controller.selectedBirthDate.value ?? DateTime(2000);
-    DateTime tempDate = initialDate;
 
-    await showModalBottomSheet(
+    final date = await showDatePicker(
       context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      initialDate: initialDate,
+      firstDate: DateTime(1920),
+      lastDate: DateTime.now().subtract(const Duration(days: 365 * 5)),
+      builder: (ctx, child) => Theme(
+        data: Theme.of(ctx).copyWith(
+          colorScheme: ColorScheme.light(
+            primary: AppColors.primary,
+            onPrimary: Colors.white,
+          ),
+        ),
+        child: child!,
       ),
-      builder: (_) {
-        return _DatePickerSheet(
-          initialDate: initialDate,
-          onDateChanged: (d) => tempDate = d,
-          onConfirm: () {
-            controller.setBirthDate(tempDate);
-            Get.back();
-          },
-        );
-      },
     );
+    if (date != null) {
+      controller.setBirthDate(date);
+    }
   }
 }
 
@@ -325,80 +323,3 @@ class _ValidationSuccess extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────
-// Date picker bottom sheet
-// ─────────────────────────────────────────────
-class _DatePickerSheet extends StatelessWidget {
-  final DateTime initialDate;
-  final ValueChanged<DateTime> onDateChanged;
-  final VoidCallback onConfirm;
-
-  const _DatePickerSheet({
-    required this.initialDate,
-    required this.onDateChanged,
-    required this.onConfirm,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Handle
-        Container(
-          margin: const EdgeInsets.only(top: 12, bottom: 4),
-          width: 40,
-          height: 4,
-          decoration: BoxDecoration(
-            color: Colors.grey.shade300,
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ),
-        // Header
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              TextButton(
-                onPressed: Get.back,
-                child: Text(
-                  'cancel'.tr,
-                  style: TextStyle(color: AppColors.textSecondary),
-                ),
-              ),
-              Text(
-                'select_date'.tr,
-                style: AppFonts.titleMedium.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              TextButton(
-                onPressed: onConfirm,
-                child: Text(
-                  'confirm'.tr,
-                  style: TextStyle(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const Divider(height: 1),
-        SizedBox(
-          height: 220,
-          child: CupertinoDatePicker(
-            mode: CupertinoDatePickerMode.date,
-            initialDateTime: initialDate,
-            minimumDate: DateTime(1920),
-            maximumDate: DateTime.now().subtract(const Duration(days: 365 * 5)),
-            onDateTimeChanged: onDateChanged,
-          ),
-        ),
-        const SizedBox(height: 16),
-      ],
-    );
-  }
-}

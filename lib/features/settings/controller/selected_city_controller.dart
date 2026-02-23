@@ -27,14 +27,16 @@ class SelectedCityController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    // Automatically try to get current location on entry
-    useCurrentLocation(isAutomatic: true);
+    // Don't auto-request location — Android may suppress the permission dialog
+    // when it's not user-initiated. Request only when user taps "استخدم موقع الجهاز".
   }
 
   /// Fetch location using GPS
   Future<void> useCurrentLocation({bool isAutomatic = false}) async {
+    if (currentLocationLoading.value) return;
     try {
       currentLocationLoading.value = true;
+      detectedCityName.value = '';
       final position = await _locationService.getCurrentLocation();
 
       if (position != null && !_locationService.isUsingDefaultLocation.value) {
@@ -47,12 +49,19 @@ class SelectedCityController extends GetxController {
           cityName: _locationService.cityName.value,
         );
 
+        // Clear "skipped" flag — user explicitly used GPS; allow init to refresh next time
+        await _storageService.setLocationSkippedInOnboarding(false);
+
         // Refresh prayer times
         await _prayerTimeService.calculatePrayerTimes();
 
         // If manual click (not automatic), close the screen
         if (!isAutomatic) {
-          Get.back();
+          AppFeedback.showSuccess(
+            "success".tr,
+            "location_select_success".trParams({'city': detectedCityName.value}),
+          );
+          Get.back(result: true);
         }
       } else if (!isAutomatic) {
         // Only show error if manual click
@@ -61,6 +70,10 @@ class SelectedCityController extends GetxController {
         } else {
           AppFeedback.showError("error".tr, "location_error_gps".tr);
         }
+      }
+    } catch (e) {
+      if (!isAutomatic) {
+        AppFeedback.showError("error".tr, "location_select_error".tr);
       }
     } finally {
       currentLocationLoading.value = false;
@@ -147,7 +160,7 @@ class SelectedCityController extends GetxController {
       // Refresh prayer times
       await _prayerTimeService.calculatePrayerTimes();
 
-      Get.back();
+      Get.back(result: true);
       AppFeedback.showSuccess(
         "success".tr,
         "location_select_success".trParams({'city': cityName}),
@@ -174,11 +187,31 @@ class SelectedCityController extends GetxController {
   String _extractCountryName(Map<String, dynamic> result) {
     final address = result['address'] as Map<String, dynamic>?;
     if (address != null) {
-      return address['country'] ?? '';
+      final country = address['country'] as String? ?? '';
+      if (country.isNotEmpty) return country;
+      final code = address['country_code'] as String?;
+      return _countryFromCode(code ?? '');
     }
     // Fallback: use last part of display_name
     final parts = result['display_name'].split(',');
     return parts.last.trim();
+  }
+
+  static String _countryFromCode(String? code) {
+    if (code == null || code.isEmpty) return '';
+    switch (code.toUpperCase()) {
+      case 'JO': return 'Jordan';
+      case 'SA': return 'Saudi Arabia';
+      case 'EG': return 'Egypt';
+      case 'AE': return 'United Arab Emirates';
+      case 'KW': return 'Kuwait';
+      case 'QA': return 'Qatar';
+      case 'BH': return 'Bahrain';
+      case 'OM': return 'Oman';
+      case 'PK': return 'Pakistan';
+      case 'TR': return 'Turkey';
+      default: return code;
+    }
   }
 
   @override

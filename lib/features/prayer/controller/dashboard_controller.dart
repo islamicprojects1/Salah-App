@@ -137,7 +137,14 @@ class DashboardController extends GetxController with WidgetsBindingObserver {
   bool get isUsingDefaultLocation =>
       _locationService.isUsingDefaultLocation.value;
 
-  void openSelectCity() => Get.toNamed(AppRoutes.selectCity);
+  Future<void> openSelectCity() async {
+    final result = await Get.toNamed(AppRoutes.selectCity);
+    final updated = result as bool?;
+    if (updated == true) {
+      await _prayerService.calculatePrayerTimes();
+      _loadPrayerTimes();
+    }
+  }
 
   // --- Qada ---
 
@@ -296,21 +303,26 @@ class DashboardController extends GetxController with WidgetsBindingObserver {
     _notificationsSubscription?.cancel();
     _notificationsSubscription = _userRepo
         .getUnreadUserNotificationsStream(userId)
-        .listen((snapshot) {
-      for (final doc in snapshot.docs) {
-        final data = doc.data();
-        if (data['type'] == 'encouragement') {
-          AppFeedback.showSnackbar(
-            data['fromName'] ?? 'عضو عائلة',
-            data['message'] ?? 'شجعك على الصلاة',
+        .listen(
+      (snapshot) {
+        for (final doc in snapshot.docs) {
+          final data = doc.data();
+          if (data['type'] == 'encouragement') {
+            AppFeedback.showSnackbar(
+              data['fromName'] ?? 'عضو عائلة',
+              data['message'] ?? 'شجعك على الصلاة',
+            );
+          }
+          _userRepo.markUserNotificationAsRead(
+            userId: userId,
+            notificationId: doc.id,
           );
         }
-        _userRepo.markUserNotificationAsRead(
-          userId: userId,
-          notificationId: doc.id,
-        );
-      }
-    });
+      },
+      onError: (e) {
+        AppLogger.debug('Dashboard: encourages stream error: $e');
+      },
+    );
   }
 
   // --- Prayer Time Tracking ---
@@ -415,6 +427,12 @@ class DashboardController extends GetxController with WidgetsBindingObserver {
 
   void _celebrateAllPrayersDone() {
     AppFeedback.showSuccess('all_prayers_complete'.tr, 'god_accept_prayers'.tr);
+  }
+
+  /// Call before logout to stop Firestore listeners and avoid permission-denied.
+  void cancelStreamsForLogout() {
+    _notificationsSubscription?.cancel();
+    _notificationsSubscription = null;
   }
 
   @override

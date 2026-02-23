@@ -4,6 +4,8 @@ import 'dart:math' as math;
 import 'package:salah/core/theme/app_colors.dart';
 import 'package:salah/core/theme/app_fonts.dart';
 import 'package:salah/core/constants/app_dimensions.dart';
+import 'package:salah/core/di/injection_container.dart';
+import 'package:salah/core/services/location_service.dart';
 import 'package:salah/core/widgets/app_loading.dart';
 import 'package:salah/features/prayer/controller/qibla_controller.dart';
 
@@ -12,8 +14,10 @@ class QiblaScreen extends GetView<QiblaController> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? AppColors.darkBackground : AppColors.primary;
     return Scaffold(
-      backgroundColor: AppColors.primaryDark,
+      backgroundColor: bgColor,
       body: Obx(() {
         if (controller.isLoading.value) {
           return const _QiblaLoadingState();
@@ -28,16 +32,22 @@ class QiblaScreen extends GetView<QiblaController> {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              // Background
-              const _QiblaBackground(),
+              // Background — theme-aware
+              _QiblaBackground(isDark: isDark),
 
               // Main content
               SafeArea(
                 child: Column(
                   children: [
-                    _buildTopBar(),
-                    Expanded(child: _buildCompassView()),
-                    _buildBottomInfo(),
+                    _buildTopBar(context),
+                    Obx(() {
+                      if (!controller.isUsingDefaultLocation.value) {
+                        return const SizedBox.shrink();
+                      }
+                      return _buildMeccaFallbackBanner(context);
+                    }),
+                    Expanded(child: _buildCompassView(context)),
+                    _buildBottomInfo(context),
                   ],
                 ),
               ),
@@ -58,7 +68,8 @@ class QiblaScreen extends GetView<QiblaController> {
     );
   }
 
-  Widget _buildTopBar() {
+  Widget _buildTopBar(BuildContext context) {
+    final onBg = AppColors.textPrimary;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       child: Row(
@@ -67,13 +78,13 @@ class QiblaScreen extends GetView<QiblaController> {
             icon: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.12),
+                color: onBg.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                border: Border.all(color: onBg.withValues(alpha: 0.2)),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.close_rounded,
-                color: Colors.white,
+                color: onBg,
                 size: 18,
               ),
             ),
@@ -84,7 +95,7 @@ class QiblaScreen extends GetView<QiblaController> {
               'qibla_direction'.tr,
               textAlign: TextAlign.center,
               style: AppFonts.titleMedium.copyWith(
-                color: Colors.white,
+                color: onBg,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.3,
               ),
@@ -96,9 +107,55 @@ class QiblaScreen extends GetView<QiblaController> {
     );
   }
 
-  Widget _buildErrorState() {
+  Widget _buildMeccaFallbackBanner(BuildContext context) {
     return Container(
-      color: AppColors.primaryDark,
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.amber.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.amber.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.location_off_rounded, color: Colors.amber, size: 18),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'qibla_mecca_notice'.tr,
+              style: AppFonts.bodySmall.copyWith(
+                color: Colors.amber.shade200,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: () => sl<LocationService>().openAppSettings(),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.25),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                'grant_permission'.tr,
+                style: AppFonts.labelSmall.copyWith(
+                  color: Colors.amber.shade100,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorState() {
+    final bgColor = Get.isDarkMode ? AppColors.darkBackground : AppColors.primary;
+    final onBg = AppColors.textPrimary;
+    return Container(
+      color: bgColor,
       child: SafeArea(
         child: Center(
           child: Padding(
@@ -122,7 +179,7 @@ class QiblaScreen extends GetView<QiblaController> {
                 Text(
                   controller.errorMessage.value,
                   style: AppFonts.bodyMedium.copyWith(
-                    color: Colors.white.withValues(alpha: 0.75),
+                    color: onBg.withValues(alpha: 0.9),
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -153,7 +210,9 @@ class QiblaScreen extends GetView<QiblaController> {
     );
   }
 
-  Widget _buildCompassView() {
+  Widget _buildCompassView(BuildContext context) {
+    final onBg = AppColors.textPrimary;
+    final onBgMuted = AppColors.textSecondary;
     return Obx(() {
       final qiblaAngle = controller.qiblaDirection.value ?? 0;
       final headingAngle = controller.heading.value ?? 0;
@@ -171,12 +230,12 @@ class QiblaScreen extends GetView<QiblaController> {
             decoration: BoxDecoration(
               color: isFacing
                   ? AppColors.success.withValues(alpha: 0.20)
-                  : Colors.white.withValues(alpha: 0.08),
+                  : onBg.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color: isFacing
                     ? AppColors.success.withValues(alpha: 0.50)
-                    : Colors.white.withValues(alpha: 0.15),
+                    : onBg.withValues(alpha: 0.15),
               ),
             ),
             child: Row(
@@ -187,13 +246,13 @@ class QiblaScreen extends GetView<QiblaController> {
                       ? Icons.check_circle_rounded
                       : Icons.navigation_rounded,
                   size: 16,
-                  color: isFacing ? AppColors.success : Colors.white60,
+                  color: isFacing ? AppColors.success : onBgMuted,
                 ),
                 const SizedBox(width: 8),
                 Text(
                   isFacing ? 'أنت تواجه القبلة' : 'حرّك الجهاز نحو القبلة',
                   style: AppFonts.labelMedium.copyWith(
-                    color: isFacing ? AppColors.success : Colors.white60,
+                    color: isFacing ? AppColors.success : onBgMuted,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -211,19 +270,31 @@ class QiblaScreen extends GetView<QiblaController> {
               SizedBox(
                 width: 300,
                 height: 300,
-                child: CustomPaint(painter: _OuterRingPainter()),
+                child: CustomPaint(
+                  painter: _OuterRingPainter(
+                    isDark: Theme.of(context).brightness == Brightness.dark,
+                  ),
+                ),
               ),
               // Compass ring
               SizedBox(
                 width: 260,
                 height: 260,
-                child: CustomPaint(painter: _CompassRingPainter()),
+                child: CustomPaint(
+                  painter: _CompassRingPainter(
+                    isDark: Theme.of(context).brightness == Brightness.dark,
+                  ),
+                ),
               ),
               // Cardinal labels
               SizedBox(
                 width: 260,
                 height: 260,
-                child: CustomPaint(painter: _CardinalLabelsPainter()),
+                child: CustomPaint(
+                  painter: _CardinalLabelsPainter(
+                    isDark: Theme.of(context).brightness == Brightness.dark,
+                  ),
+                ),
               ),
               // Needle
               SizedBox(
@@ -235,6 +306,7 @@ class QiblaScreen extends GetView<QiblaController> {
                     painter: _QiblaArrowPainter(
                       color: qiblaColor,
                       isFacing: isFacing,
+                      isDark: Theme.of(context).brightness == Brightness.dark,
                     ),
                   ),
                 ),
@@ -264,7 +336,7 @@ class QiblaScreen extends GetView<QiblaController> {
           Text(
             '${controller.heading.value?.toStringAsFixed(0) ?? "--"}°',
             style: AppFonts.displayLarge.copyWith(
-              color: Colors.white,
+              color: onBg,
               fontWeight: FontWeight.w300,
               letterSpacing: -2,
               height: 1.0,
@@ -274,7 +346,7 @@ class QiblaScreen extends GetView<QiblaController> {
           Text(
             controller.locationAndBearing,
             style: AppFonts.bodyMedium.copyWith(
-              color: Colors.white.withValues(alpha: 0.55),
+              color: onBgMuted,
             ),
           ),
         ],
@@ -282,7 +354,7 @@ class QiblaScreen extends GetView<QiblaController> {
     });
   }
 
-  Widget _buildBottomInfo() {
+  Widget _buildBottomInfo(BuildContext context) {
     return Obx(() {
       if (controller.distanceToKaaba.value <= 0)
         return const SizedBox(height: 32);
@@ -292,9 +364,9 @@ class QiblaScreen extends GetView<QiblaController> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.08),
+            color: AppColors.textPrimary.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+            border: Border.all(color: AppColors.textPrimary.withValues(alpha: 0.12)),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -303,13 +375,13 @@ class QiblaScreen extends GetView<QiblaController> {
               const SizedBox(width: 10),
               Text(
                 'المسافة إلى الكعبة',
-                style: AppFonts.labelMedium.copyWith(color: Colors.white60),
+                style: AppFonts.labelMedium.copyWith(color: AppColors.textSecondary),
               ),
               const Spacer(),
               Text(
                 '${controller.distanceToKaaba.value.toStringAsFixed(0)} ${'kilometers'.tr}',
                 style: AppFonts.titleMedium.copyWith(
-                  color: Colors.white,
+                  color: AppColors.textPrimary,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -541,16 +613,19 @@ class _QiblaLoadingState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(color: AppColors.primaryDark, child: const AppLoading());
+    final bg = Get.isDarkMode ? AppColors.darkBackground : AppColors.primary;
+    return Container(color: bg, child: const AppLoading());
   }
 }
 
 class _QiblaBackground extends StatelessWidget {
-  const _QiblaBackground();
+  final bool isDark;
+
+  const _QiblaBackground({required this.isDark});
 
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(painter: _BackgroundPainter());
+    return CustomPaint(painter: _BackgroundPainter(isDark: isDark));
   }
 }
 
@@ -559,23 +634,28 @@ class _QiblaBackground extends StatelessWidget {
 // ─────────────────────────────────────────────
 
 class _BackgroundPainter extends CustomPainter {
+  final bool isDark;
+
+  _BackgroundPainter({required this.isDark});
+
   @override
   void paint(Canvas canvas, Size size) {
-    // Radial glow from center
+    final baseColor = isDark ? AppColors.primaryDark : AppColors.primaryLight;
     final centerPaint = Paint()
       ..shader = RadialGradient(
         center: const Alignment(0, -0.1),
         radius: 0.85,
         colors: [
-          AppColors.primary.withValues(alpha: 0.60),
-          AppColors.primaryDark,
+          AppColors.primary.withValues(alpha: isDark ? 0.60 : 0.35),
+          baseColor,
         ],
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
 
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), centerPaint);
 
-    // Subtle star dots
-    final dotPaint = Paint()..color = Colors.white.withValues(alpha: 0.15);
+    final dotColor = isDark ? 0.15 : 0.08;
+    final dotPaint = Paint()
+      ..color = (isDark ? AppColors.white : AppColors.black).withValues(alpha: dotColor);
     final rng = math.Random(42);
     for (int i = 0; i < 60; i++) {
       final x = rng.nextDouble() * size.width;
@@ -586,19 +666,25 @@ class _BackgroundPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _BackgroundPainter oldDelegate) =>
+      oldDelegate.isDark != isDark;
 }
 
 class _OuterRingPainter extends CustomPainter {
+  final bool isDark;
+
+  _OuterRingPainter({required this.isDark});
+
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2;
+    final strokeColor = (isDark ? AppColors.white : AppColors.black).withValues(alpha: 0.08);
 
     final paint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1
-      ..color = Colors.white.withValues(alpha: 0.08);
+      ..color = strokeColor;
 
     canvas.drawCircle(center, radius, paint);
     canvas.drawCircle(center, radius - 8, paint);
@@ -614,19 +700,25 @@ class _OuterRingPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _OuterRingPainter oldDelegate) =>
+      oldDelegate.isDark != isDark;
 }
 
 class _CompassRingPainter extends CustomPainter {
+  final bool isDark;
+
+  _CompassRingPainter({required this.isDark});
+
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2 - 8;
+    final onBg = (isDark ? AppColors.white : AppColors.black);
 
     final trackPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.5
-      ..color = Colors.white.withValues(alpha: 0.12);
+      ..color = onBg.withValues(alpha: 0.12);
     canvas.drawCircle(center, radius, trackPaint);
 
     for (int i = 0; i < 360; i += 5) {
@@ -648,7 +740,7 @@ class _CompassRingPainter extends CustomPainter {
         ..strokeWidth = isCardinal ? 2.5 : (isMajor ? 1.5 : 0.8)
         ..color = isCardinal
             ? AppColors.gold.withValues(alpha: 0.70)
-            : Colors.white.withValues(alpha: isMajor ? 0.25 : 0.12)
+            : onBg.withValues(alpha: isMajor ? 0.25 : 0.12)
         ..strokeCap = StrokeCap.round;
 
       canvas.drawLine(start, end, tickPaint);
@@ -656,15 +748,21 @@ class _CompassRingPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _CompassRingPainter oldDelegate) =>
+      oldDelegate.isDark != isDark;
 }
 
 class _CardinalLabelsPainter extends CustomPainter {
+  final bool isDark;
+
+  _CardinalLabelsPainter({required this.isDark});
+
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2 - 30;
     final labels = ['N', 'E', 'S', 'W'];
+    final onBgMuted = (isDark ? AppColors.white : AppColors.black).withValues(alpha: 0.40);
 
     for (int i = 0; i < 4; i++) {
       final angle = (i * 90 - 90) * math.pi / 180;
@@ -677,7 +775,7 @@ class _CardinalLabelsPainter extends CustomPainter {
           style: TextStyle(
             color: i == 0
                 ? AppColors.gold.withValues(alpha: 0.90)
-                : Colors.white.withValues(alpha: 0.40),
+                : onBgMuted,
             fontSize: i == 0 ? 13 : 11,
             fontWeight: i == 0 ? FontWeight.w700 : FontWeight.w400,
             fontFamily: 'Cairo',
@@ -694,14 +792,20 @@ class _CardinalLabelsPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _CardinalLabelsPainter oldDelegate) =>
+      oldDelegate.isDark != isDark;
 }
 
 class _QiblaArrowPainter extends CustomPainter {
   final Color color;
   final bool isFacing;
+  final bool isDark;
 
-  const _QiblaArrowPainter({required this.color, required this.isFacing});
+  const _QiblaArrowPainter({
+    required this.color,
+    required this.isFacing,
+    required this.isDark,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -735,8 +839,9 @@ class _QiblaArrowPainter extends CustomPainter {
         colors: [color, color.withValues(alpha: 0.7)],
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
 
+    final tailColor = (isDark ? AppColors.white : AppColors.black).withValues(alpha: 0.20);
     final tailPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.20)
+      ..color = tailColor
       ..isAntiAlias = true;
 
     // Glow
@@ -752,13 +857,16 @@ class _QiblaArrowPainter extends CustomPainter {
     canvas.drawPath(arrowPath, arrowPaint);
 
     // Mosque icon at tip (small dot)
-    final tipPaint = Paint()..color = Colors.white;
+    final tipColor = isDark ? AppColors.white : AppColors.black;
+    final tipPaint = Paint()..color = tipColor;
     canvas.drawCircle(Offset(cx, 6), 3, tipPaint);
   }
 
   @override
   bool shouldRepaint(covariant _QiblaArrowPainter oldDelegate) =>
-      oldDelegate.color != color || oldDelegate.isFacing != isFacing;
+      oldDelegate.color != color ||
+      oldDelegate.isFacing != isFacing ||
+      oldDelegate.isDark != isDark;
 }
 
 // ─────────────────────────────────────────────

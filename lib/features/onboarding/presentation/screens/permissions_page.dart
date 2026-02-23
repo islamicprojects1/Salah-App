@@ -39,7 +39,9 @@ class PermissionsPage extends GetView<OnboardingController> {
                     isLoading:
                         controller.isLoading.value &&
                         !controller.locationPermissionGranted.value,
-                    onTap: null,
+                    onTap: !controller.locationPermissionGranted.value
+                        ? controller.requestLocationPermission
+                        : null,
                   ),
                 ),
               ),
@@ -61,7 +63,9 @@ class PermissionsPage extends GetView<OnboardingController> {
                     isLoading:
                         controller.isLoading.value &&
                         !controller.notificationPermissionGranted.value,
-                    onTap: null,
+                    onTap: !controller.notificationPermissionGranted.value
+                        ? controller.requestNotificationPermission
+                        : null,
                   ),
                 ),
               ),
@@ -105,7 +109,7 @@ class PermissionsPage extends GetView<OnboardingController> {
             ),
           ),
         ),
-        const SizedBox(height: 60),
+        const SizedBox(height: 20),
       ],
     );
   }

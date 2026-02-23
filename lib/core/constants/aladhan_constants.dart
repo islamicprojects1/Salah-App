@@ -7,6 +7,10 @@ library;
 /// Base URL for Aladhan API (no trailing slash)
 const String aladhanBaseUrl = 'https://api.aladhan.com/v1';
 
+/// الموقع الافتراضي — مكة المكرمة (الكعبة المشرفة) — يُستخدَم عند فشل GPS
+const double kMeccaLatitude = 21.4225;
+const double kMeccaLongitude = 39.8262;
+
 /// Days before month end to pre-fetch next month
 const int daysBeforeMonthEndToPrefetch = 5;
 
@@ -121,11 +125,22 @@ const Map<String, int> countryToAladhanMethod = {
 
 /// Get Aladhan method ID for a country (case-insensitive).
 ///
+/// Uses exact match first, then partial match for known countries.
 /// Returns [countryToAladhanMethod['default']] (3) if not found.
 int getAladhanMethodForCountry(String? country) {
   if (country == null || country.trim().isEmpty) {
     return countryToAladhanMethod['default']!;
   }
   final key = country.trim().toLowerCase();
-  return countryToAladhanMethod[key] ?? countryToAladhanMethod['default']!;
+
+  // Exact match first
+  final exact = countryToAladhanMethod[key];
+  if (exact != null) return exact;
+
+  // Partial match for Jordan (e.g. "Hashemite Kingdom of Jordan")
+  if (key.contains('jordan') || key.contains('أردن')) {
+    return 23;
+  }
+
+  return countryToAladhanMethod['default']!;
 }

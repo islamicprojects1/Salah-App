@@ -65,11 +65,10 @@ class _DashboardTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        const DashboardAppBar(),
-        const Expanded(child: DashboardHomeContent()),
-      ],
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: const DashboardAppBar(),
+      body: const DashboardHomeContent(),
     );
   }
 }

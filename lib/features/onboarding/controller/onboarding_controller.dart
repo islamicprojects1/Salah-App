@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:salah/core/constants/enums.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:salah/core/services/storage_service.dart';
 import 'package:salah/core/services/location_service.dart';
 import 'package:salah/core/di/injection_container.dart';
@@ -26,7 +28,7 @@ class OnboardingController extends GetxController
   // STATE
   // ============================================================
   final currentPage = 0.obs;
-  static const int totalPages = 5;
+  static const int totalPages = 4;
 
   final isLoading = false.obs;
   final locationPermissionGranted = false.obs;
@@ -161,7 +163,7 @@ class OnboardingController extends GetxController
     }
 
     // Recheck permissions when moving to permissions page
-    if (currentStep == OnboardingStep.family) {
+    if (currentStep == OnboardingStep.features) {
       await _checkPermissionsStatus();
     }
 
@@ -204,7 +206,14 @@ class OnboardingController extends GetxController
   // ============================================================
   Future<void> _checkPermissionsStatus() async {
     try {
-      locationPermissionGranted.value = _locationService.hasLocation;
+      // Location: actual permission, not just coords (Mecca = no real permission)
+      final loc = await Geolocator.checkPermission();
+      locationPermissionGranted.value =
+          loc == LocationPermission.whileInUse ||
+          loc == LocationPermission.always;
+      // Notification: permission_handler status
+      final notif = await Permission.notification.status;
+      notificationPermissionGranted.value = notif.isGranted;
     } catch (e) {
       AppLogger.debug('Onboarding: check permissions failed', e);
     }
@@ -216,7 +225,8 @@ class OnboardingController extends GetxController
       isLoading.value = true;
       HapticFeedback.mediumImpact();
       await _locationService.getCurrentLocation();
-      locationPermissionGranted.value = _locationService.hasLocation;
+      locationPermissionGranted.value =
+          await _locationService.isLocationPermissionGranted;
       if (locationPermissionGranted.value) HapticFeedback.heavyImpact();
     } catch (e) {
       AppLogger.debug('Onboarding: location permission failed', e);
@@ -278,6 +288,10 @@ class OnboardingController extends GetxController
       HapticFeedback.heavyImpact();
       await _storageService.setOnboardingCompleted();
       await _storageService.setNotFirstTime();
+      // Remember if user skipped location (OK with Mecca) — don't nag later
+      if (!locationPermissionGranted.value) {
+        await _storageService.setLocationSkippedInOnboarding(true);
+      }
       Get.offAllNamed(AppRoutes.login);
     } finally {
       isLoading.value = false;
@@ -291,7 +305,6 @@ class OnboardingController extends GetxController
     const steps = [
       OnboardingStep.welcome,
       OnboardingStep.features,
-      OnboardingStep.family,
       OnboardingStep.permissions,
       OnboardingStep.profileSetup,
     ];

@@ -11,7 +11,7 @@ import 'package:salah/core/widgets/app_text_field.dart';
 import 'package:salah/features/auth/controller/auth_controller.dart';
 import 'package:salah/features/auth/presentation/widgets/login_widgets.dart';
 
-/// Register screen — same header+card layout as Login, with Google Sign-In
+/// Register screen — email/password form only
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
@@ -60,7 +60,7 @@ class _RegisterScreenState extends State<RegisterScreen>
     }
     final controller = Get.find<AuthController>();
     final topPadding = MediaQuery.paddingOf(context).top;
-    final headerHeight = MediaQuery.sizeOf(context).height * 0.28;
+    final headerHeight = MediaQuery.sizeOf(context).height * 0.26;
 
     return Scaffold(
       backgroundColor: AppColors.primary,
@@ -75,23 +75,54 @@ class _RegisterScreenState extends State<RegisterScreen>
                 height: headerHeight + topPadding,
                 child: Stack(
                   children: [
+                    // Gradient background
                     Positioned.fill(
                       child: Container(
-                        decoration: BoxDecoration(
+                        decoration: const BoxDecoration(
                           gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [AppColors.primary, AppColors.primaryDark],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              AppColors.primary,
+                              Color(0xFF1A6B4A),
+                              AppColors.primaryDark,
+                            ],
                           ),
                         ),
                       ),
                     ),
+                    // Decorative circles
+                    Positioned(
+                      top: -40,
+                      right: -40,
+                      child: AuthDecorCircle(size: 180, opacity: 0.07),
+                    ),
+                    Positioned(
+                      bottom: -20,
+                      left: -30,
+                      child: AuthDecorCircle(size: 130, opacity: 0.05),
+                    ),
+                    // Logo + label
                     Center(
                       child: Padding(
                         padding: EdgeInsets.only(top: topPadding),
                         child: FadeTransition(
                           opacity: _fadeAnim,
-                          child: _buildLogo(),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _buildLogo(),
+                              const SizedBox(height: 10),
+                              Text(
+                                'app_name'.tr,
+                                style: AppFonts.titleLarge.copyWith(
+                                  color: AppColors.white,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -151,19 +182,21 @@ class _RegisterScreenState extends State<RegisterScreen>
                               ),
                               const SizedBox(height: AppDimensions.paddingXL),
 
+                              // ── 1. Name ──
                               NameTextField(
                                 controller: controller.nameController,
                                 onChanged: (_) => controller.clearError(),
                               ),
                               const SizedBox(height: AppDimensions.paddingMD),
 
+                              // ── 3. Email ──
                               EmailTextField(
                                 controller: controller.emailController,
                                 onChanged: (_) => controller.clearError(),
                               ),
                               const SizedBox(height: AppDimensions.paddingMD),
 
-                              // Password with toggle
+                              // ── 4. Password ──
                               Obx(
                                 () => PasswordTextField(
                                   controller: controller.passwordController,
@@ -186,7 +219,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                               ),
                               const SizedBox(height: AppDimensions.paddingMD),
 
-                              // Confirm password with toggle
+                              // ── 5. Confirm password ──
                               Obx(
                                 () => AppTextField(
                                   controller:
@@ -222,7 +255,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                 ),
                               ),
 
-                              // Error message
+                              // ── Error message ──
                               Obx(() {
                                 final msg = controller.errorMessage.value;
                                 if (msg.isEmpty) return const SizedBox.shrink();
@@ -273,7 +306,7 @@ class _RegisterScreenState extends State<RegisterScreen>
 
                               const SizedBox(height: AppDimensions.paddingLG),
 
-                              // Register button
+                              // ── 6. Register button ──
                               Obx(
                                 () => AppButton.fullWidth(
                                   text: 'register'.tr,
@@ -292,28 +325,9 @@ class _RegisterScreenState extends State<RegisterScreen>
                                 ),
                               ),
 
-                              const SizedBox(height: AppDimensions.paddingLG),
-                              _OrDivider(),
-                              const SizedBox(height: AppDimensions.paddingLG),
-
-                              // Google Sign-In
-                              Obx(
-                                () => GoogleSignInButton(
-                                  onPressed: () async {
-                                    FocusScope.of(context).unfocus();
-                                    final success = await controller
-                                        .loginWithGoogle();
-                                    if (success && context.mounted) {
-                                      Get.offAllNamed(AppRoutes.dashboard);
-                                    }
-                                  },
-                                  isLoading: controller.isGoogleLoading.value,
-                                ),
-                              ),
-
                               const SizedBox(height: AppDimensions.paddingXL),
 
-                              // Login link
+                              // ── Login link ──
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
@@ -365,7 +379,7 @@ class _RegisterScreenState extends State<RegisterScreen>
         ImageAssets.appLogo,
         height: AppDimensions.sizeLogo,
         filterQuality: FilterQuality.high,
-        errorBuilder: (_, _, _) => Icon(
+        errorBuilder: (context, error, stackTrace) => Icon(
           Icons.mosque_rounded,
           size: AppDimensions.iconHero,
           color: AppColors.white,
@@ -375,26 +389,5 @@ class _RegisterScreenState extends State<RegisterScreen>
   }
 }
 
-// ─────────────────────────────────────────────
-// Shared OR Divider
-// ─────────────────────────────────────────────
-class _OrDivider extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(child: Divider(color: AppColors.divider)),
-        Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppDimensions.paddingLG,
-          ),
-          child: Text(
-            'or'.tr,
-            style: AppFonts.bodySmall.copyWith(color: AppColors.textSecondary),
-          ),
-        ),
-        Expanded(child: Divider(color: AppColors.divider)),
-      ],
-    );
-  }
-}
+
+

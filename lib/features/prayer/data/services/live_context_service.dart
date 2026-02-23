@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:get/get.dart';
+import 'package:salah/core/error/app_logger.dart';
 import 'package:salah/core/di/injection_container.dart';
 import 'package:salah/core/constants/enums.dart';
 import 'package:salah/core/services/audio_service.dart';
@@ -78,12 +79,15 @@ class LiveContextService extends GetxService {
     final userId = _authService.userId;
     if (userId == null) return;
     _logsSubscription?.cancel();
-    _logsSubscription = _prayerRepository.getTodayPrayerLogs(userId).listen((
-      logs,
-    ) {
-      todayLogs.assignAll(logs);
-      _recomputeContext();
-    });
+    _logsSubscription = _prayerRepository.getTodayPrayerLogs(userId).listen(
+      (logs) {
+        todayLogs.assignAll(logs);
+        _recomputeContext();
+      },
+      onError: (e) {
+        AppLogger.debug('LiveContext: stream error: $e');
+      },
+    );
   }
 
   void _startTimer() {
@@ -221,6 +225,18 @@ class LiveContextService extends GetxService {
       }
     }
     return DailyPrayersSummary(date: date, prayers: map);
+  }
+
+  /// Call before logout to stop Firestore listeners and avoid permission-denied.
+  void stopForLogout() {
+    _timer?.cancel();
+    _timer = null;
+    _logsSubscription?.cancel();
+    _logsSubscription = null;
+    todayLogs.clear();
+    prayerContext.value = PrayerContextModel.empty();
+    todaySummary.value = DailyPrayersSummary.empty(DateTime.now());
+    _isInitialized = false;
   }
 
   @override

@@ -84,6 +84,8 @@ class PrayerRepository extends BaseRepository {
     final data = log.toMap();
     data['localId'] = localId;
     data['clientId'] = const Uuid().v4();
+    // Ensure userId is present under both keys for sync compatibility
+    data['userId'] = log.userId;
     await _addToQueue(SyncItemType.prayerLog, data);
   }
 
@@ -228,7 +230,8 @@ class PrayerRepository extends BaseRepository {
             );
           }
           final firestoreData = {
-            'oderId': data['oderId'],
+            'oderId': data['userId'] ?? data['oderId'], // legacy field
+            'userId': data['userId'] ?? data['oderId'], // canonical field
             'prayer': data['prayer'],
             'prayedAt': data['prayedAt'],
             'adhanTime': data['adhanTime'],
@@ -306,34 +309,40 @@ class PrayerRepository extends BaseRepository {
     var logs = _mapLocalLogsToModels(localLogs);
     yield logs;
 
-    if (_isOnline) {
       // 2. Continuous Firestore updates
-      await for (final snapshot in firestore.getTodayPrayerLogs(userId)) {
-        final remoteLogs = snapshot.docs
-            .map((doc) => PrayerLogModel.fromFirestore(doc))
-            .toList();
+      try {
+        await for (final snapshot in firestore.getTodayPrayerLogs(userId)) {
+          final remoteLogs = snapshot.docs
+              .map((doc) => PrayerLogModel.fromFirestore(doc))
+              .toList();
 
-        // Merge local unsynced with remote
-        final unsynced = await _databaseHelper.getTodayPrayerLogs(userId);
-        final unsyncedModels = _mapLocalLogsToModels(unsynced)
-            .where((l) => true) // Just to get a list
-            .toList();
+          // Merge local unsynced with remote
+          final unsynced = await _databaseHelper.getTodayPrayerLogs(userId);
+          final unsyncedModels = _mapLocalLogsToModels(unsynced)
+              .where((l) => true) // Just to get a list
+              .toList();
 
-        // Final list: Remote logs + any local log not yet in remote
-        final merged = <String, PrayerLogModel>{};
-        for (final l in remoteLogs) {
-          merged[l.prayer.name] = l;
-        }
-        for (final l in unsyncedModels) {
-          // If not in remote, add it (preserves local optimistic update)
-          if (!merged.containsKey(l.prayer.name)) {
+          // Final list: Remote logs + any local log not yet in remote
+          final merged = <String, PrayerLogModel>{};
+          for (final l in remoteLogs) {
             merged[l.prayer.name] = l;
           }
-        }
+          for (final l in unsyncedModels) {
+            // If not in remote, add it (preserves local optimistic update)
+            if (!merged.containsKey(l.prayer.name)) {
+              merged[l.prayer.name] = l;
+            }
+          }
 
-        yield merged.values.toList();
+          yield merged.values.toList();
+        }
+      } catch (e) {
+        if (e.toString().contains('permission-denied')) {
+          AppLogger.debug('PrayerRepo: Permission denied stream (logout)');
+        } else {
+          rethrow;
+        }
       }
-    }
   }
 
   Stream<List<PrayerLogModel>> getPrayerLogsByDate({

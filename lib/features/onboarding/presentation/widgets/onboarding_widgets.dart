@@ -2,7 +2,6 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lottie/lottie.dart';
-import 'package:salah/core/constants/app_dimensions.dart';
 import 'package:salah/core/theme/app_colors.dart';
 import 'package:salah/core/theme/app_fonts.dart';
 
@@ -39,6 +38,7 @@ class OnboardingPageLayout extends StatelessWidget {
 
     Widget content = Column(
       mainAxisSize: scrollable ? MainAxisSize.min : MainAxisSize.max,
+      mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         // ── Illustration ──
@@ -85,10 +85,16 @@ class OnboardingPageLayout extends StatelessWidget {
     );
 
     if (scrollable) {
+      final viewportHeight = size.height -
+          MediaQuery.paddingOf(context).top -
+          MediaQuery.paddingOf(context).bottom;
       content = SingleChildScrollView(
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: content,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: viewportHeight),
+          child: content,
+        ),
       );
     }
 
@@ -96,11 +102,12 @@ class OnboardingPageLayout extends StatelessWidget {
   }
 
   Widget _buildIllustration(Size size) {
-    final height = size.height * 0.26;
+    final height = size.height * 0.18;
+    final constrainedHeight = height > 180 ? 180.0 : height;
 
     if (lottie != null || lottieAsset != null) {
       return SizedBox(
-        height: height,
+        height: constrainedHeight,
         width: double.infinity,
         child:
             lottie ??
@@ -115,12 +122,12 @@ class OnboardingPageLayout extends StatelessWidget {
 
     if (iconData != null) {
       return SizedBox(
-        height: height,
+        height: constrainedHeight,
         child: _AnimatedIconDisplay(icon: iconData!),
       );
     }
 
-    return SizedBox(height: height);
+    return SizedBox(height: constrainedHeight);
   }
 }
 

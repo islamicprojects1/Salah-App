@@ -100,6 +100,11 @@ class StorageService extends GetxService {
   Future<void> setOnboardingCompleted() =>
       write(StorageKeys.onboardingCompleted, true);
 
+  bool get locationSkippedInOnboarding =>
+      read<bool>(StorageKeys.locationSkippedInOnboarding) ?? false;
+  Future<void> setLocationSkippedInOnboarding(bool v) =>
+      write(StorageKeys.locationSkippedInOnboarding, v);
+
   // ══════════════════════════════════════════════════════════════
   // LOCATION
   // ══════════════════════════════════════════════════════════════
@@ -128,11 +133,6 @@ class StorageService extends GetxService {
   Future<void> setNotificationsEnabled(bool v) =>
       write(StorageKeys.notificationsEnabled, v);
 
-  /// إعداد الإشعار لصلاة معينة (يستخدم مفتاح الصلاة مباشرة)
-  bool getPrayerNotification(String prayerKey) => read<bool>(prayerKey) ?? true;
-  Future<void> setPrayerNotification(String prayerKey, bool v) =>
-      write(prayerKey, v);
-
   // ══════════════════════════════════════════════════════════════
   // NOTIFICATION SOUND MODE
   // ══════════════════════════════════════════════════════════════
@@ -158,7 +158,7 @@ class StorageService extends GetxService {
   static const List<int> approachingMinutesOptions = [5, 10, 15, 20, 30];
 
   bool get approachingAlertEnabled =>
-      read<bool>(StorageKeys.approachingAlertEnabled) ?? false;
+      read<bool>(StorageKeys.approachingAlertEnabled) ?? true;
   Future<void> setApproachingAlertEnabled(bool v) =>
       write(StorageKeys.approachingAlertEnabled, v);
 

@@ -7,6 +7,9 @@ class PrayerLogModel {
 
   /// Owner/user id. Note: field name is "oderId" (legacy typo) in Firestore/DB for compatibility.
   final String oderId;
+
+  /// Alias for [oderId] — use this in new code.
+  String get userId => oderId;
   final PrayerName prayer;
   final DateTime prayedAt;
   final DateTime adhanTime;
@@ -40,7 +43,7 @@ class PrayerLogModel {
     final data = doc.data()!;
     return PrayerLogModel(
       id: doc.id,
-      oderId: data['oderId'] ?? '',
+      oderId: data['userId'] ?? data['oderId'] ?? '',
       prayer: _parsePrayerName(data['prayer'] ?? 'fajr'),
       prayedAt: (data['prayedAt'] as Timestamp).toDate(),
       adhanTime: (data['adhanTime'] as Timestamp).toDate(),
@@ -56,7 +59,8 @@ class PrayerLogModel {
   /// Convert to Firestore map
   Map<String, dynamic> toFirestore() {
     return {
-      'oderId': oderId,
+      'oderId': oderId, // legacy field — kept for backward compatibility
+      'userId': oderId, // canonical field
       'prayer': prayer.name,
       'prayedAt': Timestamp.fromDate(prayedAt),
       'adhanTime': Timestamp.fromDate(adhanTime),

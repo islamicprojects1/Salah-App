@@ -65,41 +65,41 @@ class FirestoreService extends GetxService {
     await _usersCollection.doc(userId).delete();
   }
 
-  /// Calculate and update user streak
+  /// Calculate and update user streak.
+  ///
+  /// "Prayer day" starts at 03:00 (not midnight) so that Isha prayed after
+  /// midnight still belongs to the same prayer day as the preceding Fajr.
   Future<int> updateStreak(String userId) async {
     try {
-      // Fetch last 30 days of logs to calculate streak
       final now = DateTime.now();
       int streak = 0;
 
-      // We look back day by day
+      // Anchor the prayer-day base: if it's before 3 AM, we're still in
+      // yesterday's prayer day (Isha may not have been prayed yet).
+      final prayerDayBase = _prayerDayStart(now);
+
       for (int i = 0; i < 30; i++) {
-        final date = now.subtract(Duration(days: i));
-        final startOfDay = DateTime(date.year, date.month, date.day);
-        final endOfDay = startOfDay.add(const Duration(days: 1));
+        final dayStart = prayerDayBase.subtract(Duration(days: i));
+        final dayEnd = dayStart.add(const Duration(hours: 24));
 
         final snapshot = await _prayerLogsCollection(userId)
-            .where('prayedAt', isGreaterThanOrEqualTo: startOfDay)
-            .where('prayedAt', isLessThan: endOfDay)
+            .where('prayedAt', isGreaterThanOrEqualTo: dayStart)
+            .where('prayedAt', isLessThan: dayEnd)
             .get();
 
-        // Check if 5 prayers completed (excluding sunrise for MVP, or including if required)
-        // Specification says 5/5 = 1 day
         final completedPrayers = snapshot.docs
             .map((d) => d.data()['prayer'] as String)
             .toSet();
-        // Remove sunrise if it's there
+        // Remove non-obligatory sunrise / شروق
         completedPrayers.remove('sunrise');
-        completedPrayers.remove('Ø§Ù„Ø´Ø±ÙˆÙ‚');
+        completedPrayers.remove('الشروق');
 
         if (completedPrayers.length >= 5) {
           streak++;
         } else if (i == 0) {
-          // If today isn't finished, don't break the streak yet,
-          // but if yesterday wasn't finished, the streak definitely broke.
+          // Current prayer day isn't finished yet — don't break the streak.
           continue;
         } else {
-          // Streak broken
           break;
         }
       }
@@ -107,9 +107,19 @@ class FirestoreService extends GetxService {
       await updateUser(userId, {'currentStreak': streak});
       return streak;
     } catch (e) {
-      // Streak update failed
       return 0;
     }
+  }
+
+  /// Returns the start of the current "prayer day" (03:00 AM boundary).
+  /// Before 3 AM we're still in the previous day's prayer cycle.
+  static DateTime _prayerDayStart(DateTime moment) {
+    final cutoff = DateTime(moment.year, moment.month, moment.day, 3);
+    if (moment.isBefore(cutoff)) {
+      final prev = moment.subtract(const Duration(days: 1));
+      return DateTime(prev.year, prev.month, prev.day, 3);
+    }
+    return cutoff;
   }
 
   /// Get real-time notifications for a user

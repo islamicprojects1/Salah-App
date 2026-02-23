@@ -179,22 +179,59 @@ class SplashTagline extends StatelessWidget {
 }
 
 /// Loading indicator
-class SplashLoadingIndicator extends StatelessWidget {
+class SplashLoadingIndicator extends StatefulWidget {
   const SplashLoadingIndicator({super.key});
+
+  @override
+  State<SplashLoadingIndicator> createState() => _SplashLoadingIndicatorState();
+}
+
+class _SplashLoadingIndicatorState extends State<SplashLoadingIndicator>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        SizedBox(
-          width: 40,
-          height: 40,
-          child: CircularProgressIndicator(
-            strokeWidth: 3,
-            valueColor: const AlwaysStoppedAnimation<Color>(
-              AppColors.secondary,
-            ),
-          ),
+        AnimatedBuilder(
+          animation: _controller,
+          builder: (_, __) {
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(3, (i) {
+                final delay = i / 3;
+                final t = (((_controller.value - delay) % 1.0 + 1.0) % 1.0);
+                final scale = 0.5 + 0.5 * (t < 0.5 ? t * 2 : (1 - t) * 2);
+                return Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 5),
+                  width: 10 * scale,
+                  height: 10 * scale,
+                  decoration: BoxDecoration(
+                    color: AppColors.secondary.withValues(
+                      alpha: 0.5 + 0.5 * scale,
+                    ),
+                    shape: BoxShape.circle,
+                  ),
+                );
+              }),
+            );
+          },
         ),
         const SizedBox(height: 16),
         Text(
@@ -209,3 +246,4 @@ class SplashLoadingIndicator extends StatelessWidget {
     );
   }
 }
+

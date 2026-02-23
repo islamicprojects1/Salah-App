@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:salah/core/constants/enums.dart';
+import 'package:salah/core/feedback/app_feedback.dart';
 import 'package:salah/core/constants/storage_keys.dart';
 import 'package:salah/core/di/injection_container.dart';
 import 'package:salah/core/feedback/toast_service.dart';
@@ -11,6 +12,9 @@ import 'package:salah/features/auth/data/helpers/auth_validation.dart';
 import 'package:salah/features/auth/data/models/user_model.dart';
 import 'package:salah/features/auth/data/services/auth_service.dart';
 import 'package:salah/features/prayer/data/services/firestore_service.dart';
+import 'package:salah/features/prayer/data/services/live_context_service.dart';
+import 'package:salah/features/prayer/controller/dashboard_controller.dart';
+import 'package:salah/features/family/controller/family_controller.dart';
 
 /// Controller for authentication flow
 class AuthController extends GetxController {
@@ -29,6 +33,9 @@ class AuthController extends GetxController {
   final isLoading = false.obs;
   final isGoogleLoading = false.obs;
   final errorMessage = ''.obs;
+
+  /// True when a Google sign-in creates a brand-new account (needs profile setup)
+  final isNewGoogleUser = false.obs;
 
   // Password visibility toggles
   final isPasswordVisible = false.obs;
@@ -116,11 +123,13 @@ class AuthController extends GetxController {
     final emailErr = AuthValidation.validateEmail(emailController.text.trim());
     if (emailErr != null) {
       errorMessage.value = emailErr;
+      AppFeedback.showError('error'.tr, emailErr);
       return false;
     }
     final passErr = AuthValidation.validatePassword(passwordController.text);
     if (passErr != null) {
       errorMessage.value = passErr;
+      AppFeedback.showError('error'.tr, passErr);
       return false;
     }
 
@@ -136,9 +145,12 @@ class AuthController extends GetxController {
           ? _authService.errorMessage.value
           : 'auth_error_default'.tr;
       errorMessage.value = msg;
+      AppFeedback.showError('error'.tr, msg);
       return false;
     } catch (e) {
-      errorMessage.value = 'auth_error_default'.tr;
+      final msg = 'auth_error_default'.tr;
+      errorMessage.value = msg;
+      AppFeedback.showError('error'.tr, msg);
       return false;
     } finally {
       isLoading.value = false;
@@ -147,16 +159,32 @@ class AuthController extends GetxController {
 
   Future<bool> loginWithGoogle() async {
     isGoogleLoading.value = true;
+    isNewGoogleUser.value = false;
     clearError();
     try {
       final user = await _authService.signInWithGoogle();
-      if (user != null) return true;
+      if (user == null) {
+        final msg = _authService.errorMessage.value.isNotEmpty
+            ? _authService.errorMessage.value
+            : 'auth_error_default'.tr;
+        if (msg.isNotEmpty) {
+          errorMessage.value = msg;
+          AppFeedback.showError('error'.tr, msg);
+        }
+        return false;
+      }
 
-      final msg = _authService.errorMessage.value.isNotEmpty
-          ? _authService.errorMessage.value
-          : 'auth_error_default'.tr;
-      errorMessage.value = msg;
-      return false;
+      // Check if user already has a Firestore profile
+      final snapshot = await _firestore.getUser(user.uid);
+      if (snapshot.exists) {
+        // Returning user — go straight to dashboard
+        return true;
+      }
+
+      // New user — create profile from Google data
+      await _createProfileFromGoogle(user);
+      isNewGoogleUser.value = true;
+      return true;
     } catch (e) {
       final msg = 'auth_error_default'.tr;
       errorMessage.value = msg;
@@ -165,6 +193,25 @@ class AuthController extends GetxController {
     } finally {
       isGoogleLoading.value = false;
     }
+  }
+
+  /// Creates a Firestore profile from Google account data
+  Future<void> _createProfileFromGoogle(dynamic user) async {
+    final userModel = UserModel(
+      id: user.uid,
+      name: user.displayName ?? '',
+      birthDate: DateTime(2000, 1, 1),
+      gender: Gender.male,
+      email: user.email,
+      photoUrl: user.photoURL,
+      createdAt: DateTime.now(),
+      language: Get.locale?.languageCode ?? 'ar',
+    );
+    await _firestore.setUser(user.uid, userModel.toFirestore());
+
+    // Pre-fill form controllers for profile setup
+    nameController.text = user.displayName ?? '';
+    emailController.text = user.email ?? '';
   }
 
   void navigateToRegister() {
@@ -212,8 +259,23 @@ class AuthController extends GetxController {
 
   /// Logout
   Future<void> logout() async {
+    // 1. Cancel Firestore listeners before signing out to avoid permission-denied errors
+    if (Get.isRegistered<FamilyController>()) {
+      Get.find<FamilyController>().cancelStreamsForLogout();
+    }
+    if (Get.isRegistered<DashboardController>()) {
+      Get.find<DashboardController>().cancelStreamsForLogout();
+    }
+    if (sl.isRegistered<LiveContextService>()) {
+      sl<LiveContextService>().stopForLogout();
+    }
+
+    // 2. Clear app state
     await _authService.signOut();
     clearFormAndErrors();
+
+    // 3. Navigate to login
+    Get.offAllNamed(AppRoutes.login);
   }
 
   // ============================================================

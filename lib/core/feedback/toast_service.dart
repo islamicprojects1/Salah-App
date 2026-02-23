@@ -56,7 +56,7 @@ class ToastService {
     String? message,
     required ToastType type,
     Duration duration = const Duration(seconds: 3),
-    bool isRetry = false, // ✅ بدون underscore
+    int retryCount = 0,
   }) {
     dismiss();
 
@@ -66,15 +66,15 @@ class ToastService {
         : null;
 
     if (overlayState == null) {
-      if (!isRetry) {
-        // Defer one frame and try again — overlay may not be ready yet.
+      // Retry up to 3 frames — handles complex navigation transitions.
+      if (retryCount < 3) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           _show(
             title,
             message: message,
             type: type,
             duration: duration,
-            isRetry: true,
+            retryCount: retryCount + 1,
           );
         });
       }

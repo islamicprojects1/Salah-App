@@ -46,6 +46,9 @@ class _JoinGroupScreenState extends State<JoinGroupScreen> {
       case 'not_found':
         setState(() => _error = 'code_not_found'.tr);
         break;
+      case 'expired':
+        setState(() => _error = 'invite_code_expired'.tr);
+        break;
       case 'blocked':
         setState(() => _error = 'you_are_blocked'.tr);
         break;

@@ -84,6 +84,7 @@ class FamilyRepository {
         name: name.trim(),
         type: type,
         inviteCode: code,
+        inviteCodeExpiresAt: now.add(const Duration(days: 30)),
         createdAt: now,
         createdBy: uid,
         adminId: uid,
@@ -106,7 +107,7 @@ class FamilyRepository {
       await batch.commit();
 
       await _db.cacheFamilyId(uid, groupRef.id);
-      await _db.cacheFamily(groupRef.id, jsonEncode(group.toMap()));
+      await _db.cacheFamily(groupRef.id, jsonEncode(group.toJson()));
       return group;
     } catch (e) {
       Get.log('[FamilyRepo] createGroup: $e', isError: true);
@@ -135,6 +136,7 @@ class FamilyRepository {
       final doc = snap.docs.first;
       final group = GroupModel.fromMap(doc.data(), doc.id);
 
+      if (group.isInviteCodeExpired) return 'expired';
       if (group.blockedUserIds.contains(uid)) return 'blocked';
 
       // Idempotency check
@@ -167,7 +169,7 @@ class FamilyRepository {
       await batch.commit();
 
       await _db.cacheFamilyId(uid, group.groupId);
-      await _db.cacheFamily(group.groupId, jsonEncode(group.toMap()));
+      await _db.cacheFamily(group.groupId, jsonEncode(group.toJson()));
       return 'success';
     } catch (e) {
       Get.log('[FamilyRepo] joinByCode: $e', isError: true);
@@ -210,7 +212,7 @@ class FamilyRepository {
       // نبحث عن مجموعة فيها عضوية نشطة لهذا المستخدم
       final memberDocs = await _firestore
           .collectionGroup(_membersCol)
-          .where(FieldPath.documentId, isEqualTo: uid)
+          .where('userId', isEqualTo: uid)
           .where('isActive', isEqualTo: true)
           .limit(1)
           .get();
@@ -228,7 +230,7 @@ class FamilyRepository {
 
       final group = GroupModel.fromMap(groupDoc.data()!, groupId);
       await _db.cacheFamilyId(uid, groupId);
-      await _db.cacheFamily(groupId, jsonEncode(group.toMap()));
+      await _db.cacheFamily(groupId, jsonEncode(group.toJson()));
       return group;
     } catch (e) {
       Get.log('[FamilyRepo] fetchFromFirestore: $e', isError: true);
@@ -310,19 +312,46 @@ class FamilyRepository {
   }
 
   /// يُستدعى بعد تسجيل أي صلاة من المستخدم
-  Future<void> onPrayerLogged(String groupId) async {
+  /// [prayerName] اسم الصلاة (e.g. 'fajr') لعرض حالة الصلاة لكل عضو
+  Future<void> onPrayerLogged(String groupId, String prayerName) async {
     final uid = _userId;
     if (uid == null) return;
 
     try {
-      final key = _todayKey();
+      final today = _todayKey();
+
+      // 1. تحديث حالة صلوات العضو في المجموعة (مرئي لجميع الأعضاء)
+      final memberRef = _firestore
+          .collection(_groupsCol)
+          .doc(groupId)
+          .collection(_membersCol)
+          .doc(uid);
+
+      await _firestore.runTransaction((txn) async {
+        final snap = await txn.get(memberRef);
+        final storedDate = snap.data()?['todayPrayersDate'] as String?;
+
+        if (storedDate == today) {
+          // نفس اليوم — أضف الصلاة إن لم تكن موجودة
+          txn.update(memberRef, {
+            'todayPrayers': FieldValue.arrayUnion([prayerName]),
+          });
+        } else {
+          // يوم جديد — أعد الضبط
+          txn.update(memberRef, {
+            'todayPrayersDate': today,
+            'todayPrayers': [prayerName],
+          });
+        }
+      });
+
+      // 2. تحديث الملخص اليومي للمجموعة (العضو يُحسب مرة واحدة فقط)
       final dailyRef = _firestore
           .collection(_groupsCol)
           .doc(groupId)
           .collection(_dailyCol)
-          .doc(key);
+          .doc(today);
 
-      // نتحقق هل سجّل هذا العضو اليوم من قبل (لمنع عدّه مرتين)
       final loggedRef = dailyRef.collection('logged_today').doc(uid);
       final alreadyLogged = await loggedRef.get();
       if (alreadyLogged.exists) return;
@@ -481,6 +510,9 @@ class FamilyRepository {
       final code = await _uniqueCode();
       await _firestore.collection(_groupsCol).doc(groupId).update({
         'inviteCode': code,
+        'inviteCodeExpiresAt': Timestamp.fromDate(
+          DateTime.now().add(const Duration(days: 30)),
+        ),
         'lastAdminActivity': FieldValue.serverTimestamp(),
       });
       return code;
@@ -494,8 +526,14 @@ class FamilyRepository {
     final uid = _userId;
     if (uid == null) return false;
     try {
-      final batch = _firestore.batch();
       final groupRef = _firestore.collection(_groupsCol).doc(groupId);
+
+      // Check if the leaving user is admin before removing them
+      final groupDoc = await groupRef.get();
+      final isAdmin =
+          groupDoc.exists && (groupDoc.data()?['adminId'] as String?) == uid;
+
+      final batch = _firestore.batch();
       batch.update(groupRef.collection(_membersCol).doc(uid), {
         'isActive': false,
       });
@@ -505,10 +543,51 @@ class FamilyRepository {
       });
       await batch.commit();
       await _db.clearFamilyCache(uid);
+
+      // Admin left — promote the next oldest active member automatically
+      if (isAdmin) {
+        await _autoSucceedAdmin(groupId, uid);
+      }
+
       return true;
     } catch (e) {
       Get.log('[FamilyRepo] leave: $e', isError: true);
       return false;
+    }
+  }
+
+  /// يُرقّي أقدم عضو نشط لمنصب المشرف عند غياب المشرف الحالي.
+  Future<void> _autoSucceedAdmin(
+    String groupId,
+    String currentAdminId,
+  ) async {
+    try {
+      final members = await _firestore
+          .collection(_groupsCol)
+          .doc(groupId)
+          .collection(_membersCol)
+          .where('isActive', isEqualTo: true)
+          .where('isShadow', isEqualTo: false)
+          .orderBy('joinedAt')
+          .get();
+
+      final candidates =
+          members.docs.where((d) => d.id != currentAdminId).toList();
+      if (candidates.isEmpty) return; // لا يوجد أعضاء آخرون
+
+      final newAdminId = candidates.first.id;
+      final batch = _firestore.batch();
+      final groupRef = _firestore.collection(_groupsCol).doc(groupId);
+      batch.update(groupRef.collection(_membersCol).doc(newAdminId), {
+        'role': 'admin',
+      });
+      batch.update(groupRef, {
+        'adminId': newAdminId,
+        'lastAdminActivity': FieldValue.serverTimestamp(),
+      });
+      await batch.commit();
+    } catch (e) {
+      Get.log('[FamilyRepo] autoSucceed: $e', isError: true);
     }
   }
 
@@ -558,34 +637,7 @@ class FamilyRepository {
       if (last == null) return;
       if (DateTime.now().difference(last).inDays < 90) return;
 
-      final members = await _firestore
-          .collection(_groupsCol)
-          .doc(groupId)
-          .collection(_membersCol)
-          .where('isActive', isEqualTo: true)
-          .where('isShadow', isEqualTo: false)
-          .orderBy('joinedAt')
-          .get();
-
-      final candidates = members.docs
-          .where((d) => d.id != group.adminId)
-          .toList();
-      if (candidates.isEmpty) return;
-
-      final newAdmin = candidates.first.id;
-      final batch = _firestore.batch();
-      final groupRef = _firestore.collection(_groupsCol).doc(groupId);
-      batch.update(groupRef.collection(_membersCol).doc(group.adminId), {
-        'role': 'member',
-      });
-      batch.update(groupRef.collection(_membersCol).doc(newAdmin), {
-        'role': 'admin',
-      });
-      batch.update(groupRef, {
-        'adminId': newAdmin,
-        'lastAdminActivity': FieldValue.serverTimestamp(),
-      });
-      await batch.commit();
+      await _autoSucceedAdmin(groupId, group.adminId);
     } catch (e) {
       Get.log('[FamilyRepo] succession: $e', isError: true);
     }

@@ -15,6 +15,7 @@ import 'package:salah/features/prayer/data/services/firestore_service.dart';
 import 'package:salah/features/prayer/data/services/live_context_service.dart';
 import 'package:salah/features/prayer/data/services/notification_service.dart';
 import 'package:salah/features/prayer/data/services/qada_detection_service.dart';
+import 'package:salah/features/family/controller/family_controller.dart';
 
 /// Handles all prayer logging operations:
 /// - Current prayer logging
@@ -78,6 +79,7 @@ class PrayerLogger {
       _qadaService.resetSnoozeCount(prayerType);
       _qadaService.onPrayerLogged();
       _liveContextService.onPrayerLogged();
+      _notifyFamily(prayerType);
 
       if (synced) {
         await sl<FirestoreService>().addAnalyticsEvent(
@@ -146,6 +148,7 @@ class PrayerLogger {
       _qadaService.resetSnoozeCount(prayerType);
       _qadaService.onPrayerLogged();
       _liveContextService.onPrayerLogged();
+      _notifyFamily(prayerType);
 
       int? updatedStreak;
       if (todayLogs.length >= 5) {
@@ -209,6 +212,7 @@ class PrayerLogger {
           );
           if (!synced) anyQueued = true;
           logged++;
+          _notifyFamily(prayer.prayerType);
         } catch (e) {
           AppLogger.debug('Batch log failed for ${prayer.name}', e);
         }
@@ -264,6 +268,7 @@ class PrayerLogger {
       }
       await storage.remove(StorageKeys.pendingPrayerLog);
       _liveContextService.onPrayerLogged();
+      _notifyFamily(prayer);
       if (synced) {
         AppFeedback.showSuccess(
           'done'.tr,
@@ -281,6 +286,15 @@ class PrayerLogger {
   // ============================================================
   // HELPERS
   // ============================================================
+
+  /// Notify the family controller that a prayer was logged so it can
+  /// update the member's per-prayer status and daily X/Y summary.
+  /// Safe to call even when FamilyController is not registered.
+  void _notifyFamily(PrayerName prayer) {
+    if (Get.isRegistered<FamilyController>()) {
+      Get.find<FamilyController>().onPrayerLogged(prayer).ignore();
+    }
+  }
 
   /// Map a [PrayerName] to its notification base ID.
   static int notificationIdForPrayer(PrayerName prayer) {

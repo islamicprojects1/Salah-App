@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:salah/core/feedback/app_feedback.dart';
 import 'package:salah/features/family/controller/family_controller.dart';
 import 'package:salah/features/family/data/models/group_model.dart';
 
@@ -34,17 +35,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
     if (ok) {
       Get.back();
     } else {
-      Get.rawSnackbar(
-        message: 'create_group_error'.tr,
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade800,
-        borderRadius: 12,
-        margin: const EdgeInsets.all(16),
-        messageText: Text(
-          'create_group_error'.tr,
-          style: const TextStyle(color: Colors.white),
-        ),
-      );
+      AppFeedback.showError('error'.tr, 'create_group_error'.tr);
     }
   }
 

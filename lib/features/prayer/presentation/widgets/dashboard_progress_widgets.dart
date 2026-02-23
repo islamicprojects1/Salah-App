@@ -126,6 +126,7 @@ Widget buildQuickPrayerIcons(
                     time: DateTimeHelper.formatTime12(prayer.dateTime),
                     isLogged: isLogged,
                     quality: log?.quality,
+                    timingQuality: log?.timingQuality,
                     isNext: isNext,
                     isCurrent: isCurrent,
                     isPastUnlogged: isPast && !isLogged,
@@ -204,6 +205,7 @@ Widget buildPrayerIcon({
   required String time,
   required bool isLogged,
   PrayerQuality? quality,
+  PrayerTimingQuality? timingQuality,
   required bool isNext,
   required bool isCurrent,
   bool isPastUnlogged = false,
@@ -211,14 +213,18 @@ Widget buildPrayerIcon({
 }) {
   final Color bgColor;
   final Color iconColor;
-  final IconData iconData = PrayerTimingHelper.getPrayerIcon(prayerType);
+  final IconData iconData = PrayerTimingHelper.prayerIcon(prayerType);
 
-  if (isLogged && quality != null) {
-    iconColor = PrayerTimingHelper.getLegacyQualityColor(quality);
+  if (isLogged) {
+    // Prefer detailed timingQuality for richer time-based colors
+    if (timingQuality != null) {
+      iconColor = PrayerTimingHelper.qualityColor(timingQuality);
+    } else if (quality != null) {
+      iconColor = PrayerTimingHelper.legacyQualityColor(quality);
+    } else {
+      iconColor = AppColors.success;
+    }
     bgColor = iconColor.withValues(alpha: 0.2);
-  } else if (isLogged) {
-    bgColor = AppColors.success.withValues(alpha: 0.2);
-    iconColor = AppColors.success;
   } else if (isPastUnlogged) {
     bgColor = AppColors.orange.withValues(alpha: 0.15);
     iconColor = AppColors.orange;
@@ -272,13 +278,7 @@ Widget buildPrayerIcon({
         Text(
           name,
           style: AppFonts.labelSmall.copyWith(
-            color: isLogged && quality != null
-                ? PrayerTimingHelper.getLegacyQualityColor(quality!)
-                : isLogged
-                ? AppColors.success
-                : isPastUnlogged
-                ? AppColors.orange
-                : AppColors.textPrimary,
+            color: isLogged ? iconColor : isPastUnlogged ? AppColors.orange : AppColors.textPrimary,
             fontWeight: (isCurrent || isPastUnlogged)
                 ? FontWeight.bold
                 : FontWeight.normal,

@@ -59,14 +59,85 @@ class MemberListTile extends StatelessWidget {
             ],
           ],
         ),
-        subtitle: Text(
-          member.isAdmin ? 'group_admin'.tr : 'group_member'.tr,
-          style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 2),
+            if (!member.isShadow) _PrayerDotsRow(member: member),
+            if (member.isShadow)
+              Text(
+                'group_member'.tr,
+                style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+              ),
+          ],
         ),
         trailing: (showAdminActions && !isMe && ctrl.isAdmin)
             ? _AdminActions(member: member)
             : null,
       ),
+    );
+  }
+}
+
+// The 5 obligatory prayers (excluding sunrise) in display order
+const _kPrayers = [
+  (name: 'fajr',    label: 'ف'),
+  (name: 'dhuhr',   label: 'ظ'),
+  (name: 'asr',     label: 'ع'),
+  (name: 'maghrib', label: 'م'),
+  (name: 'isha',    label: 'ع'),
+];
+
+class _PrayerDotsRow extends StatelessWidget {
+  final MemberModel member;
+  const _PrayerDotsRow({required this.member});
+
+  String _todayKey() {
+    final now = DateTime.now();
+    final m = now.month.toString().padLeft(2, '0');
+    final d = now.day.toString().padLeft(2, '0');
+    return '${now.year}-$m-$d';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final logged = member.getTodayPrayers(_todayKey()).toSet();
+    return Row(
+      children: _kPrayers.map((p) {
+        final done = logged.contains(p.name);
+        return Padding(
+          padding: const EdgeInsets.only(right: 5),
+          child: Tooltip(
+            message: p.name.tr,
+            child: Container(
+              width: 22,
+              height: 22,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: done
+                    ? const Color(0xFF1A6B4A)
+                    : Colors.grey.withValues(alpha: 0.15),
+                border: Border.all(
+                  color: done
+                      ? const Color(0xFF1A6B4A)
+                      : Colors.grey.withValues(alpha: 0.3),
+                  width: 1.2,
+                ),
+              ),
+              child: Center(
+                child: Text(
+                  p.label,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: done ? Colors.white : Colors.grey[400],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 }

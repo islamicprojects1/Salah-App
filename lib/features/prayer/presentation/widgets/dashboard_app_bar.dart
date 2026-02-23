@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:salah/core/constants/app_dimensions.dart';
-import 'package:salah/core/routes/app_routes.dart';
 import 'package:salah/core/theme/app_colors.dart';
 import 'package:salah/core/theme/app_fonts.dart';
 import 'package:salah/features/prayer/controller/dashboard_controller.dart';
@@ -39,7 +38,7 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
           onPressed: () => scaffoldKey.currentState?.openDrawer(),
         ),
         title: InkWell(
-          onTap: () => Get.toNamed(AppRoutes.selectCity),
+          onTap: () => dashboardCtrl.openSelectCity(),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,

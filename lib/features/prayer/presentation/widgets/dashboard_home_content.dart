@@ -39,64 +39,90 @@ class _DashboardHomeContentState extends State<DashboardHomeContent>
           padding: const EdgeInsets.symmetric(
             horizontal: AppDimensions.paddingLG,
           ),
-          child: Column(
-            children: [
+          child: CustomScrollView(
+            slivers: [
               // Location hint — only when using default location
-              Obx(
-                () => controller.isUsingDefaultLocation
-                    ? LocationHintBanner(onTap: controller.openSelectCity)
-                    : const SizedBox.shrink(),
+              SliverToBoxAdapter(
+                child: Obx(
+                  () => controller.isUsingDefaultLocation
+                      ? LocationHintBanner(onTap: controller.openSelectCity)
+                      : const SizedBox.shrink(),
+                ),
               ),
 
-              const SizedBox(height: AppDimensions.paddingMD),
+              const SliverToBoxAdapter(
+                child: SizedBox(height: AppDimensions.paddingMD),
+              ),
 
               // Clock + streak row
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  const Expanded(child: DigitalClock()),
-                  _StreakBadge(controller: controller),
-                ],
+              SliverToBoxAdapter(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const Expanded(child: DigitalClock()),
+                    _StreakBadge(controller: controller),
+                  ],
+                ),
               ),
 
               // Daily review (only after Isha)
-              const DailyReviewCard(),
+              const SliverToBoxAdapter(child: DailyReviewCard()),
 
-              const SizedBox(height: AppDimensions.paddingSM),
-
-              // Main prayer circle — takes available vertical space
-              const Expanded(
-                flex: 3,
-                child: SmartPrayerCircle(),
+              const SliverToBoxAdapter(
+                child: SizedBox(height: AppDimensions.paddingSM),
               ),
 
-              const SizedBox(height: AppDimensions.paddingSM),
+              // Main prayer circle — use fixed height (LayoutBuilder incompatible with SliverFillRemaining)
+              SliverToBoxAdapter(
+                child: SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.36,
+                  child: const SmartPrayerCircle(),
+                ),
+              ),
+
+              const SliverToBoxAdapter(
+                child: SizedBox(height: AppDimensions.paddingSM),
+              ),
 
               // Connection status
-              const ConnectionStatusIndicator(),
+              const SliverToBoxAdapter(child: ConnectionStatusIndicator()),
 
-              const SizedBox(height: AppDimensions.paddingSM),
-
-              // Qada review button
-              _QadaReviewButton(controller: controller),
-
-              const SizedBox(height: AppDimensions.paddingSM),
-
-              // Today progress bar
-              buildTodayProgress(context, controller),
-
-              const SizedBox(height: AppDimensions.paddingSM),
-
-              // Quick prayer icons row
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppDimensions.paddingXS,
-                ),
-                child: buildQuickPrayerIcons(context, controller),
+              const SliverToBoxAdapter(
+                child: SizedBox(height: AppDimensions.paddingSM),
               ),
 
-              const SizedBox(height: AppDimensions.paddingSM),
+              // Qada review button
+              SliverToBoxAdapter(
+                child: _QadaReviewButton(controller: controller),
+              ),
+
+              const SliverToBoxAdapter(
+                child: SizedBox(height: AppDimensions.paddingSM),
+              ),
+
+              // Today progress bar
+              SliverToBoxAdapter(
+                child: buildTodayProgress(context, controller),
+              ),
+
+              const SliverToBoxAdapter(
+                child: SizedBox(height: AppDimensions.paddingSM),
+              ),
+
+              // Quick prayer icons row
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppDimensions.paddingXS,
+                  ),
+                  child: buildQuickPrayerIcons(context, controller),
+                ),
+              ),
+
+              const SliverToBoxAdapter(
+                child: SizedBox(height: AppDimensions.paddingSM),
+              ),
             ],
           ),
         );
@@ -293,13 +319,27 @@ class _DigitalClockState extends State<DigitalClock> {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      DateTimeHelper.formatTime12(_now),
-      style: AppFonts.displayLarge.copyWith(
-        color: AppColors.textPrimary,
-        fontWeight: FontWeight.bold,
-        letterSpacing: 1.5,
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          DateTimeHelper.formatTime12(_now),
+          style: AppFonts.displayLarge.copyWith(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.5,
+            height: 1.1,
+          ),
+        ),
+        Text(
+          DateTimeHelper.formatDateShort(_now),
+          style: AppFonts.bodySmall.copyWith(
+            color: AppColors.textSecondary,
+            letterSpacing: 0.3,
+          ),
+        ),
+      ],
     );
   }
 }

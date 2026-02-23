@@ -40,35 +40,43 @@ class GoogleSignInButton extends StatelessWidget {
             horizontal: AppDimensions.paddingLG,
           ),
         ),
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 200),
-          child: isLoading
-              ? SizedBox(
-                  key: const ValueKey('loading'),
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.5,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      AppColors.primary,
-                    ),
-                  ),
-                )
-              : Row(
-                  key: const ValueKey('content'),
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _GoogleLogo(),
-                    const SizedBox(width: AppDimensions.paddingMD),
-                    Text(
-                      'continue_with_google'.tr,
-                      style: AppFonts.bodyLarge.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.black87,
+        child: Directionality(
+          textDirection: TextDirection.ltr,
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            child: isLoading
+                ? SizedBox(
+                    key: const ValueKey('loading'),
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        AppColors.primary,
                       ),
                     ),
-                  ],
-                ),
+                  )
+                : Row(
+                    key: const ValueKey('content'),
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _GoogleLogo(),
+                      const SizedBox(width: AppDimensions.paddingMD),
+                      Flexible(
+                        child: Text(
+                          'continue_with_google'.tr,
+                          style: AppFonts.bodyLarge.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.black87,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
         ),
       ),
     );
@@ -330,6 +338,29 @@ class _EmailSignInSectionState extends State<EmailSignInSection>
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Decorative translucent circle used in auth screen headers
+class AuthDecorCircle extends StatelessWidget {
+  final double size;
+  final double opacity;
+  const AuthDecorCircle({super.key, required this.size, required this.opacity});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: AppColors.white.withValues(alpha: opacity * 3),
+          width: 1.5,
+        ),
+        color: AppColors.white.withValues(alpha: opacity),
+      ),
     );
   }
 }
